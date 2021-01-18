@@ -1,0 +1,6 @@
+share/
+__pycache__/
+Dataset/
+pyvenv.cfg
+lib/*
+bin/*
