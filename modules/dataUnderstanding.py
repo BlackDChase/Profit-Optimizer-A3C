@@ -1,3 +1,15 @@
+"""
+Understanding what data indicates and how can it be leveraged
+Parameteres made:
+    - Correlation
+    - Hourly data (mean of all 5 minutes interval)
+    - Data with due point, temp, rel hum seprated (might have error in WEST) [advancedDF]
+    - All data with necessory elements seprated [reducedDF]
+"""
+__author__ = 'BlackDChase'
+__version__ = '0.1.1'
+
+
 import pandas as pd
 
 df = pd.read_csv(
