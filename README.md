@@ -8,3 +8,4 @@
     - `Profit parameter` Should be of that time frame that is to be maximized
 - Profit parameter to be maximised
     - Can be `Demand*Price`
+- __Environment is going to produce a reward__
