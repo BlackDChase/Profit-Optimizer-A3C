@@ -13,22 +13,43 @@
     - Will take final action
     - A supervising psuedo agent that takes action
     - Methods
+        - `__init__`
         - `Get Current State`
         - `Take Action`
         - `Initiate Boss agents`
-        -
+        - `Train Boss agents`
     - Attributes
-        - `$Policy Network`
-        - `$Critic Network`
+        - `%Policy Network`
+        - `%Critic Network`
         - `Max Episode`
         - Trajectory Lenght `T`
         - `Number of boss agents`
         - `List of Boss agents`
-- Boss Agent:
+        - `State`
+        - `Price`
+- Boss Agent(God Agent):
     - Will Update the network
     - Methods
+        - `__init__`
+        - `train`
+        - `Gather and Store` $(s_t,a_t,r_t,s_t\prime)$
+        - Calculate `v_p`
+        - Calculate `v_t`
+        - Calculate `gae`
+        - Calculate and Update `l_p %`
+        - Calculate and Update `l_c %`
     - Attributes
-
+        - $\alpha_A$
+        - $\alpha_C$
+        - $\beta$
+    - Temporary Variables
+        - V-Value of Critic Network
+            - Predicted `v_p`
+            - Target    `v_t`
+        - Advantage Value `a`
+        - Loss 
+            - Policy `l_p`
+            - Critic `l_c`
 ## Annexure
 @ Overriden method
-$ Semaphore protected attributes
+% Semaphore required
