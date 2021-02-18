@@ -61,10 +61,42 @@ class GOD:
 
 class BOSS(GOD):
     def __init__(self,actorLearningRate=0.01,criticLearningRate=0.01):
-        self.super()
+        super().__init__()
         self.name='BOSS'
-        self.maxEpisode=maxEpisode
-        self.trajectoryLength=trajectoryLength
         self.a_lr=actorLearningRate
         self.c_lr=criticLearningRate
     pass
+
+    def train(self):
+        # here the main logic of training of A2C will be present
+        trajectory_list=GatherAndStore()
+        for i in trajectory_list:
+            self.v_val_pred+=CalculateV_p()
+            self.v_val_target+=CalculateV_tar()
+            self.advantage=CalculateGAE()
+        CalculateAndUpdateL_P()  # calculate  policy loss and update policy network
+        CalculateAndUpdateL_C() # calculate critic loss and update critic network
+        pass
+
+
+    def GatherAndStore(self):
+        # gather a trajectory by acting in the enviornment using current policy
+        pass
+
+    def CalculateV_p(self):
+        # calculate the predictied v value by using critic network
+        pass
+
+    def CalculateV_tar(self):
+        # calculate the target value v_tar using critic network
+        pass
+
+    def CalculateGAE():
+        # calculate the Advantage uisng the critic network
+        pass
+
+    def CalculateAndUpdateL_P():
+        pass
+
+    def CalculateAndUpdateL_C():
+        pass
