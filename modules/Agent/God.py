@@ -2,9 +2,16 @@
 GOD AGENT
 - Will take final action
 - A supervising psuedo agent that takes action
+- Definations required:
+    - policy/critic Net
+    - state
+    - action
+
 """
 __author__ = 'BlackDChase'
 __version__ = '0.0.1'
+
+from Boss import BOSS
 
 class GOD:
     def __init__(self,maxEpisode=100,nAgent=1,debug=False,trajectoryLenght=25):
