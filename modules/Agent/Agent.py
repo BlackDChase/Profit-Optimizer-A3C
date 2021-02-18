@@ -51,6 +51,9 @@ class GOD:
 
     def initateBoss(self):
         # To be defined Later
+        for i in range(self.nAgent):
+            self.bossAgent.append(BOSS())
+
         pass
 
     def trainBoss(self):
@@ -65,38 +68,54 @@ class BOSS(GOD):
         self.name='BOSS'
         self.a_lr=actorLearningRate
         self.c_lr=criticLearningRate
-    pass
+        self.trajectory = []
+        '''
+        # To be initialised
+        self.v_val_pred =
+        self.v_val_target =
+        self.advantage =
+        '''
+
+        pass
 
     def train(self):
         # here the main logic of training of A2C will be present
-        trajectory_list=GatherAndStore()
-        for i in trajectory_list:
-            self.v_val_pred+=CalculateV_p()
-            self.v_val_target+=CalculateV_tar()
-            self.advantage=CalculateGAE()
-        CalculateAndUpdateL_P()  # calculate  policy loss and update policy network
-        CalculateAndUpdateL_C() # calculate critic loss and update critic network
+        self.gatherAndStore()
+        for i in self.trajectory:
+            """
+            Wouldnt all these funtions below need `i` in some sense?
+            #"""
+            self.v_val_pred += self.calculateV_p()
+            self.v_val_target += self.calculateV_tar()
+            self.advantage = self.calculateGAE()
+        self.calculateAndUpdateL_P()  # calculate  policy loss and update policy network
+        self.calculateAndUpdateL_C() # calculate critic loss and update critic network
         pass
 
 
-    def GatherAndStore(self):
+    def gatherAndStore(self):
         # gather a trajectory by acting in the enviornment using current policy
+        '''
+        May be remove first element of the trajectory once that time has passed...
+        And then add a new element until len(self.trajectory)<=self.trajectoryLenght
+        #'''
+        self.trajectory.append()
         pass
 
-    def CalculateV_p(self):
+    def calculateV_p(self):
         # calculate the predictied v value by using critic network
         pass
 
-    def CalculateV_tar(self):
+    def calculateV_tar(self):
         # calculate the target value v_tar using critic network
         pass
 
-    def CalculateGAE(self):
+    def calculateGAE(self):
         # calculate the Advantage uisng the critic network
         pass
 
-    def CalculateAndUpdateL_P(self):
+    def calculateAndUpdateL_P(self):
         pass
 
-    def CalculateAndUpdateL_C(self):
+    def calculateAndUpdateL_C(self):
         pass
