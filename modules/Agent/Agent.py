@@ -11,7 +11,7 @@ GOD AGENT
 __author__ = 'BlackDChase'
 __version__ = '0.0.1'
 
-from Boss import BOSS
+import torch as pt
 
 class GOD:
     def __init__(self,maxEpisode=100,nAgent=1,debug=False,trajectoryLenght=25):
@@ -59,10 +59,12 @@ class GOD:
 
     pass
 
-class BOSS:
-    def __init__(self,maxEpisode=100,debug=False,tragectoryLength=25,actorLearningRate=0.01,criticLearningRate=0.01):
+class BOSS(GOD):
+    def __init__(self,actorLearningRate=0.01,criticLearningRate=0.01):
+        self.super()
         self.name='BOSS'
         self.maxEpisode=maxEpisode
         self.trajectoryLength=trajectoryLength
         self.a_lr=actorLearningRate
         self.c_lr=criticLearningRate
+    pass
