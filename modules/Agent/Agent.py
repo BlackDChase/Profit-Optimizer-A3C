@@ -11,7 +11,7 @@ GOD AGENT
 __author__ = 'BlackDChase'
 __version__ = '0.0.1'
 
-from Boss import BOSS
+import torch as pt
 
 class GOD:
     def __init__(self,maxEpisode=100,nAgent=1,debug=False,trajectoryLenght=25):
@@ -57,4 +57,7 @@ class GOD:
         # To be defined Later
         pass
 
+    pass
+
+class BOSS(GOD):
     pass
