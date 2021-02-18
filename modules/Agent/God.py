@@ -58,3 +58,11 @@ class GOD:
         pass
 
     pass
+
+class BOSS:
+    def __init__(self,maxEpisode=100,debug=False,tragectoryLength=25,actorLearningRate=0.01,criticLearningRate=0.01):
+        self.name='BOSS'
+        self.maxEpisode=maxEpisode
+        self.trajectoryLength=trajectoryLength
+        self.a_lr=actorLearningRate
+        self.c_lr=criticLearningRate
