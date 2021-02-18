@@ -91,12 +91,12 @@ class BOSS(GOD):
         # calculate the target value v_tar using critic network
         pass
 
-    def CalculateGAE():
+    def CalculateGAE(self):
         # calculate the Advantage uisng the critic network
         pass
 
-    def CalculateAndUpdateL_P():
+    def CalculateAndUpdateL_P(self):
         pass
 
-    def CalculateAndUpdateL_C():
+    def CalculateAndUpdateL_C(self):
         pass
