@@ -3,10 +3,13 @@ GOD AGENT
 - Will take final action
 - A supervising psuedo agent that takes action
 - Definations required:
-    - policy/critic Net
     - state
     - action
+    - policy/critic Net
+BOSS AGENT
+- Will Update the network
 
+((Market Demand)**@+(Ontario Demand)**2),Ontario Price,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce
 """
 __author__ = 'BlackDChase'
 __version__ = '0.0.1'
@@ -21,11 +24,11 @@ class GOD:
         self.setTrajectoryLength(trajectoryLenght)
         self.bossAgent = []
         self.price = 0
+        self.state = pt.Tensor([0]*9) 
         # To be defined Later
         '''
         self.policyNet =
         self.criticNet =
-        self.state =
         #'''
         pass
 
@@ -43,7 +46,11 @@ class GOD:
 
     def getState(self):
         # To be defined Later
+        self.updateBOSS()
         pass
+
+    def updateBOSS(self):
+
 
     def takeAction(self):
         # To be defined Later
@@ -58,6 +65,8 @@ class GOD:
 
     def trainBoss(self):
         # To be defined Later
+        for i in range(self.nAgent):
+            self.bossAgent[i].train(self.state.copy())
         pass
 
     pass
@@ -69,6 +78,7 @@ class BOSS(GOD):
         self.a_lr=actorLearningRate
         self.c_lr=criticLearningRate
         self.trajectory = []
+        # If entropy H_t calculated, Init beta
         '''
         # To be initialised
         self.v_val_pred =
@@ -78,7 +88,8 @@ class BOSS(GOD):
 
         pass
 
-    def train(self):
+    def train(self,state):
+        self.state=state
         # here the main logic of training of A2C will be present
         self.gatherAndStore()
         for i in self.trajectory:
