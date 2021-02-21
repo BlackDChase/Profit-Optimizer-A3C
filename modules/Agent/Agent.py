@@ -9,12 +9,47 @@ GOD AGENT
 BOSS AGENT
 - Will Update the network
 
-((Market Demand)**@+(Ontario Demand)**2),Ontario Price,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce
+State = ((Market Demand)**@+(Ontario Demand)**2),Ontario Price,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, (TIMEstamp - optional)
 """
 __author__ = 'BlackDChase'
 __version__ = '0.0.1'
 
 import torch as pt
+from torch import nn
+import numpy as np
+from torch.nn.modules.activation import Tanh
+from tqdm import tqdm
+
+
+class Network(nn.Module):
+    def __init__(self,stateSize,actionSize,**kwargs):
+        super(Network,self).__init__()
+        self.inputSize = stateSize
+        self.outputSize = actionSize
+
+        layers = []
+        keyWords = list(kwargs.keys())
+        kwargs["stateSize"] = (nn.Linear,stateSize,nn.ReLU)
+        keyWords.insert(0,"stateSize")
+        
+        i=0
+        for i in range(len(keyWords)-1):
+            l1=keyWords[i]
+            l2=keyWords[i+1]
+            layers.append(kwargs[l1[0]](kwargs[l1[1]],kwargs[l2[1]]))
+            if len(l1)>=3:
+                layers.append(kwargs[l1[2]]())
+        l1=keyWords[len(keyWords)-1]
+        layers.append(kwargs[l1[0]](kwargs[l1[1]],actionSize))
+        if len(l1)>=3:
+            layers.append(kwargs[l1[2]]())
+
+        self.model = nn.Sequential(*layers)
+    
+    def forward(self,currentState):
+        probabilityDistributionParameter = self.model(currentState)
+        return probabilityDistributionParameter
+    pass
 
 class GOD:
     def __init__(self,maxEpisode=100,nAgent=1,debug=False,trajectoryLenght=25):
@@ -24,11 +59,23 @@ class GOD:
         self.setTrajectoryLength(trajectoryLenght)
         self.bossAgent = []
         self.price = 0
-        self.state = pt.Tensor([0]*9) 
+        self.state = pt.Tensor([0]*9)
+        self.actionSpace = np.array([-12.5,-10,-7.5,-5,-2.5,0,2.5,5,7.5,10,12.5])
+        self.policyNet = Network(
+            len(self.state),
+            len(self.actionSpace),
+            "L1":(nn.Linear,20,nn.Tanh)
+            "L2":(nn.Linear,50,nn.SELU)
+        )
+
         # To be defined Later
         '''
-        self.policyNet =
-        self.criticNet =
+        self.criticNet =Network(
+            len(self.state),
+            len(self.actionSpace),
+            "L1":(nn.Linear,20,nn.Tanh)
+            "L2":(nn.Linear,50,nn.SELU)
+        )
         #'''
         pass
 
@@ -72,7 +119,7 @@ class GOD:
     pass
 
 class BOSS(GOD):
-    def __init__(self,actorLearningRate=0.01,criticLearningRate=0.01):
+    def __init__(self,actorLearningRate=0.01,criticLearningRate=0.01,gamma=0.99):
         super().__init__()
         self.name='BOSS'
         self.a_lr=actorLearningRate
