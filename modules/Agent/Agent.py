@@ -26,6 +26,7 @@ device = device("cuda" if args.cuda else "cpu")
 class Network(nn.Module):
     global device
     def __init__(self,stateSize,actionSize,**kwargs):
+        ## All logic below are initializing the Network with the layers.
         super(Network,self).__init__()
         self.inputSize = stateSize
         self.outputSize = actionSize
@@ -48,7 +49,7 @@ class Network(nn.Module):
         self.model = nn.Sequential(*layers)
 
     def forward(self,currentState):
-        probabilityDistributionParameter = self.model(currentState)
+        probabilityDistributionParameter = self.model(currentState) # calculate the pd-parameters by using the neural net.
         return probabilityDistributionParameter
     pass
 
@@ -60,19 +61,19 @@ class GOD:
         self.setTrajectoryLength(trajectoryLenght)
         self.bossAgent = []
         self.price = 0
-        self.state = Tensor([0]*9)
-        self.actionSpace = np.array([-12.5,-10,-7.5,-5,-2.5,0,2.5,5,7.5,10,12.5])
+        self.state = Tensor([0]*9) # state is the 9 dimentional tensor , defined at the top
+        self.actionSpace = np.array([-12.5,-10,-7.5,-5,-2.5,0,2.5,5,7.5,10,12.5]) # action space is the percent change of the current price.
         
-        self.policySemaphore = threading.Semaphore()
+        self.policySemaphore = threading.Semaphore() # semaphores do deal with simultaneous updates of the policy and critic net by multiple bosses.
         self.criticSemaphore = threading.Semaphore()
-        self.policyNet = Network(
+        self.policyNet = Network(    ## defining the actual neural net itself, input is state output is probability for each action.
             len(self.state),
             len(self.actionSpace),
-            "L1":(nn.Linear,20,nn.Tanh)
+            "L1":(nn.Linear,20,nn.Tanh)  
             "L2":(nn.Linear,50,nn.SELU)
         )
                 # Could be updated
-        self.criticNet =Network(
+        self.criticNet =Network(   ## the critic network :: it's input is space and output is a scaler ( the value of the state)
             len(self.state),
             1,
             "L1":(nn.Linear,30,nn.ReLU)
@@ -113,7 +114,7 @@ class GOD:
         pass
 
     def trainBoss(self):
-        # To be defined Later
+        # To be defined Later :: the actual function to train multiple bosses.
         bossThreads=[]
         for i in range(self.nAgent):
             process = multiprocessing.Process(target=self.bossAgent[i].train,args=self.state.__deepcopy__)
@@ -171,15 +172,21 @@ class BOSS(GOD):
         pass
 
     def calculateV_p(self):
-        # calculate the predictied v value by using critic network
+        # calculate the predictied v value by using critic network :: Predicted value is just the value returned by the critic network.
         pass
 
     def calculateV_tar(self):
-        # calculate the target value v_tar using critic network
+        # calculate the target value v_tar using critic network 
+        '''
+        This is a huge topic of debate , i.e how to actually calculate the target value, currently we have 2 propositions.
+        1. v_target(s) = summation( reward + v_predicted(ss)) , where ss is some state after the trajectory.
+        2. calculate v_target with the help of advantage function itself.
+        '''
         pass
 
     def calculateGAE(self):
         # calculate the Advantage uisng the critic network
+
         pass
 
     def calculateAndUpdateL_P(self):
