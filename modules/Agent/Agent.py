@@ -73,7 +73,7 @@ class GOD:
             "L2":(nn.Linear,50,nn.SELU)
         )
                 # Could be updated
-        self.criticNet =Network(   ## the critic network :: it's input is space and output is a scaler ( the value of the state)
+        self.criticNet =Network(   ## the critic network :: it's input is state and output is a scaler ( the value of the state)
             len(self.state),
             1,
             "L1":(nn.Linear,30,nn.ReLU)
