@@ -26,13 +26,27 @@ device = device("cuda" if args.cuda else "cpu")
 class Network(nn.Module):
     global device
     def __init__(self,stateSize,actionSize,**kwargs):
+        """
         ## All logic below are initializing the Network with the layers.
+        Parameters:
+        __________
+        : stateSize     : Input Size
+        : actionSize    : Output Size
+        : **kwargs      : Keyword arguments for different layers should be L1,L2,L3..
+                          (because its a dic and will change the oredring atuomatically)
+                          Later we kan have it Ordered dic to be directly sent throught
+                          but would make less sense
+                          The touple has type of layer, it's input and activation funtion if it's there.
+        #"""
         super(Network,self).__init__()
         self.inputSize = stateSize
         self.outputSize = actionSize
         layers = []
         keyWords = list(kwargs.keys())
         kwargs["stateSize"] = (nn.Linear,stateSize,nn.ReLU)
+        """
+        Input layer
+        #"""
         keyWords.insert(0,"stateSize")
         i=0
         for i in range(len(keyWords)-1):
@@ -40,17 +54,33 @@ class Network(nn.Module):
             l2=keyWords[i+1]
             layers.append(kwargs[l1[0]](kwargs[l1[1]],kwargs[l2[1]]))
             if len(l1)>=3:
+                """
+                For layers with activation function
+                #"""
                 layers.append(kwargs[l1[2]]())
         l1=keyWords[len(keyWords)-1]
         layers.append(kwargs[l1[0]](kwargs[l1[1]],actionSize))
-        if len(l1)>=3:
+        """
+        Output Layer
+        #"""
+        if len(l1)==3:
+            """
+            For layers with activation function
+            #"""
             layers.append(kwargs[l1[2]]())
 
         self.model = nn.Sequential(*layers)
 
     def forward(self,currentState):
-        probabilityDistributionParameter = self.model(currentState) # calculate the pd-parameters by using the neural net.
-        return probabilityDistributionParameter
+        """
+        Override for forward from nn.Module
+        To calculate the pd-parameters by using the neural net.
+        __________
+        Output for Policy network   : Probability Distribution Parameter
+        Output for Critic network   : Advantage
+        #"""
+        output = self.model(currentState)
+        return output
     pass
 
 class GOD:
@@ -61,23 +91,32 @@ class GOD:
         self.setTrajectoryLength(trajectoryLenght)
         self.bossAgent = []
         self.price = 0
-        self.state = Tensor([0]*9) # state is the 9 dimentional tensor , defined at the top
-        self.actionSpace = np.array([-12.5,-10,-7.5,-5,-2.5,0,2.5,5,7.5,10,12.5]) # action space is the percent change of the current price.
-        
-        self.policySemaphore = threading.Semaphore() # semaphores do deal with simultaneous updates of the policy and critic net by multiple bosses.
+
+        # state is the 9 dimentional tensor , defined at the top
+        self.state = Tensor([0]*9)
+
+        # action space is the percent change of the current price.
+        self.actionSpace = np.array([-12.5,-10,-7.5,-5,-2.5,0,2.5,5,7.5,10,12.5])
+
+        # semaphores do deal with simultaneous updates of the policy and critic net by multiple bosses.
+        self.policySemaphore = threading.Semaphore()
         self.criticSemaphore = threading.Semaphore()
-        self.policyNet = Network(    ## defining the actual neural net itself, input is state output is probability for each action.
+
+        ## defining the actual neural net itself, input is state output is probability for each action.
+        self.policyNet = Network(
             len(self.state),
             len(self.actionSpace),
-            "L1":(nn.Linear,20,nn.Tanh)  
-            "L2":(nn.Linear,50,nn.SELU)
+            "L1":(nn.Linear,20,nn.Tanh),
+            "L2":(nn.Linear,50,nn.SELU),
         )
-                # Could be updated
-        self.criticNet =Network(   ## the critic network :: it's input is state and output is a scaler ( the value of the state)
+
+        # Could be updated
+        ## the critic network :: it's input is state and output is a scaler ( the value of the state)
+        self.criticNet =Network(
             len(self.state),
             1,
-            "L1":(nn.Linear,30,nn.ReLU)
-            "L2":(nn.Linear,40,nn.ReLU)
+            "L1":(nn.Linear,30,nn.ReLU),
+            "L2":(nn.Linear,40,nn.ReLU),
         )
         #'''
         pass
@@ -135,7 +174,7 @@ class BOSS(GOD):
         self.c_lr=criticLearningRate
         self.trajectory = []
         self.god = god
-        
+
         # If entropy H_t calculated, Init beta
         '''
         # To be initialised
