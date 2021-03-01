@@ -84,7 +84,20 @@ class Network(nn.Module):
     pass
 
 class GOD:
+    '''
+    This class is responsible for taking the final action which will be conveyed to the enviorenment 
+    and the management of BOSS agents which will explore the enviorenment.
+    
+    Also containing the initialiation of the policy Net and Critic Net.
+
+    @Input (From Enviorenment) :: The Current State.
+    @Output (To enviorenment)  :: The Final Action Taken.
+
+    '''
     def __init__(self,maxEpisode=100,nAgent=1,debug=False,trajectoryLenght=25):
+        '''
+        Initialization of various GOD parameters, self evident from the code.
+        '''
         self.name="GOD"
         self.setMaxEpisode(maxEpisode)
         self.setNumberOfAgent(nAgent)
@@ -134,19 +147,23 @@ class GOD:
         pass
 
     def getState(self):
-        # To be defined Later
+        # To be defined Later (Get the current state)
         self.updateBOSS()
         pass
 
     def updateBOSS(self):
-
+        # Black Please Define this function
 
     def takeAction(self):
-        # To be defined Later
+        '''
+        Take the final action according to the Policy Network.
+        '''
         pass
 
     def initateBoss(self):
-        # To be defined Later
+        '''
+        Initialize all the boss agents for training
+        '''
         for i in range(self.nAgent):
             self.bossAgent.append(BOSS(self))
 
@@ -166,10 +183,21 @@ class GOD:
     pass
 
 class BOSS(GOD):
+    '''
+   The actual class which does the exploration of the state space. 
+   Contains the code for the actor critic algorithm (Trajectory generation+ Policy gradient and value net updation )
+
+   @Input :: (From Enviorenment) The current state + next state according to the current price to create trajectory.
+
+   @Output:: (To Enviorenment)   The action taken for creating trajectory.
+
+   @Actual Job :: To update the policy network and critic net by creating the trajectory and calculating losses.
+
+
+    '''
     def __init__(self,god,actorLearningRate=0.01,criticLearningRate=0.01,gamma=0.99):
         super().__init__()
         self.name='BOSS'
-
         self.a_lr=actorLearningRate
         self.c_lr=criticLearningRate
         self.trajectory = []
@@ -185,6 +213,9 @@ class BOSS(GOD):
         pass
 
     def train(self,state):
+        '''
+        The Actual function to train the network , the actor-critic actual logic.
+        '''
         self.state=state
         # here the main logic of training of A2C will be present
         for _ in range(self.maxEpisode):
@@ -228,7 +259,7 @@ class BOSS(GOD):
 
         pass
 
-    def calculateAndUpdateL_P(self):
+    def calculateAndUpdateL_P(self):    ### Semaphore stuff for safe update of network by multiple bosses.
         self.god.policySemaphore.acquire()
         # Do stuff
         self.god.policySemaphore.release()
