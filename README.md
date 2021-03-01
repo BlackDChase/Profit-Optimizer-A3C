@@ -6,7 +6,7 @@
 - `Profit parameter` Should be of a time frame that is to be maximized
     - Can be `Demand*Price`
     - If it has to optimise profit for a longer term than t should be predicting for a longer term.
-- __Environment is going to produce a reward__
+- __Environment is going to produce a reward_, The only thing matters for the agent is the reward , so it doesn't matters to agent how that reward is distributed, it will only chase the state which gives high reward. Now a preliminary reward can be (price * demand) , this needs to be refined later
 
 ## Bird Eye View
 - God Agent:
@@ -50,6 +50,11 @@
         - Loss 
             - Policy `l_p`
             - Critic `l_c`
+## ONLINE-OFFLINE DILLEMA
+  -There are two versions of actor critic Batch as well as online, it seems that Online one is more suited for our problems , in online we don't 
+   need to create trajectory , we just sample a action and update the network step-by-step.
+
+
 ## Annexure
 @ Overriden method
 % Semaphore required
