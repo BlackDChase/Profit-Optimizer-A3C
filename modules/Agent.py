@@ -23,7 +23,7 @@ from tqdm import tqdm
 import threading
 import logModule.log as log
 # GLOBAL
-device = device("cuda" if torch.cuda else "cpu")
+device = device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Network(nn.Module):
     global device
@@ -128,8 +128,8 @@ class GOD:
 
         ## defining the actual neural net itself, input is state output is probability for each action.
         self.__policyNet = Network(
-            len(self.state),
-            len(self.actionSpace),
+            len(self._state),
+            len(self._actionSpace),
             lr=self.__actorLR,
             L1=(nn.Linear,20,nn.Tanh),
             L2=(nn.Linear,50,nn.Softmax), ## we will add softmax at end , which will give the probability distribution.
@@ -327,9 +327,8 @@ class BOSS(GOD):
 
     def calculateGAE(self):
         # calculate the Advantage using the critic network
-
-
-        pass
+        advantage=0
+        return advantage
 
     def calculateAndUpdateL_P(self):    ### Semaphore stuff for safe update of network by multiple bosses.
         self.god.policySemaphore.acquire()
