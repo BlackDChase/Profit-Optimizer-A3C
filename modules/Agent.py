@@ -120,7 +120,7 @@ class GOD:
             len(self.state),
             len(self.actionSpace),
             L1=(nn.Linear,20,nn.Tanh),
-            L2=(nn.Linear,50,nn.SELU),
+            L2=(nn.Linear,50,nn.SELU), ## we will add softmax at end , which will give the probability distribution.
         )
 
         # Could be updated
@@ -129,7 +129,7 @@ class GOD:
             len(self.state),
             1,
             L1=(nn.Linear,30,nn.ReLU),
-            L2=(nn.Linear,40,nn.ReLU),
+            L2=(nn.Linear,40,nn.ReLU), ## we will add softmax here too.
         )
         #'''
         pass
@@ -216,6 +216,10 @@ class BOSS(GOD):
     def train(self,state):
         '''
         The Actual function to train the network , the actor-critic actual logic.
+        Eviorienment.step :: env.step has to give different outputs for different state trajectories by different boss. it has to take in account the diff
+        trajectories becouse diff bosses will go to different states.
+        
+
         '''
         self.state=state
         # here the main logic of training of A2C will be present
