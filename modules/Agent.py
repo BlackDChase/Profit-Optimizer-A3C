@@ -91,7 +91,7 @@ class Network(nn.Module):
         return output
     pass
 
-    def 
+    
 
 class GOD:
     '''
@@ -260,11 +260,7 @@ class BOSS(GOD):
 
     def gatherAndStore(self,initialState):
         # gather a trajectory by acting in the enviornment using current policy
-        '''
         
-        #'''
-        rewards=[]
-        actions=[]
         currentState=initialState
         for _ in self.trajectoryLength:
             action = self.getAction(currentState)
@@ -276,6 +272,11 @@ class BOSS(GOD):
         return
 
     def getAction(self,state):
+        '''
+        Responsible for taking the correct action from the given state using the neural net.
+        @input :: current state
+        @output :: the action which must be taken from this states
+        '''
         state = torch.from_numpy(state.float())
         actionProb = self.god.getAction(state) ## This creates state-action probability vector from the policy net. 
         
@@ -303,7 +304,7 @@ class BOSS(GOD):
         pass
 
     def calculateGAE(self):
-        # calculate the Advantage uisng the critic network
+        # calculate the Advantage using the critic network
 
         pass
 
