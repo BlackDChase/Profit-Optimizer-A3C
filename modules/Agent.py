@@ -129,7 +129,7 @@ class GOD:
             len(self.state),
             1,
             L1=(nn.Linear,30,nn.ReLU),
-            L2=(nn.Linear,40,nn.ReLU), ## we will add softmax here too.
+            L2=(nn.Linear,40,nn.ReLU),
         )
         #'''
         pass
