@@ -4,7 +4,8 @@ Minimalist and sane interface with the PEP8 breaking (and non idempotent) loggin
 """
 import logging
 
-logging.basicConfig(level=logging.DEBUG, filename="../../Saved_model/log.tsv", format='%(asctime)s	%(levelname)s	%(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(level=logging.DEBUG, filename="../../log.tsv", format='%(asctime)s	%(levelname)s	%(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+logging.addLevelName(level=logging.info,levelName="GPUusage")
 
 def info(information,debug=False):
     if debug:
@@ -13,5 +14,9 @@ def info(information,debug=False):
 
 def debug(*args,**kwargs):
     logging.debug(args,kwargs)
+
+def gpuStatus(usage):
+    msg = "Allocated: " + str(round(usage/(1024**2),1)) + " MB"
+    logging.GPUusage(msg)
 
 info("New session initiated")
