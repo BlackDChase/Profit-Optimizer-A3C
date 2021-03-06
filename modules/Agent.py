@@ -229,7 +229,7 @@ class BOSS(GOD):
 
 
     '''
-    def __init__(self,god,gamma=0.99,depth=200):
+    def __init__(self,god,gamma=0.99,depth=200,lamda=0.1):
         super().__init__()
         self.name='BOSS'
         self.trajectory = []
@@ -248,28 +248,27 @@ class BOSS(GOD):
         '''
         # here the main logic of training of A2C will be present
         for _ in range(self.maxEpisode):
-            '''
             # To be initialised
-            self.v_val_pred =
-            self.v_val_target =
-            self.advantage =
-            #'''
+            vPredicted = torch.Tensor([0]*len(self.trajectoryLength))
+            vTarget = torch.Tensor([0]*len(self.trajectoryLength))
+            advantage = torch.Tensor([0]*len(self.trajectoryLength))
             currentState = self.god.env.reset()
             self.gatherAndStore(currentState)
-            for state in self.trajectory:
+            for i in self.trajectoryLength:
+                state = self.trajectory[i]
                 """
                 Wouldnt all these funtions below need `i` in some sense?
                 UPDATE!! @ The below function are already calculating the summed values for the given trajectory,
                 i believe this upper loop is unnecessary and must be removed!😄
                 #"""
-                self.v_val_pred += self.calculateV_p(state)
-                self.v_val_target += self.calculateV_tar()
-                self.advantage = self.calculateGAE()
+                vPredicted[i] = self.calculateV_p(state)
+                vTarget[i] = self.calculateV_tar()
+                advantage[i] = self.calculateGAE()
             '''
             Question to be figured out :: Exactly when should the boss agents update the networks??
             '''
-            self.calculateAndUpdateL_P()  # calculate  policy loss and update policy network
-            self.calculateAndUpdateL_C() # calculate critic loss and update critic network
+            self.calculateAndUpdateL_P(advantage)  # calculate  policy loss and update policy network
+            self.calculateAndUpdateL_C(vPredicted,vTarget) # calculate critic loss and update critic network
         pass
 
 
@@ -319,7 +318,7 @@ class BOSS(GOD):
         '''
         # we have set γ to be 0.99 // see this sweet γ @BlackD , α , β , θ ( this is all tex , emacs master race , Ɣ ❈)
         ans=0.0
-        for i in range(0,200,1):
+        for i in range(0,200):
             ans+=((self.ɤ)**(i+1))*self.trajectory[i][2]
 
         ans+=(self.ɤ)**200*self.god._getCriticValue((self.trajectory[200][0])) ## multiply by the actual value of the 200th state.
