@@ -261,7 +261,7 @@ class BOSS(GOD):
     def gatherAndStore(self,initialState):
         # gather a trajectory by acting in the enviornment using current policy
         '''
-
+        
         #'''
         rewards=[]
         actions=[]
@@ -277,11 +277,11 @@ class BOSS(GOD):
 
     def getAction(self,state):
         state = torch.from_numpy(state.float())
-        actionProb = self.god.getAction(state)
-
-        pd = Catagorical(logit=actionProb)
+        actionProb = self.god.getAction(state) ## This creates state-action probability vector from the policy net. 
+        
+        pd = Catagorical(logit=actionProb) ## create a catagorical distribution acording to the actionProb
         ## categorical probability distribution
-        action = pd.sample()
+        action = pd.sample() ## sample the action according to the probability distribution.
         # What does these 3 lines do??
 
         return action
