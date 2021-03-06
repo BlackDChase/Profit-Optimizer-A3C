@@ -12,17 +12,18 @@ BOSS AGENT
 State = ((Market Demand)**@+(Ontario Demand)**2),Ontario Price,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, (TIMEstamp - optional)
 """
 __author__ = 'BlackDChase'
-__version__ = '0.0.1'
+__version__ = '0.0.3'
 
 # Imports
 from torch import nn, multiprocessing, device, Tensor
 from torch.distributions import Catagorical
+import torch
 import numpy as np
 from tqdm import tqdm
 import threading
 import logModule.log as log
 # GLOBAL
-device = device("cuda" if args.cuda else "cpu")
+device = device("cuda" if torch.cuda else "cpu")
 
 class Network(nn.Module):
     global device
@@ -91,7 +92,7 @@ class Network(nn.Module):
         return output
     pass
 
-    def 
+
 
 class GOD:
     '''
@@ -115,7 +116,8 @@ class GOD:
         self.__bossAgent = []
         self.price = 0
         self.__env = env
-
+        self.__actorLR = 1e-3
+        self.__criticLR = 1e-3
         # state is the 9 dimentional tensor , defined at the top
         self._state = Tensor([0]*9)
 
@@ -130,6 +132,7 @@ class GOD:
         self.__policyNet = Network(
             len(self.state),
             len(self.actionSpace),
+            lr=self.__actorLR,
             L1=(nn.Linear,20,nn.Tanh),
             L2=(nn.Linear,50,nn.Softmax), ## we will add softmax at end , which will give the probability distribution.
         )
@@ -137,16 +140,18 @@ class GOD:
         # Could be updated
         ## the critic network :: it's input is state and output is a scaler ( the value of the state)
         self.__criticNet =Network(
-            len(self.state),
+            len(self._state),
             1,
+            lr=self.__criticLR,
             L1=(nn.Linear,30,nn.ReLU),
             L2=(nn.Linear,40,nn.ReLU),
         )
         #'''
+        self.__initateBoss()
         pass
 
     def setNumberOfAgent(self,nAgent):
-        self._nAgent = nAgent
+        self.__nAgent = nAgent
         pass
 
     def setMaxEpisode(self,maxEpisode):
@@ -163,40 +168,45 @@ class GOD:
 
     def train(self):
         self.__trainBoss()
+        pass
 
     def takeAction(self):
         '''
         Take the final action according to the Policy Network.
         '''
-
         pass
 
     def _peakAction(self,state,action):
         result = self.__env.step(state,action)
         return result
 
-    def getAction(self,state):
+    def _getAction(self,state):
         self.__policySemaphore.acquire()
         actionProbab = self.__policyNet.forward(state)
         # Not sure if forward is the way to go
-
         self.__policySemaphore.release()
         return actionProbab
+
+    def _getCriticValue(self,state):
+        self.__criticSemaphore.acquire()
+        vVlaue = self.__criticNet.forward(state)
+        self.__criticSemaphore.release()
+        return vVlaue
 
     def __initateBoss(self):
         '''
         Initialize all the boss agents for training
         '''
-        for i in range(self._nAgent):
-            self._bossAgent.append(BOSS(self))
+        for _ in range(self.__nAgent):
+            self.__bossAgent.append(BOSS(self,depth=200))
 
         pass
 
     def __trainBoss(self):
         # To be defined Later :: the actual function to train multiple bosses.
         bossThreads=[]
-        for i in range(self.nAgent):
-            process = multiprocessing.Process(target=self.bossAgent[i].train,args=self.state.__deepcopy__)
+        for i in range(self.__nAgent):
+            process = multiprocessing.Process(target=self.__bossAgent[i].train)
             process.start()
             bossThreads.append(process)
         for i in bossThreads:
@@ -207,7 +217,7 @@ class GOD:
 
 class BOSS(GOD):
     '''
-   The actual class which does the exploration of the state space. 
+   The actual class which does the exploration of the state space.
    Contains the code for the actor critic algorithm (Trajectory generation+ Policy gradient and value net updation )
 
    @Input :: (From Enviorenment) The current state + next state according to the current price to create trajectory.
@@ -218,21 +228,14 @@ class BOSS(GOD):
 
 
     '''
-    def __init__(self,god,actorLearningRate=0.01,criticLearningRate=0.01,gamma=0.99):
+    def __init__(self,god,gamma=0.99,depth=200):
         super().__init__()
         self.name='BOSS'
-        self.a_lr=actorLearningRate
-        self.c_lr=criticLearningRate
         self.trajectory = []
         self.god = god
-
+        self.ɤ = gamma
+        self.d = depth
         # If entropy H_t calculated, Init beta
-        '''
-        # To be initialised
-        self.v_val_pred =
-        self.v_val_target =
-        self.advantage =
-        '''
         pass
 
     def train(self):
@@ -244,13 +247,19 @@ class BOSS(GOD):
         '''
         # here the main logic of training of A2C will be present
         for _ in range(self.maxEpisode):
+            '''
+            # To be initialised
+            self.v_val_pred =
+            self.v_val_target =
+            self.advantage =
+            #'''
             currentState = self.god.env.reset()
             self.gatherAndStore(currentState)
             for state in self.trajectory:
                 """
                 Wouldnt all these funtions below need `i` in some sense?
                 #"""
-                self.v_val_pred += self.calculateV_p()
+                self.v_val_pred += self.calculateV_p(state)
                 self.v_val_target += self.calculateV_tar()
                 self.advantage = self.calculateGAE()
             self.calculateAndUpdateL_P()  # calculate  policy loss and update policy network
@@ -263,8 +272,6 @@ class BOSS(GOD):
         '''
 
         #'''
-        rewards=[]
-        actions=[]
         currentState=initialState
         for _ in self.trajectoryLength:
             action = self.getAction(currentState)
@@ -286,12 +293,10 @@ class BOSS(GOD):
 
         return action
 
-       # self.trajectory.append()
-        pass
-
-    def calculateV_p(self):
+    def calculateV_p(self,state):
         # calculate the predicted v value by using critic network :: Predicted value is just the value returned by the critic network.
-        pass
+        vValue = self.god._getCriticValue(state)
+        return vValue
 
     def calculateV_tar(self):
         # calculate the target value v_tar using critic network 
