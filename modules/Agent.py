@@ -318,6 +318,7 @@ class BOSS(GOD):
         2. calculate v_target with the help of advantage function itself.
         '''
         # we have set γ to be 0.99 // see this sweet γ @BlackD , α , β , θ ( this is all tex , emacs master race , Ɣ ❈)
+        ## here 𝛄 can be variable so, the length can be changed.
         ans=0.0
         for i in range(0,200,1):
             ans+=((self.ɤ)**(i+1))*self.trajectory[i][2]
@@ -327,6 +328,7 @@ class BOSS(GOD):
 
     def calculateGAE(self):
         # calculate the Advantage using the critic network
+
 
         pass
 
