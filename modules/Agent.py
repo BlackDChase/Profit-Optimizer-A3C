@@ -11,7 +11,7 @@ BOSS AGENT
 
 State = ((Market Demand)**@+(Ontario Demand)**2),Ontario Price,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, (TIMEstamp - optional)
 """
-__author__ = 'BlackDChase'
+__author__ = 'BlackDChase,MR-TLL'
 __version__ = '0.0.3'
 
 # Imports
@@ -259,6 +259,8 @@ class BOSS(GOD):
             for state in self.trajectory:
                 """
                 Wouldnt all these funtions below need `i` in some sense?
+                UPDATE!! @ The below function are already calculating the summed values for the given trajectory,
+                i believe this upper loop is unnecessary and must be removed!😄
                 #"""
                 self.v_val_pred += self.calculateV_p(state)
                 self.v_val_target += self.calculateV_tar()
@@ -315,7 +317,13 @@ class BOSS(GOD):
         1. v_target(s) = summation( reward + v_predicted(ss)) , where ss is some state after the trajectory.
         2. calculate v_target with the help of advantage function itself.
         '''
-        pass
+        # we have set γ to be 0.99 // see this sweet γ @BlackD , α , β , θ ( this is all tex , emacs master race , Ɣ ❈)
+        ans=0.0
+        for i in range(0,200,1):
+            ans+=((self.ɤ)**(i+1))*self.trajectory[i][2]
+
+        ans+=(self.ɤ)**200*self.god._getCriticValue((self.trajectory[200][0])) ## multiply by the actual value of the 200th state.
+        return ans
 
     def calculateGAE(self):
         # calculate the Advantage using the critic network
