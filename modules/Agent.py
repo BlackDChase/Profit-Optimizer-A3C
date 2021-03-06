@@ -315,6 +315,22 @@ class BOSS(GOD):
         This is a huge topic of debate , i.e how to actually calculate the target value, currently we have 2 propositions.
         1. v_target(s) = summation( reward + v_predicted(ss)) , where ss is some state after the trajectory.
         2. calculate v_target with the help of advantage function itself.
+
+        #################################################################################################################
+        Another Huge Doubt regarding v_target and GAE is::
+        
+        DO WE NEED TO CONSTRUCT NEW EXPERIENCE(ENVIORENMENT EXPLORATION) FOR CALCULATING V_tar OR WE CAN USE THE
+        CURRENT TRAJECTORY FOR THIS PURPOSE(more probable)
+
+        CHOICE 1 :: Use TD error , for each state in trajectory , use TD error to calculate V_tar since 
+        you know 𝛄 + next state reward and you can calculate value of the next and current state
+        Pros :: very fast and TD error is a reliable and solid method.
+        Cons :: Maybe if we only see one step ahead , the estimate will be less reliable.
+        
+        CHOICE 2 :: For this we will, for each state in the trajectory , calculate the advantage and V_tar using the previous
+        method(by travelling to the end of the trajectory and accumulating rewards as given in jamboard slide 15) , the only 
+        difference is we start from the current state itself to the end of trajectory. 
+
         '''
         # we have set γ to be 0.99 // see this sweet γ @BlackD , α , β , θ ( this is all tex , emacs master race , Ɣ ❈)
         ## here 𝛄 can be variable so, the length can be changed.
