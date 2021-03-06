@@ -6,14 +6,14 @@
 - `Profit parameter` Should be of a time frame that is to be maximized
     - Can be `Demand*Price`
     - If it has to optimise profit for a longer term than t should be predicting for a longer term.
-- __Environment is going to produce a reward_, The only thing matters for the agent is the reward , so it doesn't matters to agent how that reward is distributed, it will only chase the state which gives high reward. Now a preliminary reward can be (price * demand) , this needs to be refined later
+- __Environment is going to produce a reward__, The only thing matters for the agent is the reward , so it doesn't matters to agent how that reward is distributed, it will only chase the state which gives high reward. Now a preliminary reward can be (price * demand) , this needs to be refined later
 
 ## Bird Eye View
 - God Agent:
     - Will take final action
     - A supervising psuedo agent that takes action
     - Methods
-        - __init__
+        - `__init__`
         - Get Current State
         - Take Action
         - Initiate Boss agents
@@ -30,17 +30,17 @@
 - Boss Agent(God Agent):
     - Will Update the network
     - Methods
-        - __init__
+        - `__init__`
         - train
-        - Gather and Store $(s_t,a_t,r_t,s_t\prime)$
+        - Gather and Store `$(s_t,a_t,r_t,s_t\prime)$`
         - Calculate `v_p`
         - Calculate `v_t`
         - Calculate `gae`
         - Calculate and Update `l_p %`
         - Calculate and Update `l_c %`
     - Attributes
-        - $\alpha_A$
-        - $\alpha_C$
+        - `$\alpha_A$`
+        - `$\alpha_C$`
         - For later {$\beta$,Entropy}
     - Temporary Variables
         - V-Value of Critic Network 
@@ -50,9 +50,14 @@
         - Loss 
             - Policy `l_p`
             - Critic `l_c`
+
 ## ONLINE-OFFLINE DILLEMA
-  -There are two versions of actor critic Batch as well as online, it seems that Online one is more suited for our problems , in online we don't 
-   need to create trajectory , we just sample a action and update the network step-by-step.
+- There are two versions of actor critic:
+    1. Batch
+    2. Online
+        - It seems that Online one is more suited for our problems.
+        - In online we don't need to create trajectory.
+        - We just sample a action and update the network step-by-step.
 
 
 ## Annexure
