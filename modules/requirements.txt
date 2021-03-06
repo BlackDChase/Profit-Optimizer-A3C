@@ -1,4 +1,4 @@
+numpy==1.18.5
+tqdm==4.47.0
 pandas==1.0.5
-pipreqs==0.4.10
-ipython==7.20.0 
 torch==1.7.1

@@ -119,8 +119,8 @@ class GOD:
         self.policyNet = Network(
             len(self.state),
             len(self.actionSpace),
-            "L1":(nn.Linear,20,nn.Tanh),
-            "L2":(nn.Linear,50,nn.SELU),
+            L1=(nn.Linear,20,nn.Tanh),
+            L2=(nn.Linear,50,nn.SELU),
         )
 
         # Could be updated
@@ -128,8 +128,8 @@ class GOD:
         self.criticNet =Network(
             len(self.state),
             1,
-            "L1":(nn.Linear,30,nn.ReLU),
-            "L2":(nn.Linear,40,nn.ReLU),
+            L1=(nn.Linear,30,nn.ReLU),
+            L2=(nn.Linear,40,nn.ReLU),
         )
         #'''
         pass
@@ -153,6 +153,7 @@ class GOD:
 
     def updateBOSS(self):
         # Black Please Define this function
+        pass
 
     def takeAction(self):
         '''
