@@ -16,6 +16,7 @@ __version__ = '0.0.1'
 
 # Imports
 from torch import nn, multiprocessing, device, Tensor
+from torch.distributions import Catagorical
 import numpy as np
 from tqdm import tqdm
 import threading
@@ -237,17 +238,35 @@ class BOSS(GOD):
         pass
 
 
-    def gatherAndStore(self):
+    def gatherAndStore(self,initialState):
         # gather a trajectory by acting in the enviornment using current policy
         '''
         May be remove first element of the trajectory once that time has passed...
         And then add a new element until len(self.trajectory)<=self.trajectoryLenght
         #'''
-        self.trajectory.append()
+        rewards=[]
+        actions=[]
+        currentState=initialState
+        for _ in self.trajectoryLength:
+            actionProb=self.policyNet(torch.from_numpy(currentState.float())) ## maybe this needs to be changed??
+            pd=Catagorical(logit=actionProb) ## categorical probability distribution
+            action=pd.sample()
+            nextState,reward=env.step(action) ## Oi generous env , please tell me the next state and reward for the action i have taken
+            self.trajectory.append([currentState,action,reward])
+            currentState=nextState
+        for _ in self.trajectory:
+            rewards.append(_[2])
+            actions.append(_[1])
+
+        return rewards,actions
+
+
+
+       # self.trajectory.append()
         pass
 
     def calculateV_p(self):
-        # calculate the predictied v value by using critic network :: Predicted value is just the value returned by the critic network.
+        # calculate the predicted v value by using critic network :: Predicted value is just the value returned by the critic network.
         pass
 
     def calculateV_tar(self):
