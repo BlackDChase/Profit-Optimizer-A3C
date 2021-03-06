@@ -172,6 +172,9 @@ class GOD:
         pass
 
     def _peakAction(self,state,action):
+        '''
+        will be used at training time , for updating the networks
+        '''
         result = self.__env.step(state,action)
         return result
 
