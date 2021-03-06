@@ -86,9 +86,9 @@ class Network(nn.Module):
 
 class GOD:
     '''
-    This class is responsible for taking the final action which will be conveyed to the enviorenment 
+    This class is responsible for taking the final action which will be conveyed to the enviorenment
     and the management of BOSS agents which will explore the enviorenment.
-    
+
     Also containing the initialiation of the policy Net and Critic Net.
 
     @Input (From Enviorenment) :: The Current State.
@@ -121,7 +121,7 @@ class GOD:
             len(self.state),
             len(self.actionSpace),
             L1=(nn.Linear,20,nn.Tanh),
-            L2=(nn.Linear,50,nn.SELU), ## we will add softmax at end , which will give the probability distribution.
+            L2=(nn.Linear,50,nn.Softmax), ## we will add softmax at end , which will give the probability distribution.
         )
 
         # Could be updated
@@ -219,7 +219,6 @@ class BOSS(GOD):
         The Actual function to train the network , the actor-critic actual logic.
         Eviorienment.step :: env.step has to give different outputs for different state trajectories by different boss. it has to take in account the diff
         trajectories becouse diff bosses will go to different states.
-        
 
         '''
         self.state=state
