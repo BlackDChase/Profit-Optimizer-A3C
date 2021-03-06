@@ -109,25 +109,25 @@ class GOD:
         Initialization of various GOD parameters, self evident from the code.
         '''
         self.name="GOD"
-        self._setMaxEpisode(maxEpisode)
-        self._setNumberOfAgent(nAgent)
-        self._setTrajectoryLength(trajectoryLenght)
-        self._bossAgent = []
+        self.setMaxEpisode(maxEpisode)
+        self.setNumberOfAgent(nAgent)
+        self.setTrajectoryLength(trajectoryLenght)
+        self.__bossAgent = []
         self.price = 0
-        self._env = env
+        self.__env = env
 
         # state is the 9 dimentional tensor , defined at the top
-        self.state = Tensor([0]*9)
+        self._state = Tensor([0]*9)
 
         # action space is the percent change of the current price.
-        self.actionSpace = np.array([-12.5,-10,-7.5,-5,-2.5,0,2.5,5,7.5,10,12.5])
+        self._actionSpace = np.array([-12.5,-10,-7.5,-5,-2.5,0,2.5,5,7.5,10,12.5])
 
         # semaphores do deal with simultaneous updates of the policy and critic net by multiple bosses.
-        self._policySemaphore = threading.Semaphore()
-        self.criticSemaphore = threading.Semaphore()
+        self.__policySemaphore = threading.Semaphore()
+        self.__criticSemaphore = threading.Semaphore()
 
         ## defining the actual neural net itself, input is state output is probability for each action.
-        self._policyNet = Network(
+        self.__policyNet = Network(
             len(self.state),
             len(self.actionSpace),
             L1=(nn.Linear,20,nn.Tanh),
@@ -136,7 +136,7 @@ class GOD:
 
         # Could be updated
         ## the critic network :: it's input is state and output is a scaler ( the value of the state)
-        self._criticNet =Network(
+        self.__criticNet =Network(
             len(self.state),
             1,
             L1=(nn.Linear,30,nn.ReLU),
@@ -145,34 +145,45 @@ class GOD:
         #'''
         pass
 
-    def _setNumberOfAgent(self,nAgent):
+    def setNumberOfAgent(self,nAgent):
         self._nAgent = nAgent
         pass
 
-    def _setMaxEpisode(self,maxEpisode):
+    def setMaxEpisode(self,maxEpisode):
         self.maxEpisode = maxEpisode
         pass
 
-    def _setTrajectoryLength(self,trajectoryLenght):
+    def setTrajectoryLength(self,trajectoryLenght):
         self.trajectoryLength = trajectoryLenght
         pass
 
     def getState(self):
         # To be defined Later (Get the current state)
-        self.updateBOSS()
         pass
 
-    def _updateBOSS(self):
-        # Black Please Define this function
-        pass
+    def train(self):
+        self.__trainBoss()
 
     def takeAction(self):
         '''
         Take the final action according to the Policy Network.
         '''
+
         pass
 
-    def _initateBoss(self):
+    def _peakAction(self,state,action):
+        result = self.__env.step(state,action)
+        return result
+
+    def getAction(self,state):
+        self.__policySemaphore.acquire()
+        actionProbab = self.__policyNet.forward(state)
+        # Not sure if forward is the way to go
+
+        self.__policySemaphore.release()
+        return actionProbab
+
+    def __initateBoss(self):
         '''
         Initialize all the boss agents for training
         '''
@@ -181,7 +192,7 @@ class GOD:
 
         pass
 
-    def _trainBoss(self):
+    def __trainBoss(self):
         # To be defined Later :: the actual function to train multiple bosses.
         bossThreads=[]
         for i in range(self.nAgent):
@@ -250,25 +261,30 @@ class BOSS(GOD):
     def gatherAndStore(self,initialState):
         # gather a trajectory by acting in the enviornment using current policy
         '''
-        
+
         #'''
         rewards=[]
         actions=[]
         currentState=initialState
         for _ in self.trajectoryLength:
-            actionProb=self.policyNet(torch.from_numpy(currentState.float())) ## maybe this needs to be changed??
-            pd=Catagorical(logit=actionProb) ## categorical probability distribution
-            action=pd.sample()
-            nextState,reward=env.step(action) ## Oi generous env , please tell me the next state and reward for the action i have taken
+            action = self.getAction(currentState)
+            nextState,reward,info = self.god.step(currentState,action)
+            ## Oi generous env , please tell me the next state and reward for the action i have taken
+
             self.trajectory.append([currentState,action,reward])
             currentState=nextState
-        for _ in self.trajectory:
-            rewards.append(_[2])
-            actions.append(_[1])
+        return
 
-        return rewards,actions
+    def getAction(self,state):
+        state = torch.from_numpy(state.float())
+        actionProb = self.god.getAction(state)
 
+        pd = Catagorical(logit=actionProb)
+        ## categorical probability distribution
+        action = pd.sample()
+        # What does these 3 lines do??
 
+        return action
 
        # self.trajectory.append()
         pass
