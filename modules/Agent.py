@@ -256,6 +256,9 @@ class BOSS(GOD):
                 self.v_val_pred += self.calculateV_p()
                 self.v_val_target += self.calculateV_tar()
                 self.advantage = self.calculateGAE()
+            '''
+            Question to be figured out :: Exactly when should the boss agents update the networks?? 
+            '''
             self.calculateAndUpdateL_P()  # calculate  policy loss and update policy network
             self.calculateAndUpdateL_C() # calculate critic loss and update critic network
         pass
