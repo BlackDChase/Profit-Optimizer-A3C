@@ -19,13 +19,13 @@ from torch import nn, multiprocessing, device, Tensor
 import numpy as np
 from tqdm import tqdm
 import threading
-
+import logModule.log as log
 # GLOBAL
 device = device("cuda" if args.cuda else "cpu")
 
 class Network(nn.Module):
     global device
-    def __init__(self,stateSize,actionSize,**kwargs):
+    def __init__(self,stateSize,actionSize,lr=1e-3,**kwargs):
         """
         ## All logic below are initializing the Network with the layers.
         Parameters:
@@ -41,9 +41,16 @@ class Network(nn.Module):
         super(Network,self).__init__()
         self.inputSize = stateSize
         self.outputSize = actionSize
+        self.learningRate = lr
         layers = []
         keyWords = list(kwargs.keys())
         kwargs["stateSize"] = (nn.Linear,stateSize,nn.ReLU)
+
+        """
+        Optimizer and loss function
+        #"""
+
+
         """
         Input layer
         #"""
@@ -83,6 +90,8 @@ class Network(nn.Module):
         return output
     pass
 
+    def 
+
 class GOD:
     '''
     This class is responsible for taking the final action which will be conveyed to the enviorenment
@@ -94,16 +103,17 @@ class GOD:
     @Output (To enviorenment)  :: The Final Action Taken.
 
     '''
-    def __init__(self,maxEpisode=100,nAgent=1,debug=False,trajectoryLenght=25):
+    def __init__(self,env=env,maxEpisode=100,nAgent=1,debug=False,trajectoryLenght=25):
         '''
         Initialization of various GOD parameters, self evident from the code.
         '''
         self.name="GOD"
-        self.setMaxEpisode(maxEpisode)
-        self.setNumberOfAgent(nAgent)
-        self.setTrajectoryLength(trajectoryLenght)
-        self.bossAgent = []
+        self._setMaxEpisode(maxEpisode)
+        self._setNumberOfAgent(nAgent)
+        self._setTrajectoryLength(trajectoryLenght)
+        self._bossAgent = []
         self.price = 0
+        self._env = env
 
         # state is the 9 dimentional tensor , defined at the top
         self.state = Tensor([0]*9)
@@ -112,11 +122,11 @@ class GOD:
         self.actionSpace = np.array([-12.5,-10,-7.5,-5,-2.5,0,2.5,5,7.5,10,12.5])
 
         # semaphores do deal with simultaneous updates of the policy and critic net by multiple bosses.
-        self.policySemaphore = threading.Semaphore()
+        self._policySemaphore = threading.Semaphore()
         self.criticSemaphore = threading.Semaphore()
 
         ## defining the actual neural net itself, input is state output is probability for each action.
-        self.policyNet = Network(
+        self._policyNet = Network(
             len(self.state),
             len(self.actionSpace),
             L1=(nn.Linear,20,nn.Tanh),
@@ -125,7 +135,7 @@ class GOD:
 
         # Could be updated
         ## the critic network :: it's input is state and output is a scaler ( the value of the state)
-        self.criticNet =Network(
+        self._criticNet =Network(
             len(self.state),
             1,
             L1=(nn.Linear,30,nn.ReLU),
@@ -134,15 +144,15 @@ class GOD:
         #'''
         pass
 
-    def setNumberOfAgent(self,nAgent):
-        self.nAgent = nAgent
+    def _setNumberOfAgent(self,nAgent):
+        self._nAgent = nAgent
         pass
 
-    def setMaxEpisode(self,maxEpisode):
+    def _setMaxEpisode(self,maxEpisode):
         self.maxEpisode = maxEpisode
         pass
 
-    def setTrajectoryLength(self,trajectoryLenght):
+    def _setTrajectoryLength(self,trajectoryLenght):
         self.trajectoryLength = trajectoryLenght
         pass
 
@@ -151,7 +161,7 @@ class GOD:
         self.updateBOSS()
         pass
 
-    def updateBOSS(self):
+    def _updateBOSS(self):
         # Black Please Define this function
         pass
 
@@ -161,16 +171,16 @@ class GOD:
         '''
         pass
 
-    def initateBoss(self):
+    def _initateBoss(self):
         '''
         Initialize all the boss agents for training
         '''
-        for i in range(self.nAgent):
-            self.bossAgent.append(BOSS(self))
+        for i in range(self._nAgent):
+            self._bossAgent.append(BOSS(self))
 
         pass
 
-    def trainBoss(self):
+    def _trainBoss(self):
         # To be defined Later :: the actual function to train multiple bosses.
         bossThreads=[]
         for i in range(self.nAgent):
@@ -213,18 +223,18 @@ class BOSS(GOD):
         '''
         pass
 
-    def train(self,state):
+    def train(self):
         '''
         The Actual function to train the network , the actor-critic actual logic.
         Eviorienment.step :: env.step has to give different outputs for different state trajectories by different boss. it has to take in account the diff
         trajectories becouse diff bosses will go to different states.
 
         '''
-        self.state=state
         # here the main logic of training of A2C will be present
         for _ in range(self.maxEpisode):
-            self.gatherAndStore()
-            for i in self.trajectory:
+            currentState = self.god.env.reset()
+            self.gatherAndStore(currentState)
+            for state in self.trajectory:
                 """
                 Wouldnt all these funtions below need `i` in some sense?
                 #"""
@@ -239,8 +249,7 @@ class BOSS(GOD):
     def gatherAndStore(self):
         # gather a trajectory by acting in the enviornment using current policy
         '''
-        May be remove first element of the trajectory once that time has passed...
-        And then add a new element until len(self.trajectory)<=self.trajectoryLenght
+        
         #'''
         self.trajectory.append()
         pass
