@@ -92,8 +92,6 @@ class Network(nn.Module):
         return output
     pass
 
-
-
 class GOD:
     '''
     This class is responsible for taking the final action which will be conveyed to the enviorenment
@@ -177,6 +175,9 @@ class GOD:
         pass
 
     def _peakAction(self,state,action):
+        '''
+        will be used at training time , for updating the networks
+        '''
         result = self.__env.step(state,action)
         return result
 
@@ -262,6 +263,9 @@ class BOSS(GOD):
                 self.v_val_pred += self.calculateV_p(state)
                 self.v_val_target += self.calculateV_tar()
                 self.advantage = self.calculateGAE()
+            '''
+            Question to be figured out :: Exactly when should the boss agents update the networks??
+            '''
             self.calculateAndUpdateL_P()  # calculate  policy loss and update policy network
             self.calculateAndUpdateL_C() # calculate critic loss and update critic network
         pass
@@ -270,8 +274,9 @@ class BOSS(GOD):
     def gatherAndStore(self,initialState):
         # gather a trajectory by acting in the enviornment using current policy
         '''
-
+        Incomplete
         #'''
+
         currentState=initialState
         for _ in self.trajectoryLength:
             action = self.getAction(currentState)
@@ -283,12 +288,17 @@ class BOSS(GOD):
         return
 
     def getAction(self,state):
+        '''
+        Responsible for taking the correct action from the given state using the neural net.
+        @input :: current state
+        @output :: the action which must be taken from this states
+        #'''
         state = torch.from_numpy(state.float())
         actionProb = self.god.getAction(state)
-
-        pd = Catagorical(logit=actionProb)
+        ## This creates state-action probability vector from the policy net. 
+        pd = Catagorical(logit=actionProb) ## create a catagorical distribution acording to the actionProb
         ## categorical probability distribution
-        action = pd.sample()
+        action = pd.sample() ## sample the action according to the probability distribution.
         # What does these 3 lines do??
 
         return action
@@ -308,7 +318,7 @@ class BOSS(GOD):
         pass
 
     def calculateGAE(self):
-        # calculate the Advantage uisng the critic network
+        # calculate the Advantage using the critic network
 
         pass
 
