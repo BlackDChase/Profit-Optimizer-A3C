@@ -6,10 +6,12 @@ import logging
 
 logging.basicConfig(level=logging.DEBUG, filename="../../Saved_model/log.tsv", format='%(asctime)s	%(levelname)s	%(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
-debug = logging.debug
-
-def info(information):
-    #print(information)
+def info(information,debug=False):
+    if debug:
+        print(information)
     logging.info(information)
+
+def debug(*args,**kwargs):
+    logging.debug(args,kwargs)
 
 info("New session initiated")
