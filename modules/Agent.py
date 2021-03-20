@@ -330,7 +330,8 @@ class BOSS(GOD):
         CHOICE 2 :: For this we will, for each state in the trajectory , calculate the advantage and V_tar using the previous
         method(by travelling to the end of the trajectory and accumulating rewards as given in jamboard slide 15) , the only
         difference is we start from the current state itself to the end of trajectory. (Or until a depth)
-
+        
+        We have chosen choice 2 for v_tar , by terating in reverse direction in the trajectory list.
         '''
         # we have set γ to be 0.99 // see this sweet γ @BlackD , α , β , θ ( this is all tex , emacs master race , Ɣ ❈)
         ## here 𝛄 can be variable so, the length can be changed.
@@ -345,8 +346,25 @@ class BOSS(GOD):
         # calculate the Advantage using the critic network
         advantage=0
         return advantage
+    
+    def calculateTDAdvantage(self):
+        ## Calculate Advantage using TD error
+        pass
 
     def calculateAndUpdateL_P(self):    ### Semaphore stuff for safe update of network by multiple bosses.
+        '''
+        FOR UPDATING THE ACTOR USING POLICY GRADIENT WE MUST CALCULATE THE LOG PROBABILITY OF ACTION GIVEN
+        A PARTICULAR STATE.BUT IN SITUATION OF MULTIPLE AGENTS IT MAY HAPPEN THAT BEFOR AGENT 1 FETCHES THIS 
+        PROBABILITY AND UPDATES AND UPDATES THE NETWORK , AGENT-2 MAY HAVE TAMPERED/UPDATED THE NETWORK.
+
+        TO WORK AROUND THIS 2 CHOICES::
+        CHOICE 1 :: KEEP TRACK OF THE STATE ACTION PROBABILITY FOR EACH AGENT'S TRAJECTORY , SO EVEN IF
+        ANOTHER AGEND UPDATES THE NET, WE HAVE THE EXACT ORIGINAL PROBABILITY FROM WHEN THE AGENT HAD SAMPLED
+        THE ACTION.
+
+        CHOICE 2 :: BE IGNORANT , THE CHANCE THAT 2 AGENT HAVE TAMPERED WITH THE SAME STATE BEFOR UPDATING
+        THE NETWORK WITH THEIR OWN LOSS IS EXTREMELEY LOW, SO IT DOESN'T MATTERS.
+        '''
         self.god.policySemaphore.acquire()
         # Do stuff
         self.god.policySemaphore.release()
