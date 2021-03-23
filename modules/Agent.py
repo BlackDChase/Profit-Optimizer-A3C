@@ -263,7 +263,7 @@ class BOSS(GOD):
                 #"""
                 vPredicted[i] = self.calculateV_p(state)
                 vTarget[i] = self.calculateV_tar()
-                advantage[i] = self.calculateGAE()
+                advantage[i] = self.calculateNSTEPAdvantage(vPredicted)
             '''
             Question to be figured out :: Exactly when should the boss agents update the networks??
             '''
@@ -360,15 +360,16 @@ class BOSS(GOD):
         advantage=0
         return advantage
     
-    def calculateNSTEPAdvantage(self,vPredLast): ## vPredLast is the predicted v value for last state in trajectory.
+    def calculateNSTEPAdvantage(self,vPredicted): 
         ## Calculate Advantage using TD error/N-STEP , logic similar to vTarget calculation
         trajSize=len(self.trajectory)
+        vPredLast=vPredicted[trajSize-1]
         advantage=torch.tensor([0]*trajSize)
         for i in reversed(range(trajSize)):
             if i==trajSize-1:
                 advantage[i]=vPredLast
             else:
-                advantage[i]=self.trajectory[i][2] + self.ɤ*advantage[i+1]
+                advantage[i]=self.trajectory[i][2] + self.ɤ*advantage[i+1] - vPredicted[i]
         return advantage
 
 
