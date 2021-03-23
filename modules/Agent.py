@@ -12,7 +12,7 @@ BOSS AGENT
 State = ((Market Demand)**@+(Ontario Demand)**2),Ontario Price,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, (TIMEstamp - optional)
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 
 # Imports
 from torch import nn, multiprocessing, device, Tensor
@@ -335,20 +335,44 @@ class BOSS(GOD):
         '''
         # we have set γ to be 0.99 // see this sweet γ @BlackD , α , β , θ ( this is all tex , emacs master race , Ɣ ❈)
         ## here 𝛄 can be variable so, the length can be changed.
-        ans=0.0
-        for i in range(0,200):
-            ans+=((self.ɤ)**(i+1))*self.trajectory[i][2]
+      #  ans=0.0
+      #  for i in range(0,200):
+      #      ans+=((self.ɤ)**(i+1))*self.trajectory[i][2]
+      # ans+=(self.ɤ)**200*self.god._getCriticValue((self.trajectory[200][0])) ## multiply by the actual value of the 200th state.
+      #  return ans
+        trajSize=len(self.trajectory)
+        vTarget=torch.tensor([0]*trajSize)
+        for i in reversed(range(trajSize)): # iterate in reverse order.
+            if i==trajSize-1:
+                vTarget[i]=self.trajectory[i][2]  ## only the reward recieved in the last state , we can also put it zero i think
+                # guess will have to consult literature on this, diff shouldn't be substantial.
+            else: vTarget[i]=self.trajectory[i][2]+ self.ɤ*vTarget[i+1] # v_tar_currentState = reward + gamma* v_tar_nextState
+        
+        return vTarget
 
-        ans+=(self.ɤ)**200*self.god._getCriticValue((self.trajectory[200][0])) ## multiply by the actual value of the 200th state.
-        return ans
+
+            
+
 
     def calculateGAE(self):
         # calculate the Advantage using the critic network
+        # gae is put on hold at this time
         advantage=0
         return advantage
     
-    def calculateTDAdvantage(self):
-        ## Calculate Advantage using TD error
+    def calculateNSTEPAdvantage(self,vPredLast): ## vPredLast is the predicted v value for last state in trajectory.
+        ## Calculate Advantage using TD error/N-STEP , logic similar to vTarget calculation
+        trajSize=len(self.trajectory)
+        advantage=torch.tensor([0]*trajSize)
+        for i in reversed(range(trajSize)):
+            if i==trajSize-1:
+                advantage[i]=vPredLast
+            else:
+                advantage[i]=self.trajectory[i][2] + self.ɤ*advantage[i+1]
+        return advantage
+
+
+        
         pass
 
     def calculateAndUpdateL_P(self):    ### Semaphore stuff for safe update of network by multiple bosses.
