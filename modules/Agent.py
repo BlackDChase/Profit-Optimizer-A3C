@@ -12,7 +12,7 @@ BOSS AGENT
 State = ((Market Demand)**@+(Ontario Demand)**2),Ontario Price,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, (TIMEstamp - optional)
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 
 # Imports
 from torch import nn, multiprocessing, device, Tensor
@@ -243,26 +243,29 @@ class BOSS(GOD):
     def train(self):
         '''
         The Actual function to train the network , the actor-critic actual logic.
-        Eviorienment.step :: env.step has to give different outputs for different state trajectories by different boss. it has to take in account the diff
-        trajectories becouse diff bosses will go to different states.
-
+        Eviorienment.step :: env.step has to give different outputs for different state trajectories by
+        different boss. it has to take in account the diff trajectories becouse diff bosses will go to
+        different states.
         '''
         # here the main logic of training of A2C will be present
         for _ in range(self.maxEpisode):
-            # To be initialised
+            self.startState = self.god.env.reset()
+            self.gatherAndStore()
+            """ @BOSS
+            Do we need to intiallise here?? when we are re declaring it in the three cal methods
+            Also, if we are declaring them lets declare them instart, and keep it in device
+            and After each gatherAndStore reset it.
+
+            Also what which advantage function are we calling?
+            #"""
             vPredicted = torch.Tensor([0]*len(self.trajectoryLength))
             vTarget = torch.Tensor([0]*len(self.trajectoryLength))
             advantage = torch.Tensor([0]*len(self.trajectoryLength))
-            self.startState = self.god.env.reset()
-            self.gatherAndStore()
-            """
-            Wouldnt all these funtions below need `i` in some sense?
-            UPDATE!! @ The below function are already calculating the summed values for the given trajectory,
-            i believe this upper loop is unnecessary and must be removed!😄
-            #"""
+
             vPredicted = self.calculateV_p()
             vTarget = self.calculateV_tar()
             advantage = self.calculateGAE()
+
             '''
             Question to be figured out :: Exactly when should the boss agents update the networks??
             '''
@@ -271,13 +274,12 @@ class BOSS(GOD):
         pass
 
 
-    def gatherAndStore(self,initialState):
+    def gatherAndStore(self):
         # gather a trajectory by acting in the enviornment using current policy
-        '''
-        Incomplete
+        ''' @BOSS
+        Do we need any changes in here?
         #'''
-
-        currentState=initialState
+        currentState = self.startState
         for _ in self.trajectoryLength:
             action = self.getAction(currentState)
             nextState,reward,info = self.god.step(currentState,action)
@@ -305,6 +307,9 @@ class BOSS(GOD):
 
     def calculateV_p(self,state):
         # calculate the predicted v value by using critic network :: Predicted value is just the value returned by the critic network.
+        """ @BOSS
+        We are not passing state anymore. we already have obtained the trajectory, may require changes here.
+        #"""
         vValue = self.god._getCriticValue(state)
         return vValue
 
@@ -334,21 +339,45 @@ class BOSS(GOD):
         '''
         # we have set γ to be 0.99 // see this sweet γ @BlackD , α , β , θ ( this is all tex , emacs master race , Ɣ ❈)
         ## here 𝛄 can be variable so, the length can be changed.
-        ans=0.0
-        for i in range(0,200):
-            ans+=((self.ɤ)**(i+1))*self.trajectory[i][2]
-
-        ans+=(self.ɤ)**200*self.god._getCriticValue((self.trajectory[200][0])) ## multiply by the actual value of the 200th state.
-        return ans
+        #  ans=0.0
+        #  for i in range(0,200):
+        #      ans+=((self.ɤ)**(i+1))*self.trajectory[i][2]
+        # ans+=(self.ɤ)**200*self.god._getCriticValue((self.trajectory[200][0])) ## multiply by the actual value of the 200th state.
+        #  return ans
+        
+        """ @BOSS
+        Could make a duplicate tensor and do the multiplication, for loop could be slower
+        """
+        vTarget=torch.tensor([0]*self.trajectoryLength)
+        for i in reversed(range(self.trajectoryLength)): # iterate in reverse order.
+            if i==self.trajectoryLength-1:
+                vTarget[i]=self.trajectory[i][2]  ## only the reward recieved in the last state , we can also put it zero i think
+                # guess will have to consult literature on this, diff shouldn't be substantial.
+            else: vTarget[i]=self.trajectory[i][2]+ self.ɤ*vTarget[i+1] # v_tar_currentState = reward + gamma* v_tar_nextState
+        return vTarget
 
     def calculateGAE(self):
         # calculate the Advantage using the critic network
+        # gae is put on hold at this time
         advantage=0
         return advantage
 
     def calculateTDAdvantage(self):
         ## Calculate Advantage using TD error
         pass
+
+    def calculateNSTEPAdvantage(self,vPredicted):
+        ## Calculate Advantage using TD error/N-STEP , logic similar to vTarget calculation
+        vPredLast=vPredicted[self.trajectoryLength-1]
+        advantage=torch.tensor([0]*self.trajectoryLength)
+        for i in reversed(range(self.trajectoryLength)):
+            if i==self.trajectoryLength-1:
+                advantage[i]=vPredLast
+            else:
+                advantage[i]=self.trajectory[i][2] + self.ɤ*advantage[i+1] - vPredicted[i]
+        return advantage
+
+
 
     def calculateAndUpdateL_P(self):    ### Semaphore stuff for safe update of network by multiple bosses.
         '''
