@@ -79,9 +79,7 @@ class Network(nn.Module):
         """
         Optimizer and loss function
         #"""
-        self.optimizer = torch.optim.Adam(self.model.parameters(),lr=self.learningRate)
-
-    def lossFN(self,distribution,):
+        self.optimizer = torch.optim.SGD(self.model.parameters(),lr=self.learningRate)
 
     def forward(self,currentState):
         """
@@ -171,6 +169,16 @@ class GOD:
         self.__trainBoss()
         pass
 
+    def updatePolicy(self,loss):
+        self.__policyNet.optimizer.zero_grad()
+        loss.backward()
+        self.__policyNet.optimizer.step()
+
+    def updateCritc(self,loss):
+        self.__criticNet.optimizer.zero_grad()
+        loss.backward()
+        self.__criticNet.optimizer.step()
+
     def takeAction(self):
         '''
         Take the final action according to the Policy Network.
@@ -196,6 +204,7 @@ class GOD:
         vVlaue = self.__criticNet.forward(state)
         self.__criticSemaphore.release()
         return vVlaue
+
 
     def __initateBoss(self):
         '''
@@ -235,10 +244,15 @@ class BOSS(GOD):
     def __init__(self,god,gamma=0.99,depth=200,lamda=0.1):
         super().__init__()
         self.name='BOSS'
-        self.trajectory = []
+        self.trajectoryS = torch.Tensor(self._state*self.trajectoryLength)
+        self.trajectoryR = torch.Tensor([0]*self.trajectoryLength)
+        self.trajectoryA = torch.Tensor(self._actionSpace*self.trajectoryLength)
         self.god = god
         self.ɤ = gamma
         self.d = depth
+        self.vPredicted = torch.tensor([0]*self.trajectoryLength)
+        self.vTarget = torch.tensor([0]*self.trajectoryLength)
+        self.advantage = torch.tensor([0]*self.trajectoryLength)
         # If entropy H_t calculated, Init beta
         pass
 
@@ -260,15 +274,17 @@ class BOSS(GOD):
             ## @BLACK :: NO we dont need to initialize here ,i have removed it.
             Also what which advantage function are we calling? @Black :: Nstep advantage.
             #"""
-            vPredicted = self.calculateV_p()
-            vTarget = self.calculateV_tar()
-            advantage = self.calculateNSTEPAdvantage(vPredicted)
+            self.calculateV_p()
+            self.calculateV_tar()
+            self.calculateNSTEPAdvantage()
 
             '''
             Question to be figured out :: Exactly when should the boss agents update the networks??
             '''
-            self.calculateAndUpdateL_P(advantage)  # calculate  policy loss and update policy network
-            self.calculateAndUpdateL_C(vPredicted,vTarget) # calculate critic loss and update critic network
+            self.calculateAndUpdateL_P()
+            # calculate  policy loss and update policy network
+            self.calculateAndUpdateL_C()
+            # calculate critic loss and update critic network
         pass
 
 
@@ -280,12 +296,13 @@ class BOSS(GOD):
         Maybe tensorize the code??
         #'''
         currentState = self.startState
-        for _ in self.trajectoryLength:
-            action = self.getAction(currentState)
+
+        for i in self.trajectoryLength:
+            action,actionProb = self.getAction(currentState)
             nextState,reward,info = self.god.step(currentState,action)
             ## Oi generous env , please tell me the next state and reward for the action i have taken
 
-            self.trajectory.append([currentState,action,reward])
+            self.trajectoryS[i],self.trajectoryA[i],self.trajectoryR[i] = currentState,actionProb,reward
             currentState=nextState
         pass
 
@@ -303,19 +320,16 @@ class BOSS(GOD):
         action = pd.sample() ## sample the action according to the probability distribution.
         # What does these 3 lines do??
 
-        return action
+        return action,actionProb
 
     def calculateV_p(self,state):
         # calculate the predicted v value by using critic network :: Predicted value is just the value returned by the critic network.
-        """ @BOSS
-        We are not passing state anymore. we already have obtained the trajectory, may require changes here.
-        @Black:: Fixed 
-        #"""
-        vValue = torch.tensor([0]*self.trajectoryLength)
+        self.vPredicted.zero_()
+        # This resets the tensor to zero
         for i in range(self.trajectoryLength):
-            state=self.trajectory[i][0]
-            vValue[i]=self.god._getCriticValue(state)
-        return vValue
+            state=self.trajectoryS[i]
+            self.vPredicted[i]=self.god._getCriticValue(state)
+        return
 
     def calculateV_tar(self):
         # calculate the target value v_tar using critic network 
@@ -349,42 +363,37 @@ class BOSS(GOD):
         # ans+=(self.ɤ)**200*self.god._getCriticValue((self.trajectory[200][0])) ## multiply by the actual value of the 200th state.
         #  return ans
 
-        """ @BOSS
-        Could make a duplicate tensor and do the multiplication, for loop could be slower :: @Black- It is a iterative process
-        by nature , i dont know how we can do it as matrix/tensor multiplication.
-        """
-        vTarget=torch.tensor([0]*self.trajectoryLength)
-        for i in reversed(range(self.trajectoryLength)): # iterate in reverse order.
-            if i==self.trajectoryLength-1:
-                vTarget[i]=self.trajectory[i][2]  ## only the reward recieved in the last state , we can also put it zero i think
-                # guess will have to consult literature on this, diff shouldn't be substantial.
-            else: vTarget[i]=self.trajectory[i][2]+ self.ɤ*vTarget[i+1] # v_tar_currentState = reward + gamma* v_tar_nextState
-        return vTarget
+        self.vTarget.zero_()
+        self.vTarget[self.trajectoryLength-1] = self.trajectory[self.trajectoryLength-1][2]
+        ## only the reward recieved in the last state , we can also put it zero i think
+        # guess will have to consult literature on this, diff shouldn't be substantial.
+        for i in reversed(range(self.trajectoryLength-1)):
+            # iterate in reverse order.
+            self.vTarget[i] = self.trajectoryR[i] + self.ɤ*self.vTarget[i+1]
+            # v_tar_currentState = reward + gamma* v_tar_nextState
+        return
 
     def calculateGAE(self):
         # calculate the Advantage using the critic network
         # gae is put on hold at this time
-        advantage=0
-        return advantage
-
-    def calculateTDAdvantage(self):
-        ## Calculate Advantage using TD error
+        # To be declared at latter stage
         pass
 
-    def calculateNSTEPAdvantage(self,vPredicted):
-        ## Calculate Advantage using TD error/N-STEP , logic similar to vTarget calculation
-        vPredLast=vPredicted[self.trajectoryLength-1]
-        advantage=torch.tensor([0]*self.trajectoryLength)
+
+    def calculateNSTEPAdvantage(self):
+        """
+        Calculate Advantage using TD error/N-STEP , logic similar to vTarget calculation
+        #"""
+        vPredLast = self.vPredicted[self.trajectoryLength-1]
+        self.advantage.zero_()
         for i in reversed(range(self.trajectoryLength)):
             if i==self.trajectoryLength-1:
-                advantage[i]=vPredLast
+                self.advantage[i]=vPredLast
             else:
-                advantage[i]=self.trajectory[i][2] + self.ɤ*advantage[i+1] - vPredicted[i]
-        return advantage
+                self.advantage[i]=self.trajectoryR[i] + self.ɤ*self.advantage[i+1] - self.vPredicted[i]
+        return
 
-
-
-    def calculateAndUpdateL_P(self,advantage):
+    def calculateAndUpdateL_P(self):
         ### Semaphore stuff for safe update of network by multiple bosses.
         '''
         FOR UPDATING THE ACTOR USING POLICY GRADIENT WE MUST CALCULATE THE LOG PROBABILITY OF ACTION GIVEN
@@ -400,12 +409,15 @@ class BOSS(GOD):
         THE NETWORK WITH THEIR OWN LOSS IS EXTREMELEY LOW, SO IT DOESN'T MATTERS.
         '''
         self.god.policySemaphore.acquire()
-        # Do stuff
+        actionProb = self.trajectoryA
+        loss = -1*torch.sum(self.advantage*torch.log(actionProb))
+        self.god.updatePolicy(loss/self.trajectoryLength)
         self.god.policySemaphore.release()
-        pass
+        return
 
-    def calculateAndUpdateL_C(self,vPredicted,vTarget):
+    def calculateAndUpdateL_C(self):
         self.god.criticSemaphore.acquire()
-        # Do stuff
+        loss = torch.sum(torch.pow(self.vPredicted-self.vTarget,2))
+        self.god.updateCritc(loss/self.trajectoryLength)
         self.god.criticSemaphore.acquire()
-        pass
+        return
