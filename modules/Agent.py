@@ -255,16 +255,12 @@ class BOSS(GOD):
             Do we need to intiallise here?? when we are re declaring it in the three cal methods
             Also, if we are declaring them lets declare them instart, and keep it in device
             and After each gatherAndStore reset it.
-
-            Also what which advantage function are we calling?
+            ## @BLACK :: NO we dont need to initialize here ,i have removed it.
+            Also what which advantage function are we calling? @Black :: Nstep advantage.
             #"""
-            vPredicted = torch.Tensor([0]*len(self.trajectoryLength))
-            vTarget = torch.Tensor([0]*len(self.trajectoryLength))
-            advantage = torch.Tensor([0]*len(self.trajectoryLength))
-
             vPredicted = self.calculateV_p()
             vTarget = self.calculateV_tar()
-            advantage = self.calculateGAE()
+            advantage = self.calculateNSTEPAdvantage(vPredicted)
 
             '''
             Question to be figured out :: Exactly when should the boss agents update the networks??
@@ -278,6 +274,8 @@ class BOSS(GOD):
         # gather a trajectory by acting in the enviornment using current policy
         ''' @BOSS
         Do we need any changes in here?
+        @Black:i dont think so , trajectory is being gathered here step by step. no problems.
+        Maybe tensorize the code??
         #'''
         currentState = self.startState
         for _ in self.trajectoryLength:
@@ -287,7 +285,7 @@ class BOSS(GOD):
 
             self.trajectory.append([currentState,action,reward])
             currentState=nextState
-        return
+        pass
 
     def getAction(self,state):
         '''
@@ -309,8 +307,12 @@ class BOSS(GOD):
         # calculate the predicted v value by using critic network :: Predicted value is just the value returned by the critic network.
         """ @BOSS
         We are not passing state anymore. we already have obtained the trajectory, may require changes here.
+        @Black:: Fixed 
         #"""
-        vValue = self.god._getCriticValue(state)
+        vValue = torch.tensor([0]*self.trajectoryLength)
+        for i in range(self.trajectoryLength):
+            state=self.trajectory[i][0]
+            vValue[i]=self.god._getCriticValue(state)
         return vValue
 
     def calculateV_tar(self):
@@ -346,7 +348,8 @@ class BOSS(GOD):
         #  return ans
         
         """ @BOSS
-        Could make a duplicate tensor and do the multiplication, for loop could be slower
+        Could make a duplicate tensor and do the multiplication, for loop could be slower :: @Black- It is a iterative process
+        by nature , i dont know how we can do it as matrix/tensor multiplication.
         """
         vTarget=torch.tensor([0]*self.trajectoryLength)
         for i in reversed(range(self.trajectoryLength)): # iterate in reverse order.
