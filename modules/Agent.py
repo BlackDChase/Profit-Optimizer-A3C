@@ -22,6 +22,7 @@ import numpy as np
 from tqdm import tqdm
 import threading
 import logModule.log as log
+
 # GLOBAL
 device = device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -252,18 +253,16 @@ class BOSS(GOD):
             vPredicted = torch.Tensor([0]*len(self.trajectoryLength))
             vTarget = torch.Tensor([0]*len(self.trajectoryLength))
             advantage = torch.Tensor([0]*len(self.trajectoryLength))
-            currentState = self.god.env.reset()
-            self.gatherAndStore(currentState)
-            for i in self.trajectoryLength:
-                state = self.trajectory[i]
-                """
-                Wouldnt all these funtions below need `i` in some sense?
-                UPDATE!! @ The below function are already calculating the summed values for the given trajectory,
-                i believe this upper loop is unnecessary and must be removed!😄
-                #"""
-                vPredicted[i] = self.calculateV_p(state)
-                vTarget[i] = self.calculateV_tar()
-                advantage[i] = self.calculateGAE()
+            self.startState = self.god.env.reset()
+            self.gatherAndStore()
+            """
+            Wouldnt all these funtions below need `i` in some sense?
+            UPDATE!! @ The below function are already calculating the summed values for the given trajectory,
+            i believe this upper loop is unnecessary and must be removed!😄
+            #"""
+            vPredicted = self.calculateV_p()
+            vTarget = self.calculateV_tar()
+            advantage = self.calculateGAE()
             '''
             Question to be figured out :: Exactly when should the boss agents update the networks??
             '''
@@ -330,7 +329,7 @@ class BOSS(GOD):
         CHOICE 2 :: For this we will, for each state in the trajectory , calculate the advantage and V_tar using the previous
         method(by travelling to the end of the trajectory and accumulating rewards as given in jamboard slide 15) , the only
         difference is we start from the current state itself to the end of trajectory. (Or until a depth)
-        
+
         We have chosen choice 2 for v_tar , by terating in reverse direction in the trajectory list.
         '''
         # we have set γ to be 0.99 // see this sweet γ @BlackD , α , β , θ ( this is all tex , emacs master race , Ɣ ❈)
@@ -346,7 +345,7 @@ class BOSS(GOD):
         # calculate the Advantage using the critic network
         advantage=0
         return advantage
-    
+
     def calculateTDAdvantage(self):
         ## Calculate Advantage using TD error
         pass
@@ -354,7 +353,7 @@ class BOSS(GOD):
     def calculateAndUpdateL_P(self):    ### Semaphore stuff for safe update of network by multiple bosses.
         '''
         FOR UPDATING THE ACTOR USING POLICY GRADIENT WE MUST CALCULATE THE LOG PROBABILITY OF ACTION GIVEN
-        A PARTICULAR STATE.BUT IN SITUATION OF MULTIPLE AGENTS IT MAY HAPPEN THAT BEFOR AGENT 1 FETCHES THIS 
+        A PARTICULAR STATE.BUT IN SITUATION OF MULTIPLE AGENTS IT MAY HAPPEN THAT BEFOR AGENT 1 FETCHES THIS
         PROBABILITY AND UPDATES AND UPDATES THE NETWORK , AGENT-2 MAY HAVE TAMPERED/UPDATED THE NETWORK.
 
         TO WORK AROUND THIS 2 CHOICES::
