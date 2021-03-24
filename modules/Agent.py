@@ -12,7 +12,7 @@ BOSS AGENT
 State = ((Market Demand)**@+(Ontario Demand)**2),Ontario Price,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, (TIMEstamp - optional)
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.0.4'
+__version__ = '0.0.5'
 
 # Imports
 from torch import nn, multiprocessing, device, Tensor
@@ -80,6 +80,7 @@ class Network(nn.Module):
         Optimizer and loss function
         #"""
         self.optimizer = torch.optim.SGD(self.model.parameters(),lr=self.learningRate)
+        pass
 
     def forward(self,currentState):
         """
@@ -102,12 +103,11 @@ class GOD:
 
     @Input (From Enviorenment) :: The Current State.
     @Output (To enviorenment)  :: The Final Action Taken.
-
     '''
-    def __init__(self,env=env,maxEpisode=100,nAgent=1,debug=False,trajectoryLenght=25):
+    def __init__(self,env,maxEpisode=100,nAgent=1,debug=False,trajectoryLenght=25):
         '''
         Initialization of various GOD parameters, self evident from the code.
-        '''
+        #'''
         self.name="GOD"
         self.setMaxEpisode(maxEpisode)
         self.setNumberOfAgent(nAgent)
@@ -151,42 +151,58 @@ class GOD:
 
     def setNumberOfAgent(self,nAgent):
         self.__nAgent = nAgent
-        pass
+        return
 
     def setMaxEpisode(self,maxEpisode):
         self.maxEpisode = maxEpisode
-        pass
+        return
 
     def setTrajectoryLength(self,trajectoryLenght):
         self.trajectoryLength = trajectoryLenght
-        pass
+        return
 
+    """
+    Wont be needed as take action is called by enviornment and will provide current state
     def getState(self):
         # To be defined Later (Get the current state)
         pass
+    #"""
 
     def train(self):
         self.__trainBoss()
-        pass
+        return
 
-    def updatePolicy(self,loss):
+    def _updatePolicy(self,loss):
         self.__policyNet.optimizer.zero_grad()
         loss.backward()
         self.__policyNet.optimizer.step()
+        return
 
-    def updateCritc(self,loss):
+    def _updateCritc(self,loss):
         self.__criticNet.optimizer.zero_grad()
         loss.backward()
         self.__criticNet.optimizer.step()
+        return
 
-    def takeAction(self):
+    def takeAction(self,state):
         '''
         Take the final action according to the Policy Network.
+        This method is not called inside GOD.
+        This method is only called by ENV, every time it decides to take price for next time step.
+        Enviorenment will send current state and this take action will return an action via env.step
+        This will be done using pretrained policyNetwork.
         '''
-        pass
+        actionProb = self._getAction(state)
+        pd = Catagorical(logit=actionProb)
+        ## create a catagorical distribution acording to the actionProb
+        ## categorical probability distribution
+        action = pd.sample()
+        nextState,reward,info = self.__env.step(action)
+        return
 
     def _peakAction(self,state,action):
         '''
+        Online dilemma
         will be used at training time , for updating the networks
         '''
         result = self.__env.step(state,action)
@@ -212,8 +228,7 @@ class GOD:
         '''
         for _ in range(self.__nAgent):
             self.__bossAgent.append(BOSS(self,depth=200))
-
-        pass
+        return
 
     def __trainBoss(self):
         # To be defined Later :: the actual function to train multiple bosses.
@@ -224,7 +239,7 @@ class GOD:
             bossThreads.append(process)
         for i in bossThreads:
             i.join()
-        pass
+        return
 
     pass
 
@@ -242,7 +257,7 @@ class BOSS(GOD):
 
     '''
     def __init__(self,god,gamma=0.99,depth=200,lamda=0.1):
-        super().__init__()
+        super(GOD,self).__init__()
         self.name='BOSS'
         self.trajectoryS = torch.Tensor(self._state*self.trajectoryLength)
         self.trajectoryR = torch.Tensor([0]*self.trajectoryLength)
@@ -322,7 +337,7 @@ class BOSS(GOD):
 
         return action,actionProb
 
-    def calculateV_p(self,state):
+    def calculateV_p(self):
         # calculate the predicted v value by using critic network :: Predicted value is just the value returned by the critic network.
         self.vPredicted.zero_()
         # This resets the tensor to zero
@@ -364,7 +379,7 @@ class BOSS(GOD):
         #  return ans
 
         self.vTarget.zero_()
-        self.vTarget[self.trajectoryLength-1] = self.trajectory[self.trajectoryLength-1][2]
+        self.vTarget[self.trajectoryLength-1] = self.trajectoryR[self.trajectoryLength-1]
         ## only the reward recieved in the last state , we can also put it zero i think
         # guess will have to consult literature on this, diff shouldn't be substantial.
         for i in reversed(range(self.trajectoryLength-1)):
