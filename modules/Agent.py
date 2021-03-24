@@ -50,11 +50,6 @@ class Network(nn.Module):
         kwargs["stateSize"] = (nn.Linear,stateSize,nn.ReLU)
 
         """
-        Optimizer and loss function
-        #"""
-
-
-        """
         Input layer
         #"""
         keyWords.insert(0,"stateSize")
@@ -80,6 +75,13 @@ class Network(nn.Module):
             layers.append(kwargs[l1[2]]())
 
         self.model = nn.Sequential(*layers)
+
+        """
+        Optimizer and loss function
+        #"""
+        self.optimizer = torch.optim.Adam(self.model.parameters(),lr=self.learningRate)
+
+    def lossFN(self,distribution,):
 
     def forward(self,currentState):
         """
@@ -344,7 +346,7 @@ class BOSS(GOD):
         #      ans+=((self.ɤ)**(i+1))*self.trajectory[i][2]
         # ans+=(self.ɤ)**200*self.god._getCriticValue((self.trajectory[200][0])) ## multiply by the actual value of the 200th state.
         #  return ans
-        
+
         """ @BOSS
         Could make a duplicate tensor and do the multiplication, for loop could be slower
         """
@@ -379,7 +381,8 @@ class BOSS(GOD):
 
 
 
-    def calculateAndUpdateL_P(self):    ### Semaphore stuff for safe update of network by multiple bosses.
+    def calculateAndUpdateL_P(self,advantage):
+        ### Semaphore stuff for safe update of network by multiple bosses.
         '''
         FOR UPDATING THE ACTOR USING POLICY GRADIENT WE MUST CALCULATE THE LOG PROBABILITY OF ACTION GIVEN
         A PARTICULAR STATE.BUT IN SITUATION OF MULTIPLE AGENTS IT MAY HAPPEN THAT BEFOR AGENT 1 FETCHES THIS
@@ -398,7 +401,7 @@ class BOSS(GOD):
         self.god.policySemaphore.release()
         pass
 
-    def calculateAndUpdateL_C(self):
+    def calculateAndUpdateL_C(self,vPredicted,vTarget):
         self.god.criticSemaphore.acquire()
         # Do stuff
         self.god.criticSemaphore.acquire()
