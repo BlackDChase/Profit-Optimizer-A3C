@@ -16,12 +16,14 @@ __version__ = '0.0.5'
 
 # Imports
 from torch import nn, multiprocessing, device, Tensor
-from torch.distributions import Catagorical
+from torch.distributions import Categorical
 import torch
 import numpy as np
 from tqdm import tqdm
 import threading
 import logModule.log as log
+import gym
+import sys
 
 # GLOBAL
 device = device("cuda" if torch.cuda.is_available() else "cpu")
@@ -29,6 +31,8 @@ device = device("cuda" if torch.cuda.is_available() else "cpu")
 class Network(nn.Module):
     global device
     def __init__(self,stateSize,actionSize,lr=1e-3,**kwargs):
+        #print(kwargs)
+        #sys.exit()
         """
         ## All logic below are initializing the Network with the layers.
         Parameters:
@@ -54,17 +58,19 @@ class Network(nn.Module):
         #"""
         keyWords.insert(0,"stateSize")
         i=0
+        print(keyWords)
+        #sys.exit()
         for i in range(len(keyWords)-1):
             l1=keyWords[i]
             l2=keyWords[i+1]
-            layers.append(kwargs[l1[0]](kwargs[l1[1]],kwargs[l2[1]]))
+            layers.append(kwargs[l1][0](in_features=kwargs[l1][1],out_features=kwargs[l2][2]))
             if len(l1)>=3:
                 """
                 For layers with activation function
                 #"""
-                layers.append(kwargs[l1[2]]())
+                layers.append(kwargs[l1][2]())
         l1=keyWords[len(keyWords)-1]
-        layers.append(kwargs[l1[0]](kwargs[l1[1]],actionSize))
+        layers.append(kwargs[l1][0](kwargs[l1][1],actionSize))
         """
         Output Layer
         #"""
@@ -122,7 +128,7 @@ class GOD:
 
         # action space is the percent change of the current price.
         self._actionSpace = np.array([-12.5,-10,-7.5,-5,-2.5,0,2.5,5,7.5,10,12.5])
-
+        
         # semaphores do deal with simultaneous updates of the policy and critic net by multiple bosses.
         self.__policySemaphore = threading.Semaphore()
         self.__criticSemaphore = threading.Semaphore()
@@ -193,7 +199,7 @@ class GOD:
         This will be done using pretrained policyNetwork.
         '''
         actionProb = self._getAction(state)
-        pd = Catagorical(logit=actionProb)
+        pd = Categorical(logit=actionProb)
         ## create a catagorical distribution acording to the actionProb
         ## categorical probability distribution
         action = pd.sample()
@@ -330,7 +336,7 @@ class BOSS(GOD):
         state = torch.from_numpy(state.float())
         actionProb = self.god.getAction(state)
         ## This creates state-action probability vector from the policy net. 
-        pd = Catagorical(logit=actionProb) ## create a catagorical distribution acording to the actionProb
+        pd = Categorical(logit=actionProb) ## create a catagorical distribution acording to the actionProb
         ## categorical probability distribution
         action = pd.sample() ## sample the action according to the probability distribution.
         # What does these 3 lines do??
