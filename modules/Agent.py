@@ -22,11 +22,21 @@ import numpy as np
 from tqdm import tqdm
 import threading
 import logModule.log as log
-import gym
 import sys
 
 # GLOBAL
 #device = device("cuda" if torch.cuda.is_available() else "cpu")
+
+class TempEnv:
+    def __init__(self,stateSize):
+        self.stateSize = stateSize
+        pass
+    def step(self,action):
+        return nextState,reward,info
+    def reset(self):
+        torch.rand(self.stateSize)
+        return startState
+    pass
 
 class Network(nn.Module):
     global device
@@ -289,15 +299,15 @@ class BOSS(GOD):
     ):
         super(BOSS,self).__init__(maxEpisode,debug,trajectoryLenght,stateSize)
         self.name='BOSS'
-        self.trajectoryS = torch.Tensor(self._state*self.trajectoryLength)
-        self.trajectoryR = torch.Tensor([0]*self.trajectoryLength)
-        self.trajectoryA = torch.Tensor(self._actionSpace*self.trajectoryLength)
+        self.trajectoryS = torch.zeors([self._state.shape,self.trajectoryLength])
+        self.trajectoryR = torch.zeros(self.trajectoryLength)
+        self.trajectoryA = torch.zeros([self._actionSpace.shape,self.trajectoryLength])
         self.god = god
         self.ɤ = gamma
         self.d = depth
-        self.vPredicted = torch.tensor([0]*self.trajectoryLength)
-        self.vTarget = torch.tensor([0]*self.trajectoryLength)
-        self.advantage = torch.tensor([0]*self.trajectoryLength)
+        self.vPredicted = torch.zeros(self.trajectoryLength)
+        self.vTarget = torch.zeros(self.trajectoryLength)
+        self.advantage = torch.zeros(self.trajectoryLength)
         # If entropy H_t calculated, Init beta
         pass
 
