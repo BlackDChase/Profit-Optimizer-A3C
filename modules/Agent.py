@@ -26,7 +26,7 @@ import gym
 import sys
 
 # GLOBAL
-device = device("cuda" if torch.cuda.is_available() else "cpu")
+#device = device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Network(nn.Module):
     global device
@@ -63,7 +63,13 @@ class Network(nn.Module):
         for i in range(len(keyWords)-1):
             l1=keyWords[i]
             l2=keyWords[i+1]
-            layers.append(kwargs[l1][0](in_features=kwargs[l1][1],out_features=kwargs[l2][2]))
+            """
+            kwargs[l1][0] : name of the layer
+            kwargs[l1][1] : inputSize of the layer
+            kwargs[l2][1] : outputSize pf the layer == inputSize of next layer
+            kwargs[l1][2] : activation function of the layer
+            #"""
+            layers.append(kwargs[l1][0](in_features=kwargs[l1][1],out_features=kwargs[l2][1]))
             if len(l1)>=3:
                 """
                 For layers with activation function
