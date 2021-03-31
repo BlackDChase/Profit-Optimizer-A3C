@@ -207,7 +207,8 @@ class GOD:
         This will be done using pretrained policyNetwork.
         '''
         actionProb = self._getAction(state)
-        pd = Categorical(logit=actionProb)
+        pd = Categorical(actionProb) ## i think logit must be removed!!
+        ## also , i think a tensor cant be directly passed to categorical(will have to see its doc)
         ## create a catagorical distribution acording to the actionProb
         ## categorical probability distribution
         action = pd.sample()
@@ -342,7 +343,7 @@ class BOSS(GOD):
         #'''
         currentState = self.startState
 
-        for i in self.trajectoryLength:
+        for i in range(self.trajectoryLength):
             action,actionProb = self.getAction(currentState)
             nextState,reward,info = self.god.step(currentState,action)
             ## Oi generous env , please tell me the next state and reward for the action i have taken
@@ -358,9 +359,10 @@ class BOSS(GOD):
         @output :: the action which must be taken from this states
         #'''
         state = torch.from_numpy(state.float())
-        actionProb = self.god.getAction(state)
+        actionProb = self.god.takeAction(state)
         ## This creates state-action probability vector from the policy net. 
-        pd = Categorical(logit=actionProb) ## create a catagorical distribution acording to the actionProb
+        pd = Categorical(actionProb) ## create a catagorical distribution acording to the actionProb
+        ## no logit i believe
         ## categorical probability distribution
         action = pd.sample() ## sample the action according to the probability distribution.
         # What does these 3 lines do??
