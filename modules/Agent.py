@@ -25,7 +25,9 @@ import logModule.log as log
 import sys
 
 # GLOBAL
-#device = device("cuda" if torch.cuda.is_available() else "cpu")
+device = device("cuda" if torch.cuda.is_available() else "cpu")
+if torch.cuda.is_available():
+    print("Using Allmight")
 
 class TempEnv:
     def __init__(self,stateSize):
@@ -368,7 +370,7 @@ class BOSS(GOD):
         @output :: the action which must be taken from this states
         #'''
         state = torch.from_numpy(state.float())
-        actionProb = self.god.takeAction(state)
+        actionProb = self.god._getAction(state)
         ## This creates state-action probability vector from the policy net. 
         pd = Categorical(logits=actionProb) ## create a catagorical distribution acording to the actionProb
         ## categorical probability distribution
