@@ -58,8 +58,7 @@ class Network(nn.Module):
         #"""
         keyWords.insert(0,"stateSize")
         i=0
-        print(keyWords)
-        #sys.exit()
+
         for i in range(len(keyWords)-1):
             l1=keyWords[i]
             l2=keyWords[i+1]
@@ -116,7 +115,7 @@ class GOD:
     @Input (From Enviorenment) :: The Current State.
     @Output (To enviorenment)  :: The Final Action Taken.
     '''
-    def __init__(self,env,maxEpisode=100,nAgent=1,debug=False,trajectoryLenght=25):
+    def __init__(self,maxEpisode=100,nAgent=1,debug=False,trajectoryLenght=25,stateSize=9):
         '''
         Initialization of various GOD parameters, self evident from the code.
         #'''
@@ -126,11 +125,11 @@ class GOD:
         self.setTrajectoryLength(trajectoryLenght)
         self.__bossAgent = []
         self.price = 0
-        self.__env = env
         self.__actorLR = 1e-3
         self.__criticLR = 1e-3
         # state is the 9 dimentional tensor , defined at the top
-        self._state = Tensor([0]*9)
+        self.stateSize = stateSize
+        self._state = Tensor([0]*stateSize)
 
         # action space is the percent change of the current price.
         self._actionSpace = np.array([-12.5,-10,-7.5,-5,-2.5,0,2.5,5,7.5,10,12.5])
@@ -160,6 +159,9 @@ class GOD:
         #'''
         self.__initateBoss()
         pass
+
+    def giveEnvironment(self,env):
+        self.__env=env
 
     def setNumberOfAgent(self,nAgent):
         self.__nAgent = nAgent
@@ -239,7 +241,14 @@ class GOD:
         Initialize all the boss agents for training
         '''
         for _ in range(self.__nAgent):
-            self.__bossAgent.append(BOSS(self,depth=200))
+            self.__bossAgent.append(BOSS(
+                god=self,
+                depth=200,
+                maxEpisode=self.maxEpisode,
+                debug=False,
+                trajectoryLenght=self.trajectoryLength,
+                stateSize=self.stateSize
+            ))
         return
 
     def __trainBoss(self):
@@ -268,8 +277,17 @@ class BOSS(GOD):
 
 
     '''
-    def __init__(self,god,gamma=0.99,depth=200,lamda=0.1):
-        super(GOD,self).__init__()
+    def __init__(self,
+        maxEpisode,
+        god,
+        trajectoryLenght,
+        stateSize,
+        gamma=0.99,
+        lamda=0.1,
+        depth=200,
+        debug=False,
+    ):
+        super(BOSS,self).__init__(maxEpisode,debug,trajectoryLenght,stateSize)
         self.name='BOSS'
         self.trajectoryS = torch.Tensor(self._state*self.trajectoryLength)
         self.trajectoryR = torch.Tensor([0]*self.trajectoryLength)
