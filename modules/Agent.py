@@ -9,7 +9,7 @@ GOD AGENT
 BOSS AGENT
 - Will Update the network
 
-State = ((Market Demand)**@+(Ontario Demand)**2),Ontario Price,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, (TIMEstamp - optional)
+State = ((Market Demand)**2+(Ontario Demand)**2),Ontario Price,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, (TIMEstamp - optional)
 """
 __author__ = 'BlackDChase,MR-TLL'
 __version__ = '0.0.5'
@@ -21,119 +21,18 @@ import torch
 import numpy as np
 from tqdm import tqdm
 import threading
-import logModule.log as log
+import log
 import sys
+from NeuralNet import Network
 
 # GLOBAL
-device = device("cuda" if torch.cuda.is_available() else "cpu")
+#device = device("cuda" if torch.cuda.is_available() else "cpu")
+"""
 if torch.cuda.is_available():
-    print("Using Allmight")
+    log.info("Using Allmight")
 else:
-    print("Might missing")
-
-class TempEnv:
-    """
-    We don't have much info about environment step,reset method
-    How it will cater multiple boss's trajectory
-    #"""
-    def __init__(self,stateSize):
-        self.stateSize = stateSize
-        pass
-
-    def step(self,action):
-        nextState=torch.rand(self.stateSize)
-        reward=nextState[0]*nextState[2]
-        info="DONE"
-        return nextState,reward,info
-
-    def reset(self):
-        state = torch.rand(self.stateSize)
-        return state
-    pass
-
-class Network(nn.Module):
-    global device
-    def __init__(self,stateSize,actionSize,lr=1e-3,**kwargs):
-        #print(kwargs)
-        #sys.exit()
-        """
-        ## All logic below are initializing the Network with the layers.
-        Parameters:
-        __________
-        : stateSize     : Input Size
-        : actionSize    : Output Size
-        : **kwargs      : Keyword arguments for different layers should be L1,L2,L3..
-                          (because its a dic and will change the oredring atuomatically)
-                          Later we kan have it Ordered dic to be directly sent throught
-                          but would make less sense
-                          The touple has type of layer, it's input and activation funtion if it's there.
-        #"""
-        super(Network,self).__init__()
-        self.inputSize = stateSize
-        self.outputSize = actionSize
-        self.learningRate = lr
-        layers = []
-        keyWords = list(kwargs.keys())
-        kwargs["stateSize"] = (nn.Linear,stateSize,nn.ReLU())
-
-        """
-        Input layer
-        #"""
-        keyWords.insert(0,"stateSize")
-        i=0
-
-        for i in range(len(keyWords)-1):
-            l1=keyWords[i]
-            l2=keyWords[i+1]
-            """
-            kwargs[l1][0] : name of the layer
-            kwargs[l1][1] : inputSize of the layer
-            kwargs[l2][1] : outputSize pf the layer == inputSize of next layer
-            kwargs[l1][2] : activation function of the layer
-            #"""
-            layers.append(kwargs[l1][0](in_features=kwargs[l1][1],out_features=kwargs[l2][1]))
-            if len(kwargs[l1])>=3:
-                """
-                For layers with activation function
-                #"""
-                layers.append(kwargs[l1][2])
-        l1=keyWords[len(keyWords)-1]
-        layers.append(kwargs[l1][0](kwargs[l1][1],actionSize))
-        """
-        Output Layer
-        #"""
-        if len(kwargs[l1])==3:
-            """
-            For layers with activation function
-            #"""
-            layers.append(kwargs[l1][2])
-
-        self.model = nn.Sequential(*layers)
-        self.params = self.model.parameters()
-        """
-        Initiallising model
-        Rest parameters to uniform
-        0 is lower bound, 1 is upper bound
-        But thats not working
-        """
-        #nn.init.uniform_(self.params,0,1)
-        """
-        Optimizer and loss function
-        #"""
-        self.optimizer = torch.optim.SGD(self.params,lr=self.learningRate)
-        pass
-
-    def forward(self,currentState):
-        """
-        Override for forward from nn.Module
-        To calculate the pd-parameters by using the neural net.
-        __________
-        Output for Policy network   : Probability Distribution Parameter
-        Output for Critic network   : Advantage
-        #"""
-        output = self.model(currentState)
-        return output
-    pass
+    log.info("Might missing")
+#"""
 
 class GOD:
     '''
@@ -145,15 +44,16 @@ class GOD:
     @Input (From Enviorenment) :: The Current State.
     @Output (To enviorenment)  :: The Final Action Taken.
     '''
-    def __init__(self,maxEpisode=100,nAgent=1,debug=False,trajectoryLength=25,stateSize=9):
+    def __init__(self,maxEpisode=100,nAgent=1,debug=False,trajectoryLength=25,stateSize=9,actionSpace=11,name="GOD"):
         '''
         Initialization of various GOD parameters, self evident from the code.
         #'''
-        self.name="GOD"
+        self.name=name
         self.setMaxEpisode(maxEpisode)
         self.setNumberOfAgent(nAgent)
         self.setTrajectoryLength(trajectoryLength)
         self.__bossAgent = []
+        self.debug = debug
         self.price = 0
         self.__actorLR = 1e-3
         self.__criticLR = 1e-3
@@ -162,7 +62,8 @@ class GOD:
         self._state = Tensor([0]*stateSize)
 
         # action space is the percent change of the current price.
-        self._actionSpace = np.array([-12.5,-10,-7.5,-5,-2.5,0,2.5,5,7.5,10,12.5])
+        self._actionS = actionSpace
+        self.__makeActions()
 
         # semaphores do deal with simultaneous updates of the policy and critic net by multiple bosses.
         self._policySemaphore = threading.Semaphore()
@@ -175,6 +76,7 @@ class GOD:
             lr=self.__actorLR,
             L1=(nn.Linear,20,nn.Tanh()),
             L2=(nn.Linear,50,nn.Softmax(dim=0)),
+            debug=self.debug,
             ## we will add softmax at end , which will give the probability distribution.
         )
 
@@ -186,10 +88,14 @@ class GOD:
             lr=self.__criticLR,
             L1=(nn.Linear,30,nn.ReLU6()),
             L2=(nn.Linear,40,nn.ReLU6()),
+            debug=self.debug,
         )
         #'''
-        
         pass
+
+    def __makeActions(self):
+        actionSpace = [i/10 for i in range(-self._actionS*25,self._actionS*25+1,25)]
+        self._actionSpace = Tensor(actionSpace)
 
     def giveEnvironment(self,env):
         self.__env=env
@@ -199,6 +105,9 @@ class GOD:
     def setNumberOfAgent(self,nAgent):
         self.__nAgent = nAgent
         return
+
+    def getActionSpace(self):
+        return self._actionSpace
 
     def setMaxEpisode(self,maxEpisode):
         self.maxEpisode = maxEpisode
@@ -238,21 +147,24 @@ class GOD:
         This method is only called by ENV, every time it decides to take price for next time step.
         Enviorenment will send current state and this take action will return an action via env.step
         This will be done using pretrained policyNetwork.
-        '''
+        #'''
         actionProb = self._getAction(state)
         pd = Categorical(probs=actionProb)
         ## create a catagorical distribution acording to the actionProb
         ## categorical probability distribution
-        action = pd.sample()
-        #probab = 
-        nextState,reward,info = self.__env.step(action)
-        return action,probab
+        actionIndex = pd.sample()
+        probab = actionProb[actionIndex]
+        nextState,reward,info = self.__env.step(actionIndex)
+        log.info(f"{self.name} step taken,{info}, rewards = {reward}")
+        if self.debug:
+            log.debug(f"Expected next State: {nextState}")
+        return actionIndex,probab
 
     def _peakAction(self,state,action):
         '''
         Online dilemma
         will be used at training time , for updating the networks
-        '''
+        #'''
         result = self.__env.step(state,action)
         return result
 
@@ -280,15 +192,28 @@ class GOD:
         Initialize all the boss agents for training
         '''
         for i in range(self.__nAgent):
-            self.__bossAgent.insert(i,
-                                    BOSS(
-                                        god=self,
-                                        depth=200,
-                                        maxEpisode=self.maxEpisode,
-                                        debug=False,
-                                        trajectoryLength=self.trajectoryLength,
-                                        stateSize=self.stateSize,
-            ))
+            if len(self.__bossAgent)<i+1:
+                self.__bossAgent.append(BOSS(
+                    god=self,
+                    name="BOSS "+str(i).zfill(2),
+                    depth=200,
+                    maxEpisode=self.maxEpisode,
+                    debug=self.debug,
+                    trajectoryLength=self.trajectoryLength,
+                    stateSize=self.stateSize,
+                ))
+            else:
+                self.__bossAgent[i]=BOSS(
+                    god=self,
+                    name="BOSS "+str(i),
+                    depth=200,
+                    maxEpisode=self.maxEpisode,
+                    debug=self.debug,
+                    trajectoryLength=self.trajectoryLength,
+                    stateSize=self.stateSize,
+                )
+            if self.debug:
+                log.debug(f"Boss{str(i).zfill(2)} created")
         return self.__bossAgent
 
     def __trainBoss(self):
@@ -297,6 +222,8 @@ class GOD:
         for i in range(self.__nAgent):
             process = multiprocessing.Process(target=self.__bossAgent[i].train)
             process.start()
+            if self.debug:
+                log.debug(f"Boss{str(i).zfill(2)} training started via GOD")
             bossThreads.append(process)
         for i in bossThreads:
             i.join()
@@ -318,17 +245,17 @@ class BOSS(GOD):
 
     '''
     def __init__(self,
-        maxEpisode,
-        god,
-        trajectoryLength,
-        stateSize,
-        gamma=0.99,
-        lamda=0.1,
-        depth=200,
-        debug=False,
-    ):
-        super(BOSS,self).__init__(maxEpisode,debug,trajectoryLength,stateSize)
-        self.name='BOSS'
+                maxEpisode,
+                god,
+                trajectoryLength,
+                stateSize,
+                name,
+                gamma=0.99,
+                lamda=0.1,
+                depth=200,
+                debug=False,
+                 ):
+        super(BOSS,self).__init__(maxEpisode=maxEpisode,debug=debug,trajectoryLength=trajectoryLength,stateSize=stateSize,name=name)
         self.trajectoryS = torch.zeros([self.trajectoryLength,self.stateSize])
         self.trajectoryR = torch.zeros(self.trajectoryLength)
         self.trajectoryA = torch.zeros(self.trajectoryLength)
@@ -348,6 +275,9 @@ class BOSS(GOD):
         different boss. it has to take in account the diff trajectories becouse diff bosses will go to
         different states.
         '''
+        if self.debug:
+            log.debug(f"{self.name} training started inside BOSS")
+
         # here the main logic of training of A2C will be present
         for _ in range(self.maxEpisode):
             self.startState = self.god.reset()
@@ -381,15 +311,20 @@ class BOSS(GOD):
         Maybe tensorize the code??
         #'''
         currentState = self.startState
-
+        log.info(f"Starting state={currentState}")
         for i in range(self.trajectoryLength):
             action,actionProb = self.getAction(currentState)
             #nextState,reward,info = self.god.step(currentState,action)
             nextState,reward,info = self.god.step(action)
             ## Oi generous env , please tell me the next state and reward for the action i have taken
-
-            self.trajectoryS[i],self.trajectoryA[i],self.trajectoryR[i] = currentState,action,reward
+            log.info(f"{self.name},  {info}")
+            self.trajectoryS[i],self.trajectoryA[i],self.trajectoryR[i] = currentState,actionProb,reward
+            if self.debug:
+                log.debug(f"Action = {action}")
             currentState=nextState
+        if self.debug:
+            log.debug(f"Action Probability = {self.trajectoryA}")
+            log.debug(f"rewards = {self.trajectoryR}")
         pass
 
     def getAction(self,state):
@@ -418,13 +353,13 @@ class BOSS(GOD):
         return
 
     def calculateV_tar(self):
-        # calculate the target value v_tar using critic network 
+        # calculate the target value v_tar using critic network
         '''
         This is a huge topic of debate , i.e how to actually calculate the target value, currently we have 2 propositions.
         1. v_target(s) = summation( reward + v_predicted(ss)) , where ss is some state after the trajectory.
         2. calculate v_target with the help of advantage function itself.
 
-        #################################################################################################################
+        #####################################################################################################
         Another Huge Doubt regarding v_target and GAE is::
 
         DO WE NEED TO CONSTRUCT NEW EXPERIENCE(ENVIORENMENT EXPLORATION) FOR CALCULATING V_tar OR WE CAN USE THE
@@ -435,13 +370,14 @@ class BOSS(GOD):
         Pros :: very fast and TD error is a reliable and solid method.
         Cons :: Maybe if we only see one step ahead , the estimate will be less reliable.
 
-        CHOICE 2 :: For this we will, for each state in the trajectory , calculate the advantage and V_tar using the previous
-        method(by travelling to the end of the trajectory and accumulating rewards as given in jamboard slide 15) , the only
-        difference is we start from the current state itself to the end of trajectory. (Or until a depth)
+        CHOICE 2 :: For this we will, for each state in the trajectory, calculate the advantage and V_tar
+        using the previous method (by travelling to the end of the trajectory and accumulating rewards as
+        given in jamboard slide 15) , the only difference is we start from the current state itself to the
+        end of trajectory. (Or until a depth)
 
         We have chosen choice 2 for v_tar , by terating in reverse direction in the trajectory list.
         '''
-        # we have set γ to be 0.99 // see this sweet γ @BlackD , α , β , θ ( this is all tex , emacs master race , Ɣ ❈)
+        # we have set γ to be 0.99 // see this sweet γ @BlackD , α , β , θ 
         ## here 𝛄 can be variable so, the length can be changed.
         #  ans=0.0
         #  for i in range(0,200):
@@ -477,6 +413,8 @@ class BOSS(GOD):
                 self.advantage[i]=vPredLast
             else:
                 self.advantage[i]=self.trajectoryR[i] + self.ɤ*self.advantage[i+1] - self.vPredicted[i]
+        if self.debug:
+            log.debug(f"Advantage = {self.advantage}")
         return
 
     def calculateAndUpdateL_P(self):
@@ -493,11 +431,12 @@ class BOSS(GOD):
 
         CHOICE 2 :: BE IGNORANT , THE CHANCE THAT 2 AGENT HAVE TAMPERED WITH THE SAME STATE BEFOR UPDATING
         THE NETWORK WITH THEIR OWN LOSS IS EXTREMELEY LOW, SO IT DOESN'T MATTERS.
-        '''
+        #'''
         self.god._policySemaphore.acquire()
 
         actionProb = self.trajectoryA
         loss = -1*torch.sum(self.advantage*torch.log(actionProb))
+        log.info(f"policy loss = {loss}")
         self.god._updatePolicy(loss/self.trajectoryLength)
 
         self.god._policySemaphore.release()
@@ -507,17 +446,8 @@ class BOSS(GOD):
         self.god._criticSemaphore.acquire()
 
         loss = torch.sum(torch.pow(self.vPredicted-self.vTarget,2))
+        log.info(f"critic loss = {loss}")
         self.god._updateCritc(loss/self.trajectoryLength)
 
         self.god._criticSemaphore.acquire()
         return
-
-""" Demo run
-from Agent import TempEnv as ENV
-from Agent import GOD
-env = ENV(9)
-god = GOD()
-god.giveEnvironment(env)
-b=god._GOD__bossAgent[0]
-b.train()
-"""
