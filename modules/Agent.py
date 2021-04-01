@@ -32,21 +32,23 @@ else:
     print("Might missing")
 
 class TempEnv:
+    """
+    We don't have much info about environment step,reset method
+    How it will cater multiple boss's trajectory
+    #"""
     def __init__(self,stateSize):
         self.stateSize = stateSize
         pass
 
     def step(self,action):
-      state=torch.tensor([0]*self.stateSize)
-      for i in range(0,self.stateSize):
-        state[i]=rd.uniform(0,20)
-        reward=state[0]*state[2]
+        nextState=torch.rand(self.stateSize)
+        reward=nextState[0]*nextState[2]
         info="DONE"
         return nextState,reward,info
 
     def reset(self):
-        torch.rand(self.stateSize)
-        return startState
+        state = torch.rand(self.stateSize)
+        return state
     pass
 
 class Network(nn.Module):
@@ -72,7 +74,7 @@ class Network(nn.Module):
         self.learningRate = lr
         layers = []
         keyWords = list(kwargs.keys())
-        kwargs["stateSize"] = (nn.Linear,stateSize,nn.ReLU)
+        kwargs["stateSize"] = (nn.Linear,stateSize,nn.ReLU())
 
         """
         Input layer
@@ -90,28 +92,35 @@ class Network(nn.Module):
             kwargs[l1][2] : activation function of the layer
             #"""
             layers.append(kwargs[l1][0](in_features=kwargs[l1][1],out_features=kwargs[l2][1]))
-            if len(l1)>=3:
+            if len(kwargs[l1])>=3:
                 """
                 For layers with activation function
                 #"""
-                layers.append(kwargs[l1][2]())
+                layers.append(kwargs[l1][2])
         l1=keyWords[len(keyWords)-1]
         layers.append(kwargs[l1][0](kwargs[l1][1],actionSize))
         """
         Output Layer
         #"""
-        if len(l1)==3:
+        if len(kwargs[l1])==3:
             """
             For layers with activation function
             #"""
-            layers.append(kwargs[l1[2]]())
+            layers.append(kwargs[l1][2])
 
         self.model = nn.Sequential(*layers)
-
+        self.params = self.model.parameters()
+        """
+        Initiallising model
+        Rest parameters to uniform
+        0 is lower bound, 1 is upper bound
+        But thats not working
+        """
+        #nn.init.uniform_(self.params,0,1)
         """
         Optimizer and loss function
         #"""
-        self.optimizer = torch.optim.SGD(self.model.parameters(),lr=self.learningRate)
+        self.optimizer = torch.optim.SGD(self.params,lr=self.learningRate)
         pass
 
     def forward(self,currentState):
@@ -156,16 +165,17 @@ class GOD:
         self._actionSpace = np.array([-12.5,-10,-7.5,-5,-2.5,0,2.5,5,7.5,10,12.5])
 
         # semaphores do deal with simultaneous updates of the policy and critic net by multiple bosses.
-        self.__policySemaphore = threading.Semaphore()
-        self.__criticSemaphore = threading.Semaphore()
+        self._policySemaphore = threading.Semaphore()
+        self._criticSemaphore = threading.Semaphore()
 
         ## defining the actual neural net itself, input is state output is probability for each action.
         self.__policyNet = Network(
             len(self._state),
             len(self._actionSpace),
             lr=self.__actorLR,
-            L1=(nn.Linear,20,nn.Tanh),
-            L2=(nn.Linear,50,nn.Softmax), ## we will add softmax at end , which will give the probability distribution.
+            L1=(nn.Linear,20,nn.Tanh()),
+            L2=(nn.Linear,50,nn.Softmax(dim=0)),
+            ## we will add softmax at end , which will give the probability distribution.
         )
 
         # Could be updated
@@ -174,15 +184,17 @@ class GOD:
             len(self._state),
             1,
             lr=self.__criticLR,
-            L1=(nn.Linear,30,nn.ReLU),
-            L2=(nn.Linear,40,nn.ReLU),
+            L1=(nn.Linear,30,nn.ReLU6()),
+            L2=(nn.Linear,40,nn.ReLU6()),
         )
         #'''
-        self.__initateBoss()
+        
         pass
 
     def giveEnvironment(self,env):
         self.__env=env
+        self.__initateBoss()
+        return
 
     def setNumberOfAgent(self,nAgent):
         self.__nAgent = nAgent
@@ -228,12 +240,13 @@ class GOD:
         This will be done using pretrained policyNetwork.
         '''
         actionProb = self._getAction(state)
-        pd = Categorical(logits=actionProb)
+        pd = Categorical(probs=actionProb)
         ## create a catagorical distribution acording to the actionProb
         ## categorical probability distribution
         action = pd.sample()
+        #probab = 
         nextState,reward,info = self.__env.step(action)
-        return
+        return action,probab
 
     def _peakAction(self,state,action):
         '''
@@ -244,33 +257,39 @@ class GOD:
         return result
 
     def _getAction(self,state):
-        self.__policySemaphore.acquire()
+        self._policySemaphore.acquire()
         actionProbab = self.__policyNet.forward(state)
         # Not sure if forward is the way to go
-        self.__policySemaphore.release()
+        self._policySemaphore.release()
         return actionProbab
 
     def _getCriticValue(self,state):
-        self.__criticSemaphore.acquire()
+        self._criticSemaphore.acquire()
         vVlaue = self.__criticNet.forward(state)
-        self.__criticSemaphore.release()
+        self._criticSemaphore.release()
         return vVlaue
 
+    def reset(self):
+        return self.__env.reset()
+
+    def step(self,action):
+        return self.__env.step(action)
 
     def __initateBoss(self):
         '''
         Initialize all the boss agents for training
         '''
-        for _ in range(self.__nAgent):
-            self.__bossAgent.append(BOSS(
-                god=self,
-                depth=200,
-                maxEpisode=self.maxEpisode,
-                debug=False,
-                trajectoryLength=self.trajectoryLength,
-                stateSize=self.stateSize
+        for i in range(self.__nAgent):
+            self.__bossAgent.insert(i,
+                                    BOSS(
+                                        god=self,
+                                        depth=200,
+                                        maxEpisode=self.maxEpisode,
+                                        debug=False,
+                                        trajectoryLength=self.trajectoryLength,
+                                        stateSize=self.stateSize,
             ))
-        return
+        return self.__bossAgent
 
     def __trainBoss(self):
         # To be defined Later :: the actual function to train multiple bosses.
@@ -310,9 +329,9 @@ class BOSS(GOD):
     ):
         super(BOSS,self).__init__(maxEpisode,debug,trajectoryLength,stateSize)
         self.name='BOSS'
-        self.trajectoryS = torch.zeors([self._state.shape,self.trajectoryLength])
+        self.trajectoryS = torch.zeros([self.trajectoryLength,self.stateSize])
         self.trajectoryR = torch.zeros(self.trajectoryLength)
-        self.trajectoryA = torch.zeros([self._actionSpace.shape,self.trajectoryLength])
+        self.trajectoryA = torch.zeros(self.trajectoryLength)
         self.god = god
         self.ɤ = gamma
         self.d = depth
@@ -331,7 +350,7 @@ class BOSS(GOD):
         '''
         # here the main logic of training of A2C will be present
         for _ in range(self.maxEpisode):
-            self.startState = self.god.env.reset()
+            self.startState = self.god.reset()
             self.gatherAndStore()
             """ @BOSS
             Do we need to intiallise here?? when we are re declaring it in the three cal methods
@@ -365,10 +384,11 @@ class BOSS(GOD):
 
         for i in range(self.trajectoryLength):
             action,actionProb = self.getAction(currentState)
-            nextState,reward,info = self.god.step(currentState,action)
+            #nextState,reward,info = self.god.step(currentState,action)
+            nextState,reward,info = self.god.step(action)
             ## Oi generous env , please tell me the next state and reward for the action i have taken
 
-            self.trajectoryS[i],self.trajectoryA[i],self.trajectoryR[i] = currentState,actionProb,reward
+            self.trajectoryS[i],self.trajectoryA[i],self.trajectoryR[i] = currentState,action,reward
             currentState=nextState
         pass
 
@@ -376,17 +396,17 @@ class BOSS(GOD):
         '''
         Responsible for taking the correct action from the given state using the neural net.
         @input :: current state
-        @output :: the action which must be taken from this states
+        @output :: the index of action which must be taken from this states, and probability of that action
         #'''
-        state = torch.from_numpy(state.float())
+        state = state.float()
         actionProb = self.god._getAction(state)
         ## This creates state-action probability vector from the policy net. 
-        pd = Categorical(logits=actionProb) ## create a catagorical distribution acording to the actionProb
+        pd = Categorical(probs=actionProb) ## create a catagorical distribution acording to the actionProb
         ## categorical probability distribution
-        action = pd.sample() ## sample the action according to the probability distribution.
-        # What does these 3 lines do??
+        actionIndex = pd.sample() ## sample the action according to the probability distribution.
+        probab = actionProb[actionIndex]
 
-        return action,actionProb
+        return actionIndex,probab
 
     def calculateV_p(self):
         # calculate the predicted v value by using critic network :: Predicted value is just the value returned by the critic network.
@@ -474,16 +494,30 @@ class BOSS(GOD):
         CHOICE 2 :: BE IGNORANT , THE CHANCE THAT 2 AGENT HAVE TAMPERED WITH THE SAME STATE BEFOR UPDATING
         THE NETWORK WITH THEIR OWN LOSS IS EXTREMELEY LOW, SO IT DOESN'T MATTERS.
         '''
-        self.god.policySemaphore.acquire()
+        self.god._policySemaphore.acquire()
+
         actionProb = self.trajectoryA
         loss = -1*torch.sum(self.advantage*torch.log(actionProb))
-        self.god.updatePolicy(loss/self.trajectoryLength)
-        self.god.policySemaphore.release()
+        self.god._updatePolicy(loss/self.trajectoryLength)
+
+        self.god._policySemaphore.release()
         return
 
     def calculateAndUpdateL_C(self):
-        self.god.criticSemaphore.acquire()
+        self.god._criticSemaphore.acquire()
+
         loss = torch.sum(torch.pow(self.vPredicted-self.vTarget,2))
-        self.god.updateCritc(loss/self.trajectoryLength)
-        self.god.criticSemaphore.acquire()
+        self.god._updateCritc(loss/self.trajectoryLength)
+
+        self.god._criticSemaphore.acquire()
         return
+
+""" Demo run
+from Agent import TempEnv as ENV
+from Agent import GOD
+env = ENV(9)
+god = GOD()
+god.giveEnvironment(env)
+b=god._GOD__bossAgent[0]
+b.train()
+"""
