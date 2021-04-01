@@ -28,17 +28,19 @@ import sys
 device = device("cuda" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
     print("Using Allmight")
+else:
+    print("Might missing")
 
 class TempEnv:
     def __init__(self,stateSize):
         self.stateSize = stateSize
         pass
-    
+
     def step(self,action):
-      state=torch.tensor([0.0]*9)
-      for i in range(0,9):
+      state=torch.tensor([0]*self.stateSize)
+      for i in range(0,self.stateSize):
         state[i]=rd.uniform(0,20)
-        reward=state.sum()
+        reward=state[0]*state[2]
         info="DONE"
         return nextState,reward,info
 
@@ -134,14 +136,14 @@ class GOD:
     @Input (From Enviorenment) :: The Current State.
     @Output (To enviorenment)  :: The Final Action Taken.
     '''
-    def __init__(self,maxEpisode=100,nAgent=1,debug=False,trajectoryLenght=25,stateSize=9):
+    def __init__(self,maxEpisode=100,nAgent=1,debug=False,trajectoryLength=25,stateSize=9):
         '''
         Initialization of various GOD parameters, self evident from the code.
         #'''
         self.name="GOD"
         self.setMaxEpisode(maxEpisode)
         self.setNumberOfAgent(nAgent)
-        self.setTrajectoryLength(trajectoryLenght)
+        self.setTrajectoryLength(trajectoryLength)
         self.__bossAgent = []
         self.price = 0
         self.__actorLR = 1e-3
@@ -152,7 +154,7 @@ class GOD:
 
         # action space is the percent change of the current price.
         self._actionSpace = np.array([-12.5,-10,-7.5,-5,-2.5,0,2.5,5,7.5,10,12.5])
-        
+
         # semaphores do deal with simultaneous updates of the policy and critic net by multiple bosses.
         self.__policySemaphore = threading.Semaphore()
         self.__criticSemaphore = threading.Semaphore()
@@ -190,8 +192,8 @@ class GOD:
         self.maxEpisode = maxEpisode
         return
 
-    def setTrajectoryLength(self,trajectoryLenght):
-        self.trajectoryLength = trajectoryLenght
+    def setTrajectoryLength(self,trajectoryLength):
+        self.trajectoryLength = trajectoryLength
         return
 
     """
@@ -226,7 +228,7 @@ class GOD:
         This will be done using pretrained policyNetwork.
         '''
         actionProb = self._getAction(state)
-        pd = Categorical(logits=actionProb) 
+        pd = Categorical(logits=actionProb)
         ## create a catagorical distribution acording to the actionProb
         ## categorical probability distribution
         action = pd.sample()
@@ -265,7 +267,7 @@ class GOD:
                 depth=200,
                 maxEpisode=self.maxEpisode,
                 debug=False,
-                trajectoryLenght=self.trajectoryLength,
+                trajectoryLength=self.trajectoryLength,
                 stateSize=self.stateSize
             ))
         return
@@ -299,14 +301,14 @@ class BOSS(GOD):
     def __init__(self,
         maxEpisode,
         god,
-        trajectoryLenght,
+        trajectoryLength,
         stateSize,
         gamma=0.99,
         lamda=0.1,
         depth=200,
         debug=False,
     ):
-        super(BOSS,self).__init__(maxEpisode,debug,trajectoryLenght,stateSize)
+        super(BOSS,self).__init__(maxEpisode,debug,trajectoryLength,stateSize)
         self.name='BOSS'
         self.trajectoryS = torch.zeors([self._state.shape,self.trajectoryLength])
         self.trajectoryR = torch.zeros(self.trajectoryLength)
