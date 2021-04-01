@@ -33,8 +33,15 @@ class TempEnv:
     def __init__(self,stateSize):
         self.stateSize = stateSize
         pass
+    
     def step(self,action):
+      state=torch.tensor([0.0]*9)
+      for i in range(0,9):
+        state[i]=rd.uniform(0,20)
+        reward=state.sum()
+        info="DONE"
         return nextState,reward,info
+
     def reset(self):
         torch.rand(self.stateSize)
         return startState
