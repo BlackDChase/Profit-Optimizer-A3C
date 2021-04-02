@@ -6,7 +6,7 @@ from torch import nn, device
 
 class Network(nn.Module):
     #global device
-    def __init__(self,stateSize,actionSize,debug=False,lr=1e-3,**kwargs):
+    def __init__(self,stateSize,actionSize,name,debug=False,lr=1e-3,**kwargs):
         #print(kwargs)
         #sys.exit()
         """
@@ -26,6 +26,7 @@ class Network(nn.Module):
         self.outputSize = actionSize
         self.learningRate = lr
         self.debug = debug
+        self.name = name
         layers = []
         keyWords = list(kwargs.keys())
         kwargs["stateSize"] = (nn.Linear,stateSize,nn.ReLU())
@@ -35,7 +36,10 @@ class Network(nn.Module):
         #"""
         keyWords.insert(0,"stateSize")
         i=0
-
+        if self.debug:
+            log.debug(f"kwargs for {self.name} = {kwargs}")
+            log.debug(f"actionSize is {actionSize}")
+            log.debug(f"stateSize is {stateSize}")
         for i in range(len(keyWords)-1):
             l1=keyWords[i]
             l2=keyWords[i+1]
@@ -61,7 +65,8 @@ class Network(nn.Module):
             For layers with activation function
             #"""
             layers.append(kwargs[l1][2])
-
+        if self.debug:
+            log.debug(f"Layers for {self.name} = {layers}")
         self.model = nn.Sequential(*layers)
         self.params = self.model.parameters()
         """
@@ -75,6 +80,7 @@ class Network(nn.Module):
         Optimizer and loss function
         #"""
         self.optimizer = torch.optim.SGD(self.params,lr=self.learningRate)
+        #self.optimizer = torch.optim.Adam(self.params,lr=self.learningRate)
         pass
 
     def forward(self,currentState):
@@ -85,8 +91,9 @@ class Network(nn.Module):
         Output for Policy network   : Probability Distribution Parameter
         Output for Critic network   : Advantage
         #"""
-        if self.debug:
-            log.debug(f"current state : {currentState}")
         output = self.model(currentState)
+        if self.debug:
+            log.debug(f"current state for {self.name} : {currentState}")
+            log.debug(f"output of model = {output}")
         return output
     pass
