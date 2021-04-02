@@ -24,5 +24,7 @@ if __name__=="__main__":
     try:
         god.train()
     except Exception as catch:
+        #log.debug(f"Terminaion Trace back {catch.with_traceback()}")
         log.debug(f"Terminated due to {catch}")
         print("Terminated, check log ",log.name)
+        raise catch
