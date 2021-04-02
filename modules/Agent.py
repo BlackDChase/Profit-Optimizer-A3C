@@ -23,7 +23,7 @@ from tqdm import tqdm
 import threading
 import log
 import sys
-from NeuralNet import Network
+from NeuralNet import Network, Aktor, Kritc
 
 # GLOBAL
 #device = device("cuda" if torch.cuda.is_available() else "cpu")
@@ -74,6 +74,7 @@ class GOD:
         self._policySemaphore = threading.Semaphore()
         self._criticSemaphore = threading.Semaphore()
 
+        """
         ## defining the actual neural net itself, input is state output is probability for each action.
         self.__policyNet = Network(
             len(self._state),
@@ -97,7 +98,10 @@ class GOD:
             L2=(nn.Linear,40,nn.ReLU6()),
             debug=self.debug,
         )
-        #'''
+        #"""
+        self.__policyNet = Aktor()
+        self.__criticNet = Kritc()
+        #"""
         pass
 
     def __makeActions(self):
@@ -227,6 +231,7 @@ class GOD:
 
     def __trainBoss(self):
         # To be defined Later :: the actual function to train multiple bosses.
+        """
         bossThreads=[]
         for i in range(self.__nAgent):
             process = multiprocessing.Process(target=self.__bossAgent[i].train)
@@ -236,6 +241,12 @@ class GOD:
             bossThreads.append(process)
         for i in bossThreads:
             i.join()
+        #"""
+        # Remove multiprocessing for @biribiri
+        self.__bossAgent[0].train()
+        if self.debug:
+            log.debug(f"Boss00 training started via GOD")
+        #"""
         return
 
     pass

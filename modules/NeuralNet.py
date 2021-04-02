@@ -65,10 +65,14 @@ class Network(nn.Module):
             For layers with activation function
             #"""
             layers.append(kwargs[l1][2])
+        self.myLayers=layers
+        self.hypoThesis = nn.Sequential(*layers)
+        self.params = self.hypoThesis.parameters()
+
         if self.debug:
             log.debug(f"Layers for {self.name} = {layers}")
-        self.model = nn.Sequential(*layers)
-        self.params = self.model.parameters()
+            log.debug(f"{self.name} Model: {self.hypoThesis}")
+
         """
         Initiallising model
         Rest parameters to uniform
@@ -91,9 +95,43 @@ class Network(nn.Module):
         Output for Policy network   : Probability Distribution Parameter
         Output for Critic network   : Advantage
         #"""
-        output = self.model(currentState)
+        output = self.hypoThesis(currentState)
         if self.debug:
             log.debug(f"current state for {self.name} : {currentState}")
             log.debug(f"output of model = {output}")
         return output
     pass
+
+class Aktor(nn.Module):
+    def __init__(self):
+        super(Aktor,self).__init__()
+        self.learningRate = 1e-3
+        self.model = nn.Sequential(
+            nn.Linear(in_features=9,out_features=20),
+            nn.Tanh(),
+            nn.Linear(in_features=20,out_features=50),
+            nn.ReLU(),
+            nn.Linear(in_features=50,out_features=11),
+            nn.Softmax(),
+        )
+        self.params = self.model.parameters()
+        self.optimizer = torch.optim.SGD(self.params,lr=self.learningRate)
+    def forward(self,currentState):
+        output = self.model(currentState)
+        return output
+
+class Kritc(nn.Module):
+    def __init__(self):
+        super(Kritc,self).__init__()
+        self.learningRate = 1e-3
+        self.model = nn.Sequential(
+            nn.Linear(in_features=9,out_features=20),
+            nn.ELU(),
+            nn.Linear(in_features=20,out_features=1),
+            nn.LeakyReLU(),
+        )
+        self.params = self.model.parameters()
+        self.optimizer = torch.optim.SGD(self.params,lr=self.learningRate)
+    def forward(self,currentState):
+        output = self.model(currentState)
+        return output
