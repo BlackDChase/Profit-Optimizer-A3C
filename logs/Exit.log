@@ -1,17 +1,61 @@
+
+/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/lib/python3.8/site-packages/torch/autograd/__init__.py:130: UserWarning: Error detected in MmBackward. Traceback of forward call that caused the error:
+  File "main.py", line 17, in <module>
+    god.train()
+  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/modules/Agent.py", line 134, in train
+    self.__trainBoss()
+  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/modules/Agent.py", line 230, in __trainBoss
+    process.start()
+  File "/usr/lib/python3.8/multiprocessing/process.py", line 121, in start
+    self._popen = self._Popen(self)
+  File "/usr/lib/python3.8/multiprocessing/context.py", line 224, in _Popen
+    return _default_context.get_context().Process._Popen(process_obj)
+  File "/usr/lib/python3.8/multiprocessing/context.py", line 277, in _Popen
+    return Popen(process_obj)
+  File "/usr/lib/python3.8/multiprocessing/popen_fork.py", line 19, in __init__
+    self._launch(process_obj)
+  File "/usr/lib/python3.8/multiprocessing/popen_fork.py", line 75, in _launch
+    code = process_obj._bootstrap(parent_sentinel=child_r)
+  File "/usr/lib/python3.8/multiprocessing/process.py", line 315, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.8/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/modules/Agent.py", line 298, in train
+    self.calculateV_p()
+  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/modules/Agent.py", line 359, in calculateV_p
+    self.vPredicted[i]=self.god._getCriticValue(state)
+  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/modules/Agent.py", line 186, in _getCriticValue
+    vVlaue = self.__criticNet.forward(state)
+  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/modules/NeuralNet.py", line 90, in forward
+    output = self.model(currentState)
+  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/lib/python3.8/site-packages/torch/nn/modules/module.py", line 727, in _call_impl
+    result = self.forward(*input, **kwargs)
+  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/lib/python3.8/site-packages/torch/nn/modules/container.py", line 117, in forward
+    input = module(input)
+  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/lib/python3.8/site-packages/torch/nn/modules/module.py", line 727, in _call_impl
+    result = self.forward(*input, **kwargs)
+  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/lib/python3.8/site-packages/torch/nn/modules/linear.py", line 93, in forward
+    return F.linear(input, self.weight, self.bias)
+  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/lib/python3.8/site-packages/torch/nn/functional.py", line 1692, in linear
+    output = input.matmul(weight.t())
+ (Triggered internally at  /pytorch/torch/csrc/autograd/python_anomaly_mode.cpp:104.)
+  Variable._execution_engine.run_backward(
+  1%|▊                                                                              | 1/100 [00:01<02:04,  1.26s/it]
 Process Process-1:
 Traceback (most recent call last):
   File "/usr/lib/python3.8/multiprocessing/process.py", line 315, in _bootstrap
     self.run()
   File "/usr/lib/python3.8/multiprocessing/process.py", line 108, in run
     self._target(*self._args, **self._kwargs)
-  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/modules/Agent.py", line 299, in train
+  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/modules/Agent.py", line 305, in train
     self.calculateAndUpdateL_P()
-  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/modules/Agent.py", line 441, in calculateAndUpdateL_P
-    self.god._updatePolicy(loss/self.trajectoryLength)
-  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/modules/Agent.py", line 132, in _updatePolicy
+  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/modules/Agent.py", line 446, in calculateAndUpdateL_P
+    self.god._updatePolicy(loss)
+  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/modules/Agent.py", line 138, in _updatePolicy
     loss.backward(retain_graph=True)
   File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/lib/python3.8/site-packages/torch/tensor.py", line 221, in backward
     torch.autograd.backward(self, gradient, retain_graph, create_graph)
   File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/lib/python3.8/site-packages/torch/autograd/__init__.py", line 130, in backward
     Variable._execution_engine.run_backward(
-RuntimeError: one of the variables needed for gradient computation has been modified by an inplace operation: [torch.FloatTensor [40, 1]], which is output 0 of TBackward, is at version 2; expected version 1 instead. Hint: enable anomaly detection to find the operation that failed to compute its gradient, with torch.autograd.set_detect_anomaly(True).
+RuntimeError: one of the variables needed for gradient computation has been modified by an inplace operation: [torch.FloatTensor [40, 1]], which is output 0 of TBackward, is at version 2; expected version 1 instead. Hint: the backtrace further above shows the operation that failed to compute its gradient. The variable in question was changed in there or anywhere later. Good luck!
+

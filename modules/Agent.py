@@ -34,6 +34,12 @@ else:
     log.info("Might missing")
 #"""
 
+torch.autograd.set_detect_anomaly(True)
+"""
+Better error logging for inplace operations that throw errors in automatic differentiation.
+
+#"""
+
 class GOD:
     '''
     This class is responsible for taking the final action which will be conveyed to the enviorenment
@@ -251,7 +257,7 @@ class BOSS(GOD):
                 stateSize,
                 name,
                 gamma=0.99,
-                lamda=0.1,
+                # lamda=0.1, # Lambda was earlier used for GAE
                 depth=200,
                 debug=False,
                  ):
@@ -274,7 +280,7 @@ class BOSS(GOD):
         Eviorienment.step :: env.step has to give different outputs for different state trajectories by
         different boss. it has to take in account the diff trajectories becouse diff bosses will go to
         different states.
-        '''
+        #'''
         if self.debug:
             log.debug(f"{self.name} training started inside BOSS")
 
@@ -295,7 +301,7 @@ class BOSS(GOD):
 
             '''
             Question to be figured out :: Exactly when should the boss agents update the networks??
-            '''
+            #'''
             self.calculateAndUpdateL_P()
             # calculate  policy loss and update policy network
             self.calculateAndUpdateL_C()
@@ -377,7 +383,7 @@ class BOSS(GOD):
         end of trajectory. (Or until a depth)
 
         We have chosen choice 2 for v_tar , by terating in reverse direction in the trajectory list.
-        '''
+        #'''
         # we have set γ to be 0.99 // see this sweet γ @BlackD , α , β , θ 
         ## here 𝛄 can be variable so, the length can be changed.
         #  ans=0.0
@@ -409,11 +415,9 @@ class BOSS(GOD):
         #"""
         vPredLast = self.vPredicted[self.trajectoryLength-1]
         self.advantage.zero_()
-        for i in reversed(range(self.trajectoryLength)):
-            if i==self.trajectoryLength-1:
-                self.advantage[i]=vPredLast
-            else:
-                self.advantage[i]=self.trajectoryR[i] + self.ɤ*self.advantage[i+1] - self.vPredicted[i]
+        self.advantage[-1]=vPredLast
+        for i in reversed(range(self.trajectoryLength-1)):
+            self.advantage[i] = self.trajectoryR[i] + self.ɤ*self.advantage[i+1] - self.vPredicted[i]
         if self.debug:
             log.debug(f"Advantage = {self.advantage}")
         return
@@ -437,8 +441,9 @@ class BOSS(GOD):
 
         actionProb = self.trajectoryA
         loss = -1*torch.sum(self.advantage*torch.log(actionProb))
+        loss/=self.trajectoryLength
         log.info(f"policy loss = {loss}")
-        self.god._updatePolicy(loss/self.trajectoryLength)
+        self.god._updatePolicy(loss)
 
         self.god._policySemaphore.release()
         return
@@ -447,8 +452,9 @@ class BOSS(GOD):
         self.god._criticSemaphore.acquire()
 
         loss = torch.sum(torch.pow(self.vPredicted-self.vTarget,2))
+        loss/=self.trajectoryLength
         log.info(f"critic loss = {loss}")
-        self.god._updateCritc(loss/self.trajectoryLength)
+        self.god._updateCritc(loss)
 
         self.god._criticSemaphore.release()
         return
