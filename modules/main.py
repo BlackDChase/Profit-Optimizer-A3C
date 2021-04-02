@@ -5,7 +5,15 @@ import log
 if __name__=="__main__":
     stateSize = 9
     log.debug(f"stateSize = {stateSize}")
-    god = GOD(maxEpisode=100,nAgent=1,debug=True,trajectoryLength=25,stateSize=stateSize,actionSpace=11)
+    god = GOD(
+        maxEpisode=100,
+        nAgent=1,
+        debug=True,
+        trajectoryLength=25,
+        stateSize=stateSize,
+        actionSpaceDeviation=5,
+        # This means 5*2+1 number of action [-5*2.5, ... 0 , +5*2.5] percent change in price
+    )
     log.info("GOD inititated")
     actionSpace = god.getActionSpace()
     log.info(f"Action space: {actionSpace}")

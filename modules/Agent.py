@@ -37,7 +37,6 @@ else:
 torch.autograd.set_detect_anomaly(True)
 """
 Better error logging for inplace operations that throw errors in automatic differentiation.
-
 #"""
 
 class GOD:
@@ -50,7 +49,7 @@ class GOD:
     @Input (From Enviorenment) :: The Current State.
     @Output (To enviorenment)  :: The Final Action Taken.
     '''
-    def __init__(self,maxEpisode=100,nAgent=1,debug=False,trajectoryLength=25,stateSize=9,actionSpace=11,name="GOD"):
+    def __init__(self,maxEpisode=100,nAgent=1,debug=False,trajectoryLength=25,stateSize=9,actionSpaceDeviation=5,name="GOD"):
         '''
         Initialization of various GOD parameters, self evident from the code.
         #'''
@@ -68,7 +67,7 @@ class GOD:
         self._state = Tensor([0]*stateSize)
 
         # action space is the percent change of the current price.
-        self._actionS = actionSpace
+        self._actionSD = actionSpaceDeviation
         self.__makeActions()
 
         # semaphores do deal with simultaneous updates of the policy and critic net by multiple bosses.
@@ -80,6 +79,7 @@ class GOD:
             len(self._state),
             len(self._actionSpace),
             lr=self.__actorLR,
+            name="Policy Net",
             L1=(nn.Linear,20,nn.Tanh()),
             L2=(nn.Linear,50,nn.Softmax(dim=0)),
             debug=self.debug,
@@ -92,6 +92,7 @@ class GOD:
             len(self._state),
             1,
             lr=self.__criticLR,
+            name="Critic Net",
             L1=(nn.Linear,30,nn.ReLU6()),
             L2=(nn.Linear,40,nn.ReLU6()),
             debug=self.debug,
@@ -100,7 +101,7 @@ class GOD:
         pass
 
     def __makeActions(self):
-        actionSpace = [i/10 for i in range(-self._actionS*25,self._actionS*25+1,25)]
+        actionSpace = [i/10 for i in range(-self._actionSD*25,self._actionSD*25+1,25)]
         self._actionSpace = Tensor(actionSpace)
 
     def giveEnvironment(self,env):
@@ -177,6 +178,8 @@ class GOD:
     def _getAction(self,state):
         self._policySemaphore.acquire()
         actionProbab = self.__policyNet.forward(state)
+        if self.debug:
+            log.debug(f"Policy result = {actionProbab}")
         # Not sure if forward is the way to go
         self._policySemaphore.release()
         return actionProbab
@@ -202,7 +205,7 @@ class GOD:
                 self.__bossAgent.append(BOSS(
                     god=self,
                     name="BOSS "+str(i).zfill(2),
-                    depth=200,
+                    # depth=200, # Not using anymore
                     maxEpisode=self.maxEpisode,
                     debug=self.debug,
                     trajectoryLength=self.trajectoryLength,
@@ -258,7 +261,7 @@ class BOSS(GOD):
                 name,
                 gamma=0.99,
                 # lamda=0.1, # Lambda was earlier used for GAE
-                depth=200,
+                # depth=200, # Not used anymore
                 debug=False,
                  ):
         super(BOSS,self).__init__(maxEpisode=maxEpisode,debug=debug,trajectoryLength=trajectoryLength,stateSize=stateSize,name=name)
@@ -267,7 +270,7 @@ class BOSS(GOD):
         self.trajectoryA = torch.zeros(self.trajectoryLength)
         self.god = god
         self.ɤ = gamma
-        self.d = depth
+        # self.d = depth # Not using anymore
         self.vPredicted = torch.zeros(self.trajectoryLength)
         self.vTarget = torch.zeros(self.trajectoryLength)
         self.advantage = torch.zeros(self.trajectoryLength)
@@ -352,7 +355,7 @@ class BOSS(GOD):
 
     def calculateV_p(self):
         # calculate the predicted v value by using critic network :: Predicted value is just the value returned by the critic network.
-        self.vPredicted.zero_()
+        self.vPredicted = Tensor(len(self.vPredicted))
         # This resets the tensor to zero
         for i in range(self.trajectoryLength):
             state=self.trajectoryS[i]
@@ -392,13 +395,13 @@ class BOSS(GOD):
         # ans+=(self.ɤ)**200*self.god._getCriticValue((self.trajectory[200][0])) ## multiply by the actual value of the 200th state.
         #  return ans
 
-        self.vTarget.zero_()
+        self.vTarget = Tensor(len(self.vTarget))
         self.vTarget[self.trajectoryLength-1] = self.trajectoryR[self.trajectoryLength-1]
         ## only the reward recieved in the last state , we can also put it zero i think
         # guess will have to consult literature on this, diff shouldn't be substantial.
         for i in reversed(range(self.trajectoryLength-1)):
             # iterate in reverse order.
-            self.vTarget[i] = self.trajectoryR[i] + self.ɤ*self.vTarget[i+1]
+            self.vTarget[i] = self.trajectoryR[i].clone() + self.ɤ*self.vTarget[i+1].clone()
             # v_tar_currentState = reward + gamma* v_tar_nextState
         return
 
@@ -414,10 +417,10 @@ class BOSS(GOD):
         Calculate Advantage using TD error/N-STEP , logic similar to vTarget calculation
         #"""
         vPredLast = self.vPredicted[self.trajectoryLength-1]
-        self.advantage.zero_()
+        self.advantage =  Tensor(len(self.advantage))
         self.advantage[-1]=vPredLast
         for i in reversed(range(self.trajectoryLength-1)):
-            self.advantage[i] = self.trajectoryR[i] + self.ɤ*self.advantage[i+1] - self.vPredicted[i]
+            self.advantage[i] = self.trajectoryR[i].clone() + self.ɤ*self.advantage[i+1].clone() - self.vPredicted[i].clone()
         if self.debug:
             log.debug(f"Advantage = {self.advantage}")
         return
