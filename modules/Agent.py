@@ -129,15 +129,15 @@ class GOD:
         return
 
     def _updatePolicy(self,loss):
-        self.__policyNet.optimizer.zero_grad()
         loss.backward()
         self.__policyNet.optimizer.step()
+        self.__policyNet.optimizer.zero_grad()
         return
 
     def _updateCritc(self,loss):
-        self.__criticNet.optimizer.zero_grad()
         loss.backward()
         self.__criticNet.optimizer.step()
+        self.__criticNet.optimizer.zero_grad()
         return
 
     def takeAction(self,state):
