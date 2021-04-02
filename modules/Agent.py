@@ -129,7 +129,7 @@ class GOD:
         return
 
     def _updatePolicy(self,loss):
-        loss.backward()
+        loss.backward(retain_graph=True)
         self.__policyNet.optimizer.step()
         self.__policyNet.optimizer.zero_grad()
         return
