@@ -135,7 +135,7 @@ class GOD:
         return
 
     def _updateCritc(self,loss):
-        loss.backward()
+        loss.backward(retain_graph=True)
         self.__criticNet.optimizer.step()
         self.__criticNet.optimizer.zero_grad()
         return
@@ -279,7 +279,7 @@ class BOSS(GOD):
             log.debug(f"{self.name} training started inside BOSS")
 
         # here the main logic of training of A2C will be present
-        for _ in range(self.maxEpisode):
+        for e in tqdm(range(self.maxEpisode)):
             self.startState = self.god.reset()
             self.gatherAndStore()
             """ @BOSS
@@ -300,6 +300,7 @@ class BOSS(GOD):
             # calculate  policy loss and update policy network
             self.calculateAndUpdateL_C()
             # calculate critic loss and update critic network
+            log.info(f"{self.name} episode {e} Completed")
         pass
 
 
@@ -449,5 +450,5 @@ class BOSS(GOD):
         log.info(f"critic loss = {loss}")
         self.god._updateCritc(loss/self.trajectoryLength)
 
-        self.god._criticSemaphore.acquire()
+        self.god._criticSemaphore.release()
         return

@@ -1,17 +1,17 @@
 Process Process-1:
 Traceback (most recent call last):
-  File "/home/black/lib/python3.8/multiprocessing/process.py", line 315, in _bootstrap
+  File "/usr/lib/python3.8/multiprocessing/process.py", line 315, in _bootstrap
     self.run()
-  File "/home/black/lib/python3.8/multiprocessing/process.py", line 108, in run
+  File "/usr/lib/python3.8/multiprocessing/process.py", line 108, in run
     self._target(*self._args, **self._kwargs)
-  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/modules/Agent.py", line 301, in train
-    self.calculateAndUpdateL_C()
-  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/modules/Agent.py", line 450, in calculateAndUpdateL_C
-    self.god._updateCritc(loss/self.trajectoryLength)
-  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/modules/Agent.py", line 139, in _updateCritc
-    loss.backward()
-  File "/home/black/.local/lib/python3.8/site-packages/torch/tensor.py", line 221, in backward
+  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/modules/Agent.py", line 299, in train
+    self.calculateAndUpdateL_P()
+  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/modules/Agent.py", line 441, in calculateAndUpdateL_P
+    self.god._updatePolicy(loss/self.trajectoryLength)
+  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/modules/Agent.py", line 132, in _updatePolicy
+    loss.backward(retain_graph=True)
+  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/lib/python3.8/site-packages/torch/tensor.py", line 221, in backward
     torch.autograd.backward(self, gradient, retain_graph, create_graph)
-  File "/home/black/.local/lib/python3.8/site-packages/torch/autograd/__init__.py", line 130, in backward
+  File "/media/black/Data/GIT/OptimizeDemandResponse/Profit-Optimizer-A3C/lib/python3.8/site-packages/torch/autograd/__init__.py", line 130, in backward
     Variable._execution_engine.run_backward(
-RuntimeError: Trying to backward through the graph a second time, but the saved intermediate results have already been freed. Specify retain_graph=True when calling backward the first time.
+RuntimeError: one of the variables needed for gradient computation has been modified by an inplace operation: [torch.FloatTensor [40, 1]], which is output 0 of TBackward, is at version 2; expected version 1 instead. Hint: enable anomaly detection to find the operation that failed to compute its gradient, with torch.autograd.set_detect_anomaly(True).
