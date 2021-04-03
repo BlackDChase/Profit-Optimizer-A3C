@@ -40,7 +40,7 @@ Better error logging for inplace operations that throw errors in automatic diffe
 #"""
 
 class GOD:
-    '''
+    """
     This class is responsible for taking the final action which will be conveyed to the enviorenment
     and the management of BOSS agents which will explore the enviorenment.
 
@@ -48,11 +48,11 @@ class GOD:
 
     @Input (From Enviorenment) :: The Current State.
     @Output (To enviorenment)  :: The Final Action Taken.
-    '''
+    """
     def __init__(self,maxEpisode=100,nAgent=1,debug=False,trajectoryLength=25,stateSize=9,actionSpaceDeviation=5,name="GOD"):
-        '''
+        """
         Initialization of various GOD parameters, self evident from the code.
-        #'''
+        #"""
         self.name=name
         self.setMaxEpisode(maxEpisode)
         self.setNumberOfAgent(nAgent)
@@ -89,7 +89,7 @@ class GOD:
 
         # Could be updated
         ## the critic network :: it's input is state and output is a scaler ( the value of the state)
-        """
+
         self.__criticNet = Network(
             len(self._state),
             1,
@@ -153,13 +153,13 @@ class GOD:
         return
 
     def takeAction(self,state):
-        '''
+        """
         Take the final action according to the Policy Network.
         This method is not called inside GOD.
         This method is only called by ENV, every time it decides to take price for next time step.
         Enviorenment will send current state and this take action will return an action via env.step
         This will be done using pretrained policyNetwork.
-        #'''
+        #"""
         actionProb = self._getAction(state)
         pd = Categorical(probs=actionProb)
         ## create a catagorical distribution acording to the actionProb
@@ -173,10 +173,10 @@ class GOD:
         return actionIndex,probab
 
     def _peakAction(self,state,action):
-        '''
+        """
         Online dilemma
         will be used at training time , for updating the networks
-        #'''
+        #"""
         result = self.__env.step(state,action)
         return result
 
@@ -202,9 +202,9 @@ class GOD:
         return self.__env.step(action)
 
     def __initateBoss(self):
-        '''
+        """
         Initialize all the boss agents for training
-        '''
+        """
         for i in range(self.__nAgent):
             if len(self.__bossAgent)<i+1:
                 self.__bossAgent.append(BOSS(
@@ -256,7 +256,7 @@ class GOD:
     pass
 
 class BOSS(GOD):
-    '''
+    """
    The actual class which does the exploration of the state space.
    Contains the code for the actor critic algorithm (Trajectory generation+ Policy gradient and value net updation )
 
@@ -267,7 +267,7 @@ class BOSS(GOD):
    @Actual Job :: To update the policy network and critic net by creating the trajectory and calculating losses.
 
 
-    '''
+    """
     def __init__(self,
                 maxEpisode,
                 god,
@@ -285,7 +285,7 @@ class BOSS(GOD):
         self.trajectoryS = torch.zeros([self.trajectoryLength,self.stateSize])
         self.trajectoryR = torch.zeros(self.trajectoryLength)
         self.trajectoryA = torch.zeros(self.trajectoryLength)
-         
+
         self.ɤ = gamma
         # self.d = depth # Not using anymore
         self.vPredicted = torch.zeros(self.trajectoryLength)
@@ -295,12 +295,12 @@ class BOSS(GOD):
         pass
 
     def train(self):
-        '''
+        """
         The Actual function to train the network , the actor-critic actual logic.
         Eviorienment.step :: env.step has to give different outputs for different state trajectories by
         different boss. it has to take in account the diff trajectories becouse diff bosses will go to
         different states.
-        #'''
+        #"""
         if self.debug:
             log.debug(f"{self.name} training started inside BOSS")
 
@@ -319,9 +319,9 @@ class BOSS(GOD):
             self.calculateV_tar()
             self.calculateNSTEPAdvantage()
 
-            '''
+            """
             Question to be figured out :: Exactly when should the boss agents update the networks??
-            #'''
+            #"""
             self.calculateAndUpdateL_P()
             # calculate  policy loss and update policy network
             self.calculateAndUpdateL_C()
@@ -332,13 +332,13 @@ class BOSS(GOD):
 
     def gatherAndStore(self):
         # gather a trajectory by acting in the enviornment using current policy
-        ''' @BOSS
+        """ @BOSS
         Do we need any changes in here?
         @Black:i dont think so , trajectory is being gathered here step by step. no problems.
         Maybe tensorize the code??
-        #'''
+        #"""
         currentState = self.startState
-        log.info(f"Starting state={currentState}")
+        log.info(f"Starting state={currentState}, for {self.name}")
         for i in range(self.trajectoryLength):
             action = self.getAction(currentState)
             #nextState,reward,info = self.god.step(currentState,action)
@@ -352,23 +352,25 @@ class BOSS(GOD):
                 log.debug(f"Action = {action}")
             currentState=nextState
         if self.debug:
-            log.debug(f"Action Probability = {self.trajectoryA}")
+            log.debug(f"Action = {self.trajectoryA}")
             log.debug(f"rewards = {self.trajectoryR}")
+            log.debug(f"vPred = {self.vPredicted}")
+            log.debug(f"vTar = {self.vTarget}")
         pass
 
     def getAction(self,state):
-        '''
+        """
         Responsible for taking the correct action from the given state using the neural net.
         @input :: current state
         @output :: the index of action which must be taken from this states, and probability of that action
-        #'''
+        #"""
         state = state.float()
         actionProb = self.god._getAction(state)
         ## This creates state-action probability vector from the policy net. 
         pd = Categorical(probs=actionProb) ## create a catagorical distribution acording to the actionProb
         ## categorical probability distribution
         actionIndex = pd.sample() ## sample the action according to the probability distribution.
-        print(actionIndex)
+
         return actionIndex
 
     def calculateV_p(self):
@@ -382,7 +384,7 @@ class BOSS(GOD):
 
     def calculateV_tar(self):
         # calculate the target value v_tar using critic network
-        '''
+        """
         This is a huge topic of debate , i.e how to actually calculate the target value, currently we have 2 propositions.
         1. v_target(s) = summation( reward + v_predicted(ss)) , where ss is some state after the trajectory.
         2. calculate v_target with the help of advantage function itself.
@@ -404,7 +406,7 @@ class BOSS(GOD):
         end of trajectory. (Or until a depth)
 
         We have chosen choice 2 for v_tar , by terating in reverse direction in the trajectory list.
-        #'''
+        #"""
         # we have set γ to be 0.99 // see this sweet γ @BlackD , α , β , θ 
         ## here 𝛄 can be variable so, the length can be changed.
         #  ans=0.0
@@ -427,6 +429,7 @@ class BOSS(GOD):
         # calculate the Advantage using the critic network
         # gae is put on hold at this time
         # To be declared at latter stage
+        raise NotImplementedError("You disturb BOSS for this?")
         pass
 
 
@@ -445,7 +448,7 @@ class BOSS(GOD):
 
     def calculateAndUpdateL_P(self):
         ### Semaphore stuff for safe update of network by multiple bosses.
-        '''
+        """
         FOR UPDATING THE ACTOR USING POLICY GRADIENT WE MUST CALCULATE THE LOG PROBABILITY OF ACTION GIVEN
         A PARTICULAR STATE.BUT IN SITUATION OF MULTIPLE AGENTS IT MAY HAPPEN THAT BEFOR AGENT 1 FETCHES THIS
         PROBABILITY AND UPDATES AND UPDATES THE NETWORK , AGENT-2 MAY HAVE TAMPERED/UPDATED THE NETWORK.
@@ -457,30 +460,37 @@ class BOSS(GOD):
 
         CHOICE 2 :: BE IGNORANT , THE CHANCE THAT 2 AGENT HAVE TAMPERED WITH THE SAME STATE BEFOR UPDATING
         THE NETWORK WITH THEIR OWN LOSS IS EXTREMELEY LOW, SO IT DOESN'T MATTERS.
-        #'''
+
+        # Advantage detached because: Advantage is the result of critc, and if it is backpropagated here,
+        critic model might face issues during it's own backpropagation
+        #"""
         self.god._policySemaphore.acquire()
 
-        actionProb = self.trajectoryA
         pd = self.god.forwardP(self.trajectoryS)
         dist = Categorical(pd)
         logProb = dist.log_prob(self.trajectoryA)
-     
         advantage = self.advantage.detach()
-        
+
         loss = -1*torch.mean(advantage*logProb)
-        log.info(f"policy loss = {loss}")
+        log.info(f"Policy loss = {loss}")
         self.god._updatePolicy(loss)
 
         self.god._policySemaphore.release()
         return
 
     def calculateAndUpdateL_C(self):
+        """
+        vTarget detached because it is assumed to be correct and thus should not be the variable that is
+        effected by loss.
+        On the other hand vPredicted should be alligned in a way to reduces loss, hence model to be modifed
+        by backpropagation keepint vPredicted attached
+        #"""
         self.god._criticSemaphore.acquire()
-        
+
         pred = self.vPredicted
         targ = self.vTarget.detach()
         loss = torch.mean(torch.pow(pred-targ,2))
-        log.info(f"critic loss = {loss}")
+        log.info(f"Critic loss = {loss}")
         self.god._updateCritc(loss)
 
         self.god._criticSemaphore.release()

@@ -7,7 +7,7 @@ if __name__=="__main__":
     log.debug(f"stateSize = {stateSize}")
     god = GOD(
         maxEpisode=100,
-        nAgent=1,
+        nAgent=2,
         debug=True,
         trajectoryLength=25,
         stateSize=stateSize,
