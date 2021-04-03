@@ -108,10 +108,7 @@ class Aktor(nn.Module):
         self.learningRate = 1e-3
         self.model = nn.Sequential(
             nn.Linear(in_features=9,out_features=20),
-            nn.Tanh(),
-            nn.Linear(in_features=20,out_features=50),
-            nn.ReLU(),
-            nn.Linear(in_features=50,out_features=11),
+            nn.Linear(in_features=20,out_features=11),
             nn.Softmax(),
         )
         self.params = self.model.parameters()

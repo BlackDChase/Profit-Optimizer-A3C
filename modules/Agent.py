@@ -82,14 +82,15 @@ class GOD:
             lr=self.__actorLR,
             name="Policy Net",
             L1=(nn.Linear,20,nn.Tanh()),
-            L2=(nn.Linear,50,nn.Softmax(dim=0)),
+            L2=(nn.Linear,50,nn.Softmax()),
             debug=self.debug,
             ## we will add softmax at end , which will give the probability distribution.
         )
 
         # Could be updated
         ## the critic network :: it's input is state and output is a scaler ( the value of the state)
-        self.__criticNet =Network(
+        """
+        self.__criticNet = Network(
             len(self._state),
             1,
             lr=self.__criticLR,
@@ -249,6 +250,9 @@ class GOD:
         #"""
         return
 
+    def forwardP(self,var):
+        return self.__policyNet.forward(var)
+    
     pass
 
 class BOSS(GOD):
@@ -276,10 +280,12 @@ class BOSS(GOD):
                 debug=False,
                  ):
         super(BOSS,self).__init__(maxEpisode=maxEpisode,debug=debug,trajectoryLength=trajectoryLength,stateSize=stateSize,name=name)
+        self.god = god
+        self.actionSpace = self.god._actionSpace
         self.trajectoryS = torch.zeros([self.trajectoryLength,self.stateSize])
         self.trajectoryR = torch.zeros(self.trajectoryLength)
         self.trajectoryA = torch.zeros(self.trajectoryLength)
-        self.god = god
+         
         self.ɤ = gamma
         # self.d = depth # Not using anymore
         self.vPredicted = torch.zeros(self.trajectoryLength)
@@ -334,12 +340,14 @@ class BOSS(GOD):
         currentState = self.startState
         log.info(f"Starting state={currentState}")
         for i in range(self.trajectoryLength):
-            action,actionProb = self.getAction(currentState)
+            action = self.getAction(currentState)
             #nextState,reward,info = self.god.step(currentState,action)
             nextState,reward,info = self.god.step(action)
             ## Oi generous env , please tell me the next state and reward for the action i have taken
             log.info(f"{self.name},  {info}")
-            self.trajectoryS[i],self.trajectoryA[i],self.trajectoryR[i] = currentState,actionProb,reward
+            self.trajectoryS[i] = currentState
+            self.trajectoryA[i] = action
+            self.trajectoryR[i] = reward
             if self.debug:
                 log.debug(f"Action = {action}")
             currentState=nextState
@@ -360,9 +368,8 @@ class BOSS(GOD):
         pd = Categorical(probs=actionProb) ## create a catagorical distribution acording to the actionProb
         ## categorical probability distribution
         actionIndex = pd.sample() ## sample the action according to the probability distribution.
-        probab = actionProb[actionIndex]
-
-        return actionIndex,probab
+        print(actionIndex)
+        return actionIndex
 
     def calculateV_p(self):
         # calculate the predicted v value by using critic network :: Predicted value is just the value returned by the critic network.
@@ -454,10 +461,13 @@ class BOSS(GOD):
         self.god._policySemaphore.acquire()
 
         actionProb = self.trajectoryA
+        pd = self.god.forwardP(self.trajectoryS)
+        dist = Categorical(pd)
+        logProb = dist.log_prob(self.trajectoryA)
+     
         advantage = self.advantage.detach()
         
-        loss = -1*torch.sum(advantage*torch.log(actionProb))
-        loss/=self.trajectoryLength
+        loss = -1*torch.mean(advantage*logProb)
         log.info(f"policy loss = {loss}")
         self.god._updatePolicy(loss)
 
@@ -469,8 +479,7 @@ class BOSS(GOD):
         
         pred = self.vPredicted
         targ = self.vTarget.detach()
-        loss = torch.sum(torch.pow(pred-targ,2))
-        loss/=self.trajectoryLength
+        loss = torch.mean(torch.pow(pred-targ,2))
         log.info(f"critic loss = {loss}")
         self.god._updateCritc(loss)
 
