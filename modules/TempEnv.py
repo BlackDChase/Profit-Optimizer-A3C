@@ -1,4 +1,13 @@
+"""
+Temporary enviornment functional as standin
+Sends random states
+#"""
+__author__ = 'BlackDChase,MR-TLL'
+__version__ = '0.1.0'
+# Imports
 import torch
+
+# Temporary Environment
 class TempEnv:
     """
     We don't have much info about environment step,reset method
