@@ -1,3 +1,10 @@
+"""
+Main function
+python main.py
+#"""
+__author__ = 'BlackDChase,MR-TLL'
+__version__ = '0.1.0'
+# Imports
 from TempEnv import TempEnv as ENV
 from Agent import GOD
 import log
@@ -8,7 +15,7 @@ if __name__=="__main__":
     god = GOD(
         maxEpisode=100,
         nAgent=2,
-        debug=True,
+        #debug=True,
         trajectoryLength=25,
         stateSize=stateSize,
         actionSpaceDeviation=5,

@@ -12,7 +12,7 @@ BOSS AGENT
 State = ((Market Demand)**2+(Ontario Demand)**2),Ontario Price,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, (TIMEstamp - optional)
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.0.5'
+__version__ = '0.0.6'
 
 # Imports
 from torch import nn, multiprocessing, device, Tensor

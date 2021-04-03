@@ -1,3 +1,12 @@
+"""
+Conatins Various Neural Nets that an Agent can use
+Primarily We would be using Network Class as it is more robust to change
+Aktor, Kritc are standins for testing
+#"""
+__author__ = 'BlackDChase,MR-TLL'
+__version__ = '0.1.0'
+
+# Imports
 import torch
 import log
 from torch import nn, device
