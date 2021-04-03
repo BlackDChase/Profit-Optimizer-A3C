@@ -14,7 +14,7 @@ class TempEnv:
         if self.actions is not None:
             action = self.actions[action]
         nextState = torch.rand(self.stateSize)
-        reward = nextState[0]*(nextState[1]-self.state[1])
+        reward = 10
         info="Step Done"
         self.state = nextState
         return nextState,reward,info
