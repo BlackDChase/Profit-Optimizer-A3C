@@ -1,3 +1,4 @@
+modules/.ipynb_checkpoints/*
 share/
 __pycache__/
 Dataset/
@@ -5,3 +6,4 @@ pyvenv.cfg
 lib/*
 bin/*
 lib64/*
+logs/*

@@ -74,7 +74,7 @@ class GOD:
         self._policySemaphore = threading.Semaphore()
         self._criticSemaphore = threading.Semaphore()
 
-        """
+        #"""
         ## defining the actual neural net itself, input is state output is probability for each action.
         self.__policyNet = Network(
             len(self._state),
@@ -98,7 +98,7 @@ class GOD:
             L2=(nn.Linear,40,nn.ReLU6()),
             debug=self.debug,
         )
-        #"""
+        """
         self.__policyNet = Aktor()
         self.__criticNet = Kritc()
         #"""
@@ -139,16 +139,16 @@ class GOD:
         self.__trainBoss()
         return
 
-    def _updatePolicy(self,loss):
-        loss.backward(retain_graph=True)
-        self.__policyNet.optimizer.step()
+    def _updatePolicy(self,lossP):
         self.__policyNet.optimizer.zero_grad()
+        lossP.backward(retain_graph=True)
+        self.__policyNet.optimizer.step()
         return
 
-    def _updateCritc(self,loss):
-        loss.backward(retain_graph=True)
-        self.__criticNet.optimizer.step()
+    def _updateCritc(self,lossC):
         self.__criticNet.optimizer.zero_grad()
+        lossC.backward(retain_graph=True)
+        self.__criticNet.optimizer.step()
         return
 
     def takeAction(self,state):
@@ -231,7 +231,7 @@ class GOD:
 
     def __trainBoss(self):
         # To be defined Later :: the actual function to train multiple bosses.
-        """
+        #"""
         bossThreads=[]
         for i in range(self.__nAgent):
             process = multiprocessing.Process(target=self.__bossAgent[i].train)
@@ -241,7 +241,7 @@ class GOD:
             bossThreads.append(process)
         for i in bossThreads:
             i.join()
-        #"""
+        """
         # Remove multiprocessing for @biribiri
         self.__bossAgent[0].train()
         if self.debug:
@@ -454,7 +454,9 @@ class BOSS(GOD):
         self.god._policySemaphore.acquire()
 
         actionProb = self.trajectoryA
-        loss = -1*torch.sum(self.advantage*torch.log(actionProb))
+        advantage = self.advantage.detach()
+        
+        loss = -1*torch.sum(advantage*torch.log(actionProb))
         loss/=self.trajectoryLength
         log.info(f"policy loss = {loss}")
         self.god._updatePolicy(loss)
@@ -464,8 +466,10 @@ class BOSS(GOD):
 
     def calculateAndUpdateL_C(self):
         self.god._criticSemaphore.acquire()
-
-        loss = torch.sum(torch.pow(self.vPredicted-self.vTarget,2))
+        
+        pred = self.vPredicted
+        targ = self.vTarget.detach()
+        loss = torch.sum(torch.pow(pred-targ,2))
         loss/=self.trajectoryLength
         log.info(f"critic loss = {loss}")
         self.god._updateCritc(loss)
