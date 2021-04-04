@@ -15,4 +15,4 @@ vim criticLossLog.tsv  -c ':%s/.*loss = //g' -c ':wq'
 vim advantageLog.tsv  -c ':%s/.*Advantage = //g' -c ':%s/\[//g'  -c ':%s/\]//g' -c ':wq'
 echo "'Post Processing Logs was a success'"
 #python ../modules/postProcessing.py $name
-echo "'Ploting was success'"
+#echo "'Ploting was success'"
