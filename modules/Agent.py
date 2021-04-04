@@ -84,7 +84,7 @@ class GOD:
             lr=self.__actorLR,
             name="Policy Net",
             L1=(nn.Linear,20,nn.Tanh()),
-            L2=(nn.Linear,50,nn.Softmax()),
+            L2=(nn.Linear,50,nn.Softmax(dim=1)),
             debug=self.debug,
             ## we will add softmax at end , which will give the probability distribution.
         )
@@ -238,7 +238,7 @@ class GOD:
         bossThreads=[]
         for i in range(self.__nAgent):
             multiThreadFactory = TqdmMultiThreadFactory()
-            process = multiprocessing.Process(target=self.__bossAgent[i].train,args=(multiThreadFactory,))
+            process = multiprocessing.Process(target=self.__bossAgent[i].train,args=(multiThreadFactory,self.__nAgent,))
             process.start()
             if self.debug:
                 log.debug(f"Boss{str(i).zfill(2)} training started via GOD")
@@ -255,6 +255,15 @@ class GOD:
 
     def forwardP(self,var):
         return self.__policyNet.forward(var)
+
+    def saveModel(self,path):
+        torch.save(self.__policyNet.state_dict(),path+"/PolicyModel.pt")
+        torch.save(self.__criticNet.state_dict(),path+"/CritcModel.pt")
+        return
+    def loadModel(self,path):
+        self.__policyNet.load_state_dict(torch.load(path))
+        self.__criticNet.load_state_dict(torch.load(path))
+
     pass
 
 class BOSS(GOD):
@@ -296,7 +305,7 @@ class BOSS(GOD):
         # If entropy H_t calculated, Init beta
         pass
 
-    def train(self,factory):
+    def train(self,factory,nAgent):
         """
         The Actual function to train the network , the actor-critic actual logic.
         Eviorienment.step :: env.step has to give different outputs for different state trajectories by
@@ -307,7 +316,7 @@ class BOSS(GOD):
             log.debug(f"{self.name} training started inside BOSS")
 
         # here the main logic of training of A2C will be present
-        with factory.create(int(self.name[-2:]),100) as progress:
+        with factory.create(int(self.name[-2:]),nAgent) as progress:
             for e in range(self.maxEpisode):
                 self.startState = self.god.reset()
                 self.gatherAndStore()

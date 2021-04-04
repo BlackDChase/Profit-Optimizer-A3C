@@ -8,7 +8,9 @@ awk "/Policy loss/ {print}" $name.tsv > "policyLossLog.tsv"
 awk "/Critic loss/ {print}" $name.tsv > "criticLossLog.tsv"
 awk "/Advantage/ {print}" $name.tsv > "advantageLog.tsv"
 
-mv "../*.pt" "./"
+mv "../CritcModel.pt" "./"
+mv "../PolicyModel.pt" "./"
+
 vim rewardLog.tsv  -c ':%s/.*rewards = //g' -c ':%s/\[//g'  -c ':%s/\]//g' -c ':wq'
 vim policyLossLog.tsv  -c ':%s/.*loss = //g' -c ':wq'
 vim criticLossLog.tsv  -c ':%s/.*loss = //g' -c ':wq'
