@@ -25,6 +25,7 @@ import threading
 import log
 import sys
 from NeuralNet import Network, Aktor, Kritc
+from TempEnv import TempEnv as ENV
 
 # GLOBAL
 #device = device("cuda" if torch.cuda.is_available() else "cpu")
@@ -51,26 +52,36 @@ class GOD:
     @Input (From Enviorenment) :: The Current State.
     @Output (To enviorenment)  :: The Final Action Taken.
     """
-    def __init__(self,maxEpisode=100,nAgent=1,debug=False,trajectoryLength=25,stateSize=9,actionSpaceDeviation=5,name="GOD"):
+    def __init__(self,maxEpisode=100,nAgent=1,debug=False,trajectoryLength=25,stateSize=9,actionSpaceDeviation=5,name="GOD",path=None,alr=1e-3,clr=1e-3):
         """
         Initialization of various GOD parameters, self evident from the code.
         #"""
         self.name=name
-        self.setMaxEpisode(maxEpisode)
-        self.setNumberOfAgent(nAgent)
-        self.setTrajectoryLength(trajectoryLength)
-        self.__bossAgent = []
-        self.debug = debug
-        self.price = 0
-        self.__actorLR = 1e-3
-        self.__criticLR = 1e-3
-        # state is the 9 dimentional tensor , defined at the top
         self.stateSize = stateSize
+
+        # state is the 9 dimentional tensor , defined at the top
         self._state = Tensor([0]*stateSize)
 
         # action space is the percent change of the current price.
         self._actionSD = actionSpaceDeviation
         self.__makeActions()
+        self.debug = debug
+        self.price = 0
+        self.__nAgent=0
+        self.__bossAgent=[]
+        if path==None:
+            self.needTraining(maxEpisode,nAgent,trajectoryLength,alr,clr)
+        else:
+            self.loadModel(path)
+        pass
+
+    def needTraining(self,maxEpisode,nAgent,trajectoryLength,alr,clr):
+        log.info("This GOD will train with the enviornment")
+        self.setMaxEpisode(maxEpisode)
+        self.setNumberOfAgent(nAgent)
+        self.setTrajectoryLength(trajectoryLength)
+        self.__actorLR = alr
+        self.__criticLR = clr
 
         # semaphores do deal with simultaneous updates of the policy and critic net by multiple bosses.
         self._policySemaphore = threading.Semaphore()
@@ -105,7 +116,7 @@ class GOD:
         self.__policyNet = Aktor()
         self.__criticNet = Kritc()
         #"""
-        pass
+        return
 
     def __makeActions(self):
         actionSpace = [i/10 for i in range(-self._actionSD*25,self._actionSD*25+1,25)]
@@ -208,9 +219,12 @@ class GOD:
         Initialize all the boss agents for training
         """
         for i in range(self.__nAgent):
+            env = ENV(self.stateSize,len(self._actionSpace))
+            log.info(f"BOSS {str(i).zfill(2)}'s TempEnv made")
             if len(self.__bossAgent)<i+1:
                 self.__bossAgent.append(BOSS(
                     god=self,
+                    env=env,
                     name="BOSS "+str(i).zfill(2),
                     # depth=200, # Not using anymore
                     maxEpisode=self.maxEpisode,
@@ -222,7 +236,8 @@ class GOD:
                 self.__bossAgent[i]=BOSS(
                     god=self,
                     name="BOSS "+str(i),
-                    depth=200,
+                    env=env,
+                    # depth=200, # Not Using anymore
                     maxEpisode=self.maxEpisode,
                     debug=self.debug,
                     trajectoryLength=self.trajectoryLength,
@@ -253,16 +268,16 @@ class GOD:
         #"""
         return
 
-    def forwardP(self,var):
-        return self.__policyNet.forward(var)
+    def forwardP(self,actions):
+        return self.__policyNet.forward(actions)
 
     def saveModel(self,path):
         torch.save(self.__policyNet.state_dict(),path+"/PolicyModel.pt")
         torch.save(self.__criticNet.state_dict(),path+"/CritcModel.pt")
         return
     def loadModel(self,path):
-        self.__policyNet.load_state_dict(torch.load(path))
-        self.__criticNet.load_state_dict(torch.load(path))
+        self.__policyNet = torch.load(path+"/PolicyModel.pt")
+        self.__criticNet = torch.load(path+"/CritcModel.pt")
 
     pass
 
@@ -278,20 +293,22 @@ class BOSS(GOD):
    @Actual Job :: To update the policy network and critic net by creating the trajectory and calculating losses.
 
 
-    """
+    #"""
     def __init__(self,
-                maxEpisode,
-                god,
-                trajectoryLength,
-                stateSize,
-                name,
-                gamma=0.99,
-                # lamda=0.1, # Lambda was earlier used for GAE
-                # depth=200, # Not used anymore
-                debug=False,
+                 maxEpisode,
+                 god,
+                 trajectoryLength,
+                 stateSize,
+                 name,
+                 env,
+                 gamma=0.99,
+                 # lamda=0.1, # Lambda was earlier used for GAE
+                 # depth=200, # Not used anymore
+                 debug=False,
                  ):
         super(BOSS,self).__init__(maxEpisode=maxEpisode,debug=debug,trajectoryLength=trajectoryLength,stateSize=stateSize,name=name)
         self.god = god
+        self.env = env
         self.actionSpace = self.god._actionSpace
         self.trajectoryS = torch.zeros([self.trajectoryLength,self.stateSize])
         self.trajectoryR = torch.zeros(self.trajectoryLength)
@@ -318,7 +335,7 @@ class BOSS(GOD):
         # here the main logic of training of A2C will be present
         with factory.create(int(self.name[-2:]),nAgent) as progress:
             for e in range(self.maxEpisode):
-                self.startState = self.god.reset()
+                self.startState = self.env.reset()
                 self.gatherAndStore()
                 """ @BOSS
                 Do we need to intiallise here?? when we are re declaring it in the three cal methods
@@ -354,8 +371,8 @@ class BOSS(GOD):
         log.info(f"Starting state={currentState}, for {self.name}")
         for i in range(self.trajectoryLength):
             action = self.getAction(currentState)
-            #nextState,reward,info = self.god.step(currentState,action)
-            nextState,reward,info = self.god.step(action)
+            #nextState,reward,info = self.god.step(action)
+            nextState,reward,info = self.env.step(action)
             ## Oi generous env , please tell me the next state and reward for the action i have taken
             log.info(f"{self.name},  {info}")
             self.trajectoryS[i] = currentState
