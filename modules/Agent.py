@@ -20,6 +20,7 @@ from torch.distributions import Categorical
 import torch
 import numpy as np
 from tqdm import tqdm
+from tqdm_multi_thread import TqdmMultiThreadFactory
 import threading
 import log
 import sys
@@ -38,6 +39,7 @@ torch.autograd.set_detect_anomaly(True)
 """
 Better error logging for inplace operations that throw errors in automatic differentiation.
 #"""
+
 
 class GOD:
     """
@@ -235,7 +237,8 @@ class GOD:
         #"""
         bossThreads=[]
         for i in range(self.__nAgent):
-            process = multiprocessing.Process(target=self.__bossAgent[i].train)
+            multiThreadFactory = TqdmMultiThreadFactory()
+            process = multiprocessing.Process(target=self.__bossAgent[i].train,args=(multiThreadFactory,))
             process.start()
             if self.debug:
                 log.debug(f"Boss{str(i).zfill(2)} training started via GOD")
@@ -293,7 +296,7 @@ class BOSS(GOD):
         # If entropy H_t calculated, Init beta
         pass
 
-    def train(self):
+    def train(self,factory):
         """
         The Actual function to train the network , the actor-critic actual logic.
         Eviorienment.step :: env.step has to give different outputs for different state trajectories by
@@ -304,28 +307,30 @@ class BOSS(GOD):
             log.debug(f"{self.name} training started inside BOSS")
 
         # here the main logic of training of A2C will be present
-        for e in tqdm(range(self.maxEpisode)):
-            self.startState = self.god.reset()
-            self.gatherAndStore()
-            """ @BOSS
-            Do we need to intiallise here?? when we are re declaring it in the three cal methods
-            Also, if we are declaring them lets declare them instart, and keep it in device
-            and After each gatherAndStore reset it.
-            ## @BLACK :: NO we dont need to initialize here ,i have removed it.
-            Also what which advantage function are we calling? @Black :: Nstep advantage.
-            #"""
-            self.calculateV_p()
-            self.calculateV_tar()
-            self.calculateNSTEPAdvantage()
+        with factory.create(int(self.name[-2:]),100) as progress:
+            for e in range(self.maxEpisode):
+                self.startState = self.god.reset()
+                self.gatherAndStore()
+                """ @BOSS
+                Do we need to intiallise here?? when we are re declaring it in the three cal methods
+                Also, if we are declaring them lets declare them instart, and keep it in device
+                and After each gatherAndStore reset it.
+                ## @BLACK :: NO we dont need to initialize here ,i have removed it.
+                Also what which advantage function are we calling? @Black :: Nstep advantage.
+                #"""
+                self.calculateV_p()
+                self.calculateV_tar()
+                self.calculateNSTEPAdvantage()
 
-            """
-            Question to be figured out :: Exactly when should the boss agents update the networks??
-            #"""
-            self.calculateAndUpdateL_P()
-            # calculate  policy loss and update policy network
-            self.calculateAndUpdateL_C()
-            # calculate critic loss and update critic network
-            log.info(f"{self.name} episode {e} Completed")
+                """
+                Question to be figured out :: Exactly when should the boss agents update the networks??
+                #"""
+                self.calculateAndUpdateL_P()
+                # calculate  policy loss and update policy network
+                self.calculateAndUpdateL_C()
+                # calculate critic loss and update critic network
+                log.info(f"{self.name} episode {e} Completed")
+                progress.update(1)
         pass
 
 
