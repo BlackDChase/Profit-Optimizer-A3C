@@ -59,6 +59,14 @@
         - In online we don't need to create trajectory.
         - We just sample a action and update the network step-by-step.
 
+## Conclusion
+- Our model is a a3c based agent, which has two different types of agents GOD and BOSS.
+  God is responsible for taking the final action in a Online setting as well as coordination of
+  various boss agents and the network.
+  Boss is responsible for exploration of the environment and applying a2c algorithm, different boss agents
+  then asynchronously update the Network.
+- Model is concerned with choosing the appropriate price increase/decrease for the current state(current demand)
+  in hope that it will maximize the profit of the energy company and minimize the losses.
 
 ## Annexure
 @ Overriden method
