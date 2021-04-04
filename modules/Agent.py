@@ -252,7 +252,15 @@ class GOD:
 
     def forwardP(self,var):
         return self.__policyNet.forward(var)
+
+    def saveModel(self,path):
+        torch.save(self.__policyNet.state_dict(),path)
+        torch.save(self.__criticNet.state_dict(),path)
+        return
     
+    def loadModel(self,path):
+        self.__policyNet.load_state_dict(torch.load(path))
+        self.__criticNet.load_state_dict(torch.load(path))
     pass
 
 class BOSS(GOD):
