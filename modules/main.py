@@ -1,6 +1,6 @@
 """
 Main function
-python ar.py -n=3 -e=100 -t=50 -a=7 -d=t
+python main.py -n=3 -e=100 -t=50 -a=7 -d=t
 Parameters:
     - n = Number of agents
     - e = Number of episodes
@@ -22,8 +22,8 @@ if __name__=="__main__":
     keywords={
         "n":2,
         "e":100,
-        "t":25,
-        "a":5,
+        "t":5,
+        "a":3,
         "d":False
     }
     stateSize = 9
@@ -55,6 +55,7 @@ if __name__=="__main__":
     threadCount=0
     try:
         god.train()
+        god.saveModel("../Saved_model/")
     except Exception as catch:
         #log.debug(f"Terminaion Trace back {catch.with_traceback()}")
         threadCount+=1
