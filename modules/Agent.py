@@ -12,7 +12,7 @@ BOSS AGENT
 State = ((Market Demand)**2+(Ontario Demand)**2),Ontario Price,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, (TIMEstamp - optional)
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 # Imports
 from torch import nn, multiprocessing, device, Tensor
@@ -252,7 +252,6 @@ class GOD:
 
     def forwardP(self,var):
         return self.__policyNet.forward(var)
-    
     pass
 
 class BOSS(GOD):
@@ -474,7 +473,7 @@ class BOSS(GOD):
         loss = -1*torch.mean(advantage*logProb)
         log.info(f"Policy loss = {loss}")
         self.god._updatePolicy(loss)
-
+        log.info(f"Updated policyLoss for {self.name}")
         self.god._policySemaphore.release()
         return
 
@@ -492,6 +491,7 @@ class BOSS(GOD):
         loss = torch.mean(torch.pow(pred-targ,2))
         log.info(f"Critic loss = {loss}")
         self.god._updateCritc(loss)
+        log.info(f"Updated criticLoss for {self.name}")
 
         self.god._criticSemaphore.release()
         return

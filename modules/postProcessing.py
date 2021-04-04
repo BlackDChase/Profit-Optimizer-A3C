@@ -1,3 +1,18 @@
+"""
+Post processing to produce graphs from logs
+- [X] Reward
+- [ ] Policy Loss
+- [ ] Critic Loss
+- [ ] Advantage
+
+Currently is a RIPOFF of postProcessing made for MIDAS
+#"""
+__author__ = 'BlackDChase'
+__version__ = '0.1.8'
+
+# Imports
+
+
 import matplotlib.pyplot as plt
 import sys
 import numpy as np
@@ -123,4 +138,3 @@ if __name__ == '__main__':
     plt.plot(endBal)
     plt.savefig(folderName+"final Balance.svg")
     plt.close()
-
