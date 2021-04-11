@@ -1,4 +1,10 @@
 # Adjusting Price to maximize profit using A3C
+
+## Ref
+- [Research Paper](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/unstable/Paper.pdf)
+- Incomplete
+    - Missing Train and test Results
+
 ## Decisions
 - Model has to be scaled in way that it can adjust for the following scenario
 - Need to decide whether to use `reducedDF` or `advancedDF`
