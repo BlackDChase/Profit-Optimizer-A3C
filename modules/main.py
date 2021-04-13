@@ -5,12 +5,13 @@ Parameters:
     - n = Number of agents
     - e = Number of episodes
     - t = Length of trajectory
-    - a = Number of deciations in action
+    - a = Number of deviations in action
         - This means if a=5, 5*2+1 number of action [-12.5,-10 ... 0 ... +10,+12.5] percent change in price
     - d = If debug to be part of logs
     - alr = Actor Learning rate
     - clr = Critic Learning rate
     - p = Path of folder which contains PolicModel.py, CriticModel.pt
+    - h = Help
 #"""
 
 __author__ = 'BlackDChase,MR-TLL'
@@ -46,6 +47,21 @@ if __name__=="__main__":
             keywords[key[1:]] = int(value)
         log.info(f"Parameter {keywords[key[1:]]} is {value}")
     if "h" in keywords:
+        print("""
+Main function
+python main.py -n=3 -e=100 -t=50 -a=7 -d=t -alr=0.001 -clr=0.001 -p="../Saved_model/Sun-04-04-21/"
+Parameters:
+    - n     Number of agents
+    - e     Number of episodes
+    - t     Length of trajectory
+    - a     Number of deviations in action
+            This means if a=5, 5*2+1 number of action [-12.5,-10 ... 0 ... +10,+12.5] percent change in price
+    - d     If debug to be part of logs
+    - alr   Actor Learning rate
+    - clr   Critic Learning rate
+    - p     Path of folder which contains PolicModel.py, CriticModel.pt
+    - h     Help""")
+
     if "p" not in keywords.keys():
         god = GOD(
             stateSize=stateSize,
