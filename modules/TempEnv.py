@@ -32,3 +32,8 @@ class TempEnv:
         self.state = torch.rand(self.stateSize)
         return self.state
     pass
+
+class LSTM(torch.nn.Module):
+    def __init__(self,model):
+        super(LSTM, self).__init__()
+        self.load_state_dict(torch.load(model))
