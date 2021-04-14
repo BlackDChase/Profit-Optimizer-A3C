@@ -2,6 +2,8 @@ import gym
 import pandas as pd
 import numpy as np
 from collections import deque
+import random
+import log
 
 # increment / decrement price by x%
 ACTION_INC_10 = 0
@@ -12,8 +14,8 @@ ACTION_HOLD = 4
 
 class DatasetHelper:
     def __init__(self, dataset_path, max_input_len):
-        self.dataset_path = path
-        self.df = pd.read_read_csv(self.dataset_path)
+        self.dataset_path = dataset_path
+        self.df = pd.read_csv(self.dataset_path)
         self.max_input_len = max_input_len
 
     def reset(self):
@@ -36,9 +38,10 @@ class LSTMEnv(gym.Env):
         # Initialize self.observation_space
         # required for self.current_observation
         self.observation_space = gym.spaces.Box(
-                                                low=-nf.inf, 
-                                                high=np.inf, 
-                                                shape=(self.model.input_size))
+                                                low=-nf.inf,
+                                                high=np.inf,
+                                                shape=(self.model.input_size),
+        )
 
         # create model input deque
         model_input = deque([], maxlen=max_input_len)

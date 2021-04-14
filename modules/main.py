@@ -80,7 +80,7 @@ Parameters:
         log.info("GOD inititated")
         actionSpace = god.getActionSpace()
         log.info(f"Action space: {actionSpace}")
-      # env = ENV(stateSize,actionSpace)
+        # env = ENV(stateSize,actionSpace)
         env=ENV.LSTM("ENV_MODEL/lstm_model.pt","../Dataset/13_Coloumn.csv")
         log.info("Environment inititated")
         god.giveEnvironment(env)
