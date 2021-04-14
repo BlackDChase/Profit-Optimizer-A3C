@@ -98,6 +98,7 @@ class LSTMEnv(gym.Env):
     def get_new_price(self, action):
         """
         Modify the price according to the action taken.
+        10,15 % change rather than 10,50
         """
         price_index = 0
         old_price = self.current_observation[price_index]
@@ -106,11 +107,11 @@ class LSTMEnv(gym.Env):
         elif action == ACTION_INC_10:
             return old_price * 1.1
         elif action == ACTION_INC_50:
-            return old_price * 1.5
+            return old_price * 1.15
         elif action == ACTION_DEC_10:
             return old_price * 0.9
         elif action == ACTION_DEC_50:
-            return old_price * 0.5
+            return old_price * 0.85
         else:
             print("WARNING: Illegal action")
             log.debug(f"action = {action}")
@@ -124,6 +125,6 @@ class LSTMEnv(gym.Env):
         """
         market_demand_index = 1
         ontario_demand_index = 2
-        demand = self.current_observation[market_demand_index] + 
-                self.current_observation[ontario_demand_index]
-        return demand * new_price
+        demand = (self.current_observation[market_demand_index]
+        + self.current_observation[ontario_demand_index])/2
+        return (demand * new_price)**(1/2)
