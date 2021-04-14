@@ -1,4 +1,3 @@
-import torch
 import gym
 import pandas as pd
 import numpy as np
@@ -33,16 +32,12 @@ class LSTMEnv(gym.Env):
         """
         model = trained LSTM model from lstm.py
         """
-        self.model = torch.load(model)
+        self.model = model
         self.dataset_helper = DatasetHelper(dataset_path,max_input_len)
 
         # Initialize self.observation_space
         # required for self.current_observation
-        self.observation_space = gym.spaces.Box(
-                                                low=-np.inf,
-                                                high=np.inf,
-                                                shape=(self.model.input_size),
-        )
+        self.observation_space = gym.spaces.Box(low=-np.inf,high=np.inf,shape=(self.model.input_dim))
 
         # create model input deque
         model_input = deque([], maxlen=max_input_len)
