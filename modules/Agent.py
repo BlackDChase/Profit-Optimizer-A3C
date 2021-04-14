@@ -63,7 +63,7 @@ class GOD:
         self._state = Tensor([0]*stateSize)
 
         # action space is the percent change of the current price.
-        self._actionSD = actionSpaceDeviation
+        self._actionSD = int(actionSpaceDeviation)
         self.__makeActions()
         self.debug = debug
         self.price = 0

@@ -48,7 +48,7 @@ if __name__=="__main__":
             keywords[key[1:]] = value
             # For path (saved model)
         else:
-            keywords[key[1:]] = int(value)
+            keywords[key[1:]] = float(value)
         log.info(f"Parameter {keywords[key[1:]]} is {value}")
     if "h" in keywords:
         print("""
@@ -81,7 +81,7 @@ Parameters:
         actionSpace = god.getActionSpace()
         log.info(f"Action space: {actionSpace}")
         # env = ENV(stateSize,actionSpace)
-        env=ENV.LSTM("ENV_MODEL/lstm_model.pt","../Dataset/13_Coloumn.csv")
+        env=ENV("ENV_MODEL/lstm_model.pt","../Dataset/13_columns.csv")
         log.info("Environment inititated")
         god.giveEnvironment(env)
         log.info("Environment parsed, Boss inititated")
@@ -106,7 +106,7 @@ Parameters:
         actionSpace = god.getActionSpace()
         log.info(f"Action space: {actionSpace}")
         # env = ENV(stateSize,actionSpace)
-        env=ENV.LSTM("ENV_MODEL/lstm_model.pt","../Dataset/13_Coloumn.csv")
+        env=ENV("ENV_MODEL/lstm_model.pt","../Dataset/13_Coloumn.csv")
         log.info("Environment inititated")
         god.giveEnvironment(env)
         log.info("Environment parsed, Boss inititated")
