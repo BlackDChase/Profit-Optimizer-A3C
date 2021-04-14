@@ -16,7 +16,8 @@ Parameters:
 __author__ = 'BlackDChase,MR-TLL'
 __version__ = '0.1.1'
 # Imports
-from TempEnv import TempEnv as ENV
+# from TempEnv import TempEnv as ENV
+from env import LSTMEnv as ENV
 from Agent import GOD
 import log
 import sys
@@ -33,6 +34,9 @@ if __name__=="__main__":
     }
     stateSize = 9
     log.info(f"stateSize = {stateSize}")
+    
+    
+
 
     for arg in sys.argv[1:]:
         key,value = arg.split("=")
@@ -60,7 +64,8 @@ if __name__=="__main__":
         log.info("GOD inititated")
         actionSpace = god.getActionSpace()
         log.info(f"Action space: {actionSpace}")
-        env = ENV(stateSize,actionSpace)
+      # env = ENV(stateSize,actionSpace)
+        env=ENV.LSTM("ENV_MODEL/lstm_model.pt","../Dataset/13_Coloumn.csv")
         log.info("Environment inititated")
         god.giveEnvironment(env)
         log.info("Environment parsed, Boss inititated")
@@ -84,7 +89,8 @@ if __name__=="__main__":
         log.info("GOD inititated")
         actionSpace = god.getActionSpace()
         log.info(f"Action space: {actionSpace}")
-        env = ENV(stateSize,actionSpace)
+        # env = ENV(stateSize,actionSpace)
+        env=ENV.LSTM("ENV_MODEL/lstm_model.pt","../Dataset/13_Coloumn.csv")
         log.info("Environment inititated")
         god.giveEnvironment(env)
         log.info("Environment parsed, Boss inititated")
