@@ -17,9 +17,12 @@ Parameters:
 __author__ = 'BlackDChase,MR-TLL'
 __version__ = '0.1.3'
 # Imports
+"""
 from TempEnv import TempEnv as ENV
-#from lstm import LSTM
-#from env import LSTMEnv as ENV
+"""
+from lstm import LSTM
+from env import LSTMEnv as ENV
+#"""
 from Agent import GOD
 import log
 import sys
@@ -79,16 +82,16 @@ Parameters:
         actionSpace = god.getActionSpace()
         log.info(f"Action space: {actionSpace}")
 
-        """
+        #"""
         output_size = 13
         input_dim = output_size
         hidden_dim = 128
         layer_dim = 1
         model = LSTM(output_size, input_dim, hidden_dim, layer_dim)
         model.loadM("ENV_MODEL/lstm_model.pt")
-        log.info(f"Model = {model}")
+        log.info(f"LSTM Model = {model}")
         env=ENV(model,"../Dataset/13_columns.csv")
-        #"""
+        """
         env = ENV(stateSize,actionSpace)
         #"""
         log.info("Environment inititated")
@@ -115,10 +118,10 @@ Parameters:
         log.info("GOD inititated")
         actionSpace = god.getActionSpace()
         log.info(f"Action space: {actionSpace}")
-        """
+        #"""
         model=LSTM("ENV_MODEL/lstm_model.pt")
         env=ENV(model,"../Dataset/13_columns.csv")
-        #"""
+        """
         env = ENV(stateSize,actionSpace)
         #"""
         log.info("Environment inititated")
