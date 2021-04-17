@@ -12,7 +12,7 @@ BOSS AGENT
 State = ((Market Demand)**2+(Ontario Demand)**2),Ontario Price,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, (TIMEstamp - optional)
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.1.1'
+__version__ = '0.1.3'
 
 # Imports
 from torch import nn, multiprocessing, device, Tensor
@@ -26,6 +26,7 @@ import log
 import sys
 from NeuralNet import Network, Aktor, Kritc
 from TempEnv import TempEnv as ENV
+#from env import LSTMEnv as ENV
 
 # GLOBAL
 #device = device("cuda" if torch.cuda.is_available() else "cpu")
@@ -95,7 +96,7 @@ class GOD:
             lr=self.__actorLR,
             name="Policy Net",
             L1=(nn.Linear,20,nn.Tanh()),
-            L2=(nn.Linear,50,nn.Softmax(dim=1)),
+            L2=(nn.Linear,50,nn.Softmax(dim=0)),
             debug=self.debug,
             ## we will add softmax at end , which will give the probability distribution.
         )
@@ -119,6 +120,7 @@ class GOD:
         return
 
     def __makeActions(self):
+        log.info(f"Action Standard Deviation = {self._actionSD}")
         actionSpace = [i/10 for i in range(-self._actionSD*25,self._actionSD*25+1,25)]
         self._actionSpace = Tensor(actionSpace)
 
@@ -217,32 +219,24 @@ class GOD:
     def __initateBoss(self):
         """
         Initialize all the boss agents for training
-        """
+        #"""
         for i in range(self.__nAgent):
-            env = ENV(self.stateSize,len(self._actionSpace))
+            env = ENV(self.stateSize,self._actionSpace)
             log.info(f"BOSS {str(i).zfill(2)}'s TempEnv made")
+            boss = BOSS(
+                god=self,
+                env=env,
+                name="BOSS "+str(i).zfill(2),
+                # depth=200, # Not using anymore
+                maxEpisode=self.maxEpisode,
+                debug=self.debug,
+                trajectoryLength=self.trajectoryLength,
+                stateSize=self.stateSize,
+            )
             if len(self.__bossAgent)<i+1:
-                self.__bossAgent.append(BOSS(
-                    god=self,
-                    env=env,
-                    name="BOSS "+str(i).zfill(2),
-                    # depth=200, # Not using anymore
-                    maxEpisode=self.maxEpisode,
-                    debug=self.debug,
-                    trajectoryLength=self.trajectoryLength,
-                    stateSize=self.stateSize,
-                ))
+                self.__bossAgent.append(boss)
             else:
-                self.__bossAgent[i]=BOSS(
-                    god=self,
-                    name="BOSS "+str(i),
-                    env=env,
-                    # depth=200, # Not Using anymore
-                    maxEpisode=self.maxEpisode,
-                    debug=self.debug,
-                    trajectoryLength=self.trajectoryLength,
-                    stateSize=self.stateSize,
-                )
+                self.__bossAgent[i] = boss
             if self.debug:
                 log.debug(f"Boss{str(i).zfill(2)} created")
         return self.__bossAgent
