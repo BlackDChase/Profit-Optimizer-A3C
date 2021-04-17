@@ -11,7 +11,7 @@ import torch
 import log
 from torch import nn, device
 # GLOBAL
-#device = device("cuda" if torch.cuda.is_available() else "cpu")
+device = device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Network(nn.Module):
     #global device
@@ -76,6 +76,8 @@ class Network(nn.Module):
             layers.append(kwargs[l1][2])
         self.myLayers=layers
         self.hypoThesis = nn.Sequential(*layers)
+
+        self.to(device)
         self.params = self.hypoThesis.parameters()
 
         if self.debug:
@@ -88,12 +90,14 @@ class Network(nn.Module):
         0 is lower bound, 1 is upper bound
         But thats not working
         """
+
         #nn.init.uniform_(self.params,0,1)
         """
         Optimizer and loss function
         #"""
         self.optimizer = torch.optim.SGD(self.params,lr=self.learningRate)
         #self.optimizer = torch.optim.Adam(self.params,lr=self.learningRate)
+
         pass
 
     def forward(self,currentState):
@@ -120,6 +124,7 @@ class Aktor(nn.Module):
             nn.Linear(in_features=20,out_features=11),
             nn.Softmax(),
         )
+        self.to(device)
         self.params = self.model.parameters()
         self.optimizer = torch.optim.SGD(self.params,lr=self.learningRate)
     def forward(self,currentState):
@@ -136,6 +141,7 @@ class Kritc(nn.Module):
             nn.Linear(in_features=20,out_features=1),
             nn.LeakyReLU(),
         )
+        self.to(device)
         self.params = self.model.parameters()
         self.optimizer = torch.optim.SGD(self.params,lr=self.learningRate)
     def forward(self,currentState):

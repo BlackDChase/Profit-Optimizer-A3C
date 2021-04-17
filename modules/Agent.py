@@ -25,7 +25,7 @@ import threading
 import log
 import sys
 from NeuralNet import Network, Aktor, Kritc
-"""
+#"""
 from TempEnv import TempEnv as ENV
 """
 from env import LSTMEnv as ENV
@@ -43,8 +43,8 @@ envDATA="../Dataset/13_columns.csv"
 
 
 # GLOBAL
-#device = device("cuda" if torch.cuda.is_available() else "cpu")
-"""
+#"""
+device = device("cuda" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
     log.info("Using Allmight")
 else:
@@ -235,7 +235,7 @@ class GOD:
         Initialize all the boss agents for training
         #"""
         for i in range(self.__nAgent):
-            """
+            #"""
             env = ENV(self.stateSize,self._actionSpace)
             """
             env = ENV(LSTM,envDATA)
@@ -472,8 +472,6 @@ class BOSS(GOD):
         # gae is put on hold at this time
         # To be declared at latter stage
         raise NotImplementedError("You disturb BOSS for this?")
-        pass
-
 
     def calculateNSTEPAdvantage(self):
         """
