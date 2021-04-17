@@ -15,11 +15,11 @@ Parameters:
 #"""
 
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.1.1'
+__version__ = '0.1.3'
 # Imports
-#from TempEnv import TempEnv
-from lstm import LSTM
-from env import LSTMEnv as ENV
+from TempEnv import TempEnv as ENV
+#from lstm import LSTM
+#from env import LSTMEnv as ENV
 from Agent import GOD
 import log
 import sys
@@ -47,7 +47,7 @@ if __name__=="__main__":
             # For path (saved model)
         else:
             keywords[key[1:]] = float(value)
-        log.info(f"Parameter {keywords[key[1:]]} is {value}")
+        log.info(f"Parameter {key[1:]} is {value}")
     if "h" in keywords:
         print("""
 Main function
@@ -66,12 +66,12 @@ Parameters:
 
     if "p" not in keywords.keys():
         god = GOD(
-            stateSize=stateSize,
-            actionSpaceDeviation=keywords["a"],
+            stateSize=int(stateSize),
+            actionSpaceDeviation=int(keywords["a"]),
             debug=keywords["d"],
-            maxEpisode=keywords["e"],
-            nAgent=keywords["n"],
-            trajectoryLength=keywords["t"],
+            maxEpisode=int(keywords["e"]),
+            nAgent=int(keywords["n"]),
+            trajectoryLength=int(keywords["t"]),
             alr=keywords["alr"],
             clr=keywords["clr"]
         )
@@ -79,7 +79,7 @@ Parameters:
         actionSpace = god.getActionSpace()
         log.info(f"Action space: {actionSpace}")
 
-        # env = ENV(stateSize,actionSpace)
+        """
         output_size = 13
         input_dim = output_size
         hidden_dim = 128
@@ -87,8 +87,10 @@ Parameters:
         model = LSTM(output_size, input_dim, hidden_dim, layer_dim)
         model.loadM("ENV_MODEL/lstm_model.pt")
         log.info(f"Model = {model}")
-
         env=ENV(model,"../Dataset/13_columns.csv")
+        #"""
+        env = ENV(stateSize,actionSpace)
+        #"""
         log.info("Environment inititated")
 
         god.giveEnvironment(env)
@@ -106,16 +108,19 @@ Parameters:
     else:
         god = GOD(
             debug=keywords["d"],
-            stateSize=stateSize,
-            actionSpaceDeviation=keywords["a"],
+            stateSize=int(stateSize),
+            actionSpaceDeviation=int(keywords["a"]),
             path=keywords["p"],
         )
         log.info("GOD inititated")
         actionSpace = god.getActionSpace()
         log.info(f"Action space: {actionSpace}")
-        # env = ENV(stateSize,actionSpace)
+        """
         model=LSTM("ENV_MODEL/lstm_model.pt")
         env=ENV(model,"../Dataset/13_columns.csv")
+        #"""
+        env = ENV(stateSize,actionSpace)
+        #"""
         log.info("Environment inititated")
         god.giveEnvironment(env)
         log.info("Environment parsed, Boss inititated")

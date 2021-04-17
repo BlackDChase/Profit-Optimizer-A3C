@@ -4,7 +4,7 @@ Primarily We would be using Network Class as it is more robust to change
 Aktor, Kritc are standins for testing
 #"""
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.1.0'
+__version__ = '0.1.3'
 
 # Imports
 import torch
@@ -15,7 +15,7 @@ from torch import nn, device
 
 class Network(nn.Module):
     #global device
-    def __init__(self,stateSize,actionSize,name,debug=False,lr=1e-3,**kwargs):
+    def __init__(self,stateSize,outputSize,name,debug=False,lr=1e-3,**kwargs):
         #print(kwargs)
         #sys.exit()
         """
@@ -23,7 +23,7 @@ class Network(nn.Module):
         Parameters:
         __________
         : stateSize     : Input Size
-        : actionSize    : Output Size
+        : outputSize    : Output Size
         : **kwargs      : Keyword arguments for different layers should be L1,L2,L3..
                           (because its a dic and will change the oredring atuomatically)
                           Later we kan have it Ordered dic to be directly sent throught
@@ -32,7 +32,7 @@ class Network(nn.Module):
         #"""
         super(Network,self).__init__()
         self.inputSize = stateSize
-        self.outputSize = actionSize
+        self.outputSize = outputSize
         self.learningRate = lr
         self.debug = debug
         self.name = name
@@ -47,7 +47,7 @@ class Network(nn.Module):
         i=0
         if self.debug:
             log.debug(f"kwargs for {self.name} = {kwargs}")
-            log.debug(f"actionSize is {actionSize}")
+            log.debug(f"outputSize is {outputSize}")
             log.debug(f"stateSize is {stateSize}")
         for i in range(len(keyWords)-1):
             l1=keyWords[i]
@@ -65,7 +65,7 @@ class Network(nn.Module):
                 #"""
                 layers.append(kwargs[l1][2])
         l1=keyWords[len(keyWords)-1]
-        layers.append(kwargs[l1][0](kwargs[l1][1],actionSize))
+        layers.append(kwargs[l1][0](kwargs[l1][1],outputSize))
         """
         Output Layer
         #"""
