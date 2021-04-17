@@ -25,8 +25,22 @@ import threading
 import log
 import sys
 from NeuralNet import Network, Aktor, Kritc
+"""
 from TempEnv import TempEnv as ENV
-#from env import LSTMEnv as ENV
+"""
+from env import LSTMEnv as ENV
+from lstm import LSTM as LSTMmodel
+output_size = 13
+input_dim = output_size
+hidden_dim = 128
+layer_dim = 1
+LSTM = LSTMmodel(output_size, input_dim, hidden_dim, layer_dim)
+LSTM.loadM("ENV_MODEL/lstm_model.pt")
+log.info(f"LSTM Model Declared in Agent = {LSTM}")
+envDATA="../Dataset/13_columns.csv"
+# ENV(LSTM,envDATA)
+#"""
+
 
 # GLOBAL
 #device = device("cuda" if torch.cuda.is_available() else "cpu")
@@ -221,7 +235,11 @@ class GOD:
         Initialize all the boss agents for training
         #"""
         for i in range(self.__nAgent):
+            """
             env = ENV(self.stateSize,self._actionSpace)
+            """
+            env = ENV(LSTM,envDATA)
+            #"""
             log.info(f"BOSS {str(i).zfill(2)}'s TempEnv made")
             boss = BOSS(
                 god=self,
