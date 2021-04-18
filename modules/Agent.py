@@ -196,6 +196,7 @@ class GOD:
         actionIndex = pd.sample()
         probab = actionProb[actionIndex]
         nextState,reward,info = self.__env.step(actionIndex)
+        nextState = torch.Tensor(nextState)
         log.info(f"{self.name} step taken,{info}, rewards = {reward}")
         if self.debug:
             log.debug(f"Expected next State: {nextState}")
@@ -225,7 +226,7 @@ class GOD:
         return vVlaue
 
     def reset(self):
-        return self.__env.reset()
+        return torch.Tensor(self.__env.reset())
 
     def step(self,action):
         return self.__env.step(action)
@@ -347,7 +348,7 @@ class BOSS(GOD):
         # here the main logic of training of A2C will be present
         with factory.create(int(self.name[-2:]),nAgent) as progress:
             for e in range(self.maxEpisode):
-                self.startState = self.env.reset()
+                self.startState = torch.Tensor(self.env.reset())
                 self.gatherAndStore()
                 """ @BOSS
                 Do we need to intiallise here?? when we are re declaring it in the three cal methods
@@ -384,15 +385,15 @@ class BOSS(GOD):
         for i in range(self.trajectoryLength):
             action = self.getAction(currentState)
             #nextState,reward,info = self.god.step(action)
-            nextState,reward,info = self.env.step(action)
+            nextState,reward,_,info = self.env.step(action)
             ## Oi generous env , please tell me the next state and reward for the action i have taken
             log.info(f"{self.name},  {info}")
             self.trajectoryS[i] = currentState
             self.trajectoryA[i] = action
             self.trajectoryR[i] = reward
             if self.debug:
-                log.debug(f"Action = {action}")
-            currentState=nextState
+                log.debug(f"Action = {action}, {type(action)}")
+            currentState=torch.Tensor(nextState)
         if self.debug:
             log.debug(f"Action = {self.trajectoryA}")
             log.debug(f"rewards = {self.trajectoryR}")
