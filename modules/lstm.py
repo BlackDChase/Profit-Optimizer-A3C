@@ -73,7 +73,9 @@ class LSTM(nn.Module):
 
         # if numpy, then return numpy ndarray
         if numpy:
-            out = numpy.array(out)
+            out = out.detach().numpy()
+            # reshape so that the output is (13), instead of (1, 13)
+            out = out.squeeze()
 
         return out
 

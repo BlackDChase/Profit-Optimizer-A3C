@@ -6,10 +6,11 @@ import random
 import log
 
 # increment / decrement price by x%
+# TODO Fix the names of variables in the entire file to reflect the changes Harsh made
 ACTION_INC_10 = 0
-ACTION_INC_50 = 1
+ACTION_INC_15 = 1
 ACTION_DEC_10 = 2
-ACTION_DEC_50 = 3
+ACTION_DEC_15 = 3
 ACTION_HOLD = 4
 
 class DatasetHelper:
@@ -23,8 +24,8 @@ class DatasetHelper:
         Choose a random starting timestep for gym resets from dataframe
         Return it as a numpy array
         """
-        random_index = random.randint(0, len(self.df) - max_input_len + 1)
-        self.first_input = self.df.iloc[random_index:random_index + max_input_len + 1, :].values
+        random_index = random.randint(0, len(self.df) - self.max_input_len + 1)
+        self.first_input = self.df.iloc[random_index:random_index + self.max_input_len, :].values
         return self.first_input
 
 class LSTMEnv(gym.Env):
@@ -37,10 +38,10 @@ class LSTMEnv(gym.Env):
 
         # Initialize self.observation_space
         # required for self.current_observation
-        self.observation_space = gym.spaces.Box(low=-np.inf,high=np.inf,shape=(self.model.input_dim))
+        self.observation_space = gym.spaces.Box(low=-np.inf,high=np.inf,shape=(self.model.input_dim,))
 
         # create model input deque
-        model_input = deque([], maxlen=max_input_len)
+        self.model_input = deque([], maxlen=max_input_len)
 
         # set self.current_observation
         self.reset()
@@ -50,7 +51,8 @@ class LSTMEnv(gym.Env):
         Return a value within self.observation_space
         """
         self.model_input.clear()
-        self.model_input.append(self.datahelper.reset())
+        dataset_helper_input = self.dataset_helper.reset()
+        [self.model_input.append(element) for element in dataset_helper_input]
 
         # convert to numpy version
         np_model_input = np.array(self.model_input)
@@ -105,11 +107,11 @@ class LSTMEnv(gym.Env):
             return old_price
         elif action == ACTION_INC_10:
             return old_price * 1.1
-        elif action == ACTION_INC_50:
+        elif action == ACTION_INC_15:
             return old_price * 1.15
         elif action == ACTION_DEC_10:
             return old_price * 0.9
-        elif action == ACTION_DEC_50:
+        elif action == ACTION_DEC_15:
             return old_price * 0.85
         else:
             print("WARNING: Illegal action")
@@ -124,6 +126,6 @@ class LSTMEnv(gym.Env):
         """
         market_demand_index = 1
         ontario_demand_index = 2
-        demand = (self.current_observation[market_demand_index]
-        + self.current_observation[ontario_demand_index])/2
-        return (demand * new_price)**(1/2)
+        log.debug(f"self.current_observation.shape = {self.current_observation.shape}")
+        demand = self.current_observation[market_demand_index] + self.current_observation[ontario_demand_index]
+        return demand * new_price
