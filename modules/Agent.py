@@ -265,8 +265,9 @@ class GOD:
         #"""
         bossThreads=[]
         for i in range(self.__nAgent):
-            multiThreadFactory = TqdmMultiThreadFactory()
-            process = multiprocessing.Process(target=self.__bossAgent[i].train,args=(multiThreadFactory,self.__nAgent,))
+            #multiThreadFactory = TqdmMultiThreadFactory()
+            #process = multiprocessing.Process(target=self.__bossAgent[i].train,args=(multiThreadFactory,self.__nAgent,))
+            process = multiprocessing.Process(target=self.__bossAgent[i].train)
             process.start()
             if self.debug:
                 log.debug(f"Boss{str(i).zfill(2)} training started via GOD")
@@ -335,7 +336,8 @@ class BOSS(GOD):
         # If entropy H_t calculated, Init beta
         pass
 
-    def train(self,factory,nAgent):
+    #def train(self,factory,nAgent):
+    def train(self):
         """
         The Actual function to train the network , the actor-critic actual logic.
         Eviorienment.step :: env.step has to give different outputs for different state trajectories by
@@ -346,30 +348,34 @@ class BOSS(GOD):
             log.debug(f"{self.name} training started inside BOSS")
 
         # here the main logic of training of A2C will be present
-        with factory.create(int(self.name[-2:]),nAgent) as progress:
-            for e in range(self.maxEpisode):
-                self.startState = torch.Tensor(self.env.reset())
-                self.gatherAndStore()
-                """ @BOSS
-                Do we need to intiallise here?? when we are re declaring it in the three cal methods
-                Also, if we are declaring them lets declare them instart, and keep it in device
-                and After each gatherAndStore reset it.
-                ## @BLACK :: NO we dont need to initialize here ,i have removed it.
-                Also what which advantage function are we calling? @Black :: Nstep advantage.
-                #"""
-                self.calculateV_p()
-                self.calculateV_tar()
-                self.calculateNSTEPAdvantage()
+        #with factory.create(int(self.name[-2:]),nAgent) as progress:
+        for e in tqdm(range(self.maxEpisode),ascii=True,desc=self.name):
+            if self.debug:
+                log.debug(f"{self.name} e = {e}")
+            self.startState = torch.Tensor(self.env.reset())
+            if self.debug:
+                log.debug(f"{self.name} Start state = {self.startState}")
+            self.gatherAndStore()
+            """ @BOSS
+            Do we need to intiallise here?? when we are re declaring it in the three cal methods
+            Also, if we are declaring them lets declare them instart, and keep it in device
+            and After each gatherAndStore reset it.
+            ## @BLACK :: NO we dont need to initialize here ,i have removed it.
+            Also what which advantage function are we calling? @Black :: Nstep advantage.
+            #"""
+            self.calculateV_p()
+            self.calculateV_tar()
+            self.calculateNSTEPAdvantage()
 
-                """
-                Question to be figured out :: Exactly when should the boss agents update the networks??
-                #"""
-                self.calculateAndUpdateL_P()
-                # calculate  policy loss and update policy network
-                self.calculateAndUpdateL_C()
-                # calculate critic loss and update critic network
-                log.info(f"{self.name} episode {e} Completed")
-                progress.update(1)
+            """
+            Question to be figured out :: Exactly when should the boss agents update the networks??
+            #"""
+            self.calculateAndUpdateL_P()
+            # calculate  policy loss and update policy network
+            self.calculateAndUpdateL_C()
+            # calculate critic loss and update critic network
+            log.info(f"{self.name} episode {e} Completed")
+            #progress.update(1)
         pass
 
 
@@ -387,12 +393,12 @@ class BOSS(GOD):
             #nextState,reward,info = self.god.step(action)
             nextState,reward,_,info = self.env.step(action)
             ## Oi generous env , please tell me the next state and reward for the action i have taken
-            log.info(f"{self.name},  {info}")
+            log.info(f"{self.name}, {i},  {info}")
             self.trajectoryS[i] = currentState
             self.trajectoryA[i] = action
             self.trajectoryR[i] = reward
             if self.debug:
-                log.debug(f"Action = {action}, {type(action)}")
+                log.debug(f"Action for {self.name} {i} = {action}, {type(action)}")
             currentState=torch.Tensor(nextState)
         if self.debug:
             log.debug(f"Action = {self.trajectoryA}")
