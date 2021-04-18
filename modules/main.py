@@ -90,7 +90,8 @@ Parameters:
         model = LSTM(output_size, input_dim, hidden_dim, layer_dim)
         model.loadM("ENV_MODEL/lstm_model.pt")
         log.info(f"LSTM Model = {model}")
-        env=ENV(model,"../Dataset/13_columns.csv")
+        #env=ENV(model,"../Dataset/13_columns.csv")
+        env=ENV(model,"../Dataset/normalized_13_columns.csv")
         """
         env = ENV(stateSize,actionSpace)
         #"""
@@ -120,7 +121,8 @@ Parameters:
         log.info(f"Action space: {actionSpace}")
         #"""
         model=LSTM("ENV_MODEL/lstm_model.pt")
-        env=ENV(model,"../Dataset/13_columns.csv")
+         #env=ENV(model,"../Dataset/13_columns.csv")
+        env=ENV(model,"../Dataset/normalized_13_columns.csv")
         """
         env = ENV(stateSize,actionSpace)
         #"""

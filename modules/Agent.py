@@ -37,7 +37,7 @@ layer_dim = 1
 LSTM = LSTMmodel(output_size, input_dim, hidden_dim, layer_dim)
 LSTM.loadM("ENV_MODEL/lstm_model.pt")
 log.info(f"LSTM Model Declared in Agent = {LSTM}")
-envDATA="../Dataset/13_columns.csv"
+envDATA="../Dataset/normalized_13_columns.csv"
 # ENV(LSTM,envDATA)
 #"""
 
