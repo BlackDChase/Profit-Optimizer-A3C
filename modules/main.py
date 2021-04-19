@@ -29,15 +29,15 @@ import sys
 
 if __name__=="__main__":
     keywords={
-        "n":2,
-        "e":100,
+        "n":1,
+        "e":10,
         "t":5,
-        "a":3,
-        "d":False,
+        "a":2,
+        "d":True,
         "alr":1e-3,
         "clr":1e-3,
     }
-    stateSize = 9
+    stateSize = 13
     log.info(f"stateSize = {stateSize}")
 
     for arg in sys.argv[1:]:
