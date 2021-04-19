@@ -59,12 +59,18 @@ class LSTM(nn.Module):
         # TODO Is this sensible?
         hidden_state = torch.zeros(self.layer_dim, input_batch.size(0), self.hidden_dim).requires_grad_()
         cell_state = torch.zeros(self.layer_dim, input_batch.size(0), self.hidden_dim).requires_grad_()
+        log.debug("Hidden, cell state made")
 
         # Propagate input through LSTM
         # We need to detach as we are doing truncated backpropagation through time (BPTT)
         # If we don't, we'll backprop all the way to the start even after going through another batch
+        hidden_state.detach()
+        cell_state.detach()
+        log.debug(f"Input batch: {input_batch.shape}")
+        log.debug(f"Hidden shape: {hidden_state.shape}")
+        log.debug(f"Cell shape: {cell_state.shape})")
         out, (hn, cn) = self.lstm(input_batch, (hidden_state.detach(), cell_state.detach()))
-
+        log.debug("LSTM detached")
         # Index hidden state of last time step
         # out.size() --> 100, 28, 100 aka (batch_dim, seq_dim, feature_dim)
         # out[:, -1, :] --> 100, 100 --> just want last time step hidden states! (batch_dim, feature_dim)
@@ -76,7 +82,7 @@ class LSTM(nn.Module):
             out = out.detach().numpy()
             # reshape so that the output is (13), instead of (1, 13)
             out = out.squeeze()
-
+        log.debug("Forward finished")
         return out
 
     def create_datasets(self, csv_path):
@@ -109,7 +115,6 @@ class LSTM(nn.Module):
             train_batch,
             model_parameters,
             loss_fn=torch.nn.MSELoss(),
-            csv_path="datasets/newData.csv",
             num_epochs=10000,
             num_timesteps_per_batch=100,
             input_history_length=50,

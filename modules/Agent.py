@@ -20,7 +20,6 @@ from torch.distributions import Categorical
 import torch
 import numpy as np
 from tqdm import tqdm
-from tqdm_multi_thread import TqdmMultiThreadFactory
 import threading
 import log
 import sys
@@ -29,14 +28,12 @@ from NeuralNet import Network, Aktor, Kritc
 from TempEnv import TempEnv as ENV
 """
 from env import LSTMEnv as ENV
-from lstm import LSTM as LSTMmodel
+from lstm import LSTM
 output_size = 13
 input_dim = output_size
 hidden_dim = 128
 layer_dim = 1
-LSTM = LSTMmodel(output_size, input_dim, hidden_dim, layer_dim)
-LSTM.loadM("ENV_MODEL/lstm_model.pt")
-log.info(f"LSTM Model Declared in Agent = {LSTM}")
+modelPath="ENV_MODEL/lstm_model.pt"
 envDATA="../Dataset/normalized_13_columns.csv"
 # ENV(LSTM,envDATA)
 #"""
@@ -236,17 +233,9 @@ class GOD:
         Initialize all the boss agents for training
         #"""
         for i in range(self.__nAgent):
-            """
-            env = ENV(self.stateSize,self._actionSpace)
-            """
-            env = ENV(LSTM,envDATA)
-            #"""
-            log.info(f"BOSS {str(i).zfill(2)}'s TempEnv made")
             boss = BOSS(
                 god=self,
-                env=env,
                 name="BOSS "+str(i).zfill(2),
-                # depth=200, # Not using anymore
                 maxEpisode=self.maxEpisode,
                 debug=self.debug,
                 trajectoryLength=self.trajectoryLength,
@@ -314,7 +303,6 @@ class BOSS(GOD):
                  trajectoryLength,
                  stateSize,
                  name,
-                 env,
                  gamma=0.99,
                  # lamda=0.1, # Lambda was earlier used for GAE
                  # depth=200, # Not used anymore
@@ -322,7 +310,6 @@ class BOSS(GOD):
                  ):
         super(BOSS,self).__init__(maxEpisode=maxEpisode,debug=debug,trajectoryLength=trajectoryLength,stateSize=stateSize,name=name)
         self.god = god
-        self.env = env
         self.actionSpace = self.god._actionSpace
         self.trajectoryS = torch.zeros([self.trajectoryLength,self.stateSize])
         self.trajectoryR = torch.zeros(self.trajectoryLength)
@@ -336,8 +323,21 @@ class BOSS(GOD):
         # If entropy H_t calculated, Init beta
         pass
 
+    def makeENV(self):
+        """
+        env = ENV(self.stateSize,self._actionSpace)
+        log.info(f"BOSS {str(i).zfill(2)}'s TempEnv made")
+        """
+        LSTM_instance = LSTM(output_size, input_dim, hidden_dim, layer_dim)
+        LSTM_instance.loadM(modelPath)
+        log.info(f"LSTM Model Declared in Agent = {LSTM_instance}")
+        self.env = ENV(LSTM_instance,envDATA)
+        log.info(f"{self.name}'s Env made")
+        #"""
+
     #def train(self,factory,nAgent):
     def train(self):
+        self.makeENV()
         """
         The Actual function to train the network , the actor-critic actual logic.
         Eviorienment.step :: env.step has to give different outputs for different state trajectories by
@@ -394,9 +394,11 @@ class BOSS(GOD):
             nextState,reward,_,info = self.env.step(action)
             ## Oi generous env , please tell me the next state and reward for the action i have taken
             log.info(f"{self.name}, {i},  {info}")
+            if self.debug:
+                log.debug(f"Reward and Shape = {reward}, {reward.shape}")
             self.trajectoryS[i] = currentState
             self.trajectoryA[i] = action
-            self.trajectoryR[i] = reward
+            self.trajectoryR[i] = torch.Tensor(reward)
             if self.debug:
                 log.debug(f"Action for {self.name} {i} = {action}, {type(action)}")
             currentState=torch.Tensor(nextState)
@@ -514,7 +516,7 @@ class BOSS(GOD):
         critic model might face issues during it's own backpropagation
         #"""
         self.god._policySemaphore.acquire()
-
+        log.debug(f"Policy Lock with {self.name}")
         pd = self.god.forwardP(self.trajectoryS)
         dist = Categorical(pd)
         logProb = dist.log_prob(self.trajectoryA)
@@ -524,6 +526,7 @@ class BOSS(GOD):
         log.info(f"Policy loss = {loss}")
         self.god._updatePolicy(loss)
         log.info(f"Updated policyLoss for {self.name}")
+        log.debug(f"Policy UnLock with {self.name}")
         self.god._policySemaphore.release()
         return
 
@@ -535,13 +538,13 @@ class BOSS(GOD):
         by backpropagation keepint vPredicted attached
         #"""
         self.god._criticSemaphore.acquire()
-
+        log.debug(f"Criti Lock with {self.name}")
         pred = self.vPredicted
         targ = self.vTarget.detach()
         loss = torch.mean(torch.pow(pred-targ,2))
         log.info(f"Critic loss = {loss}")
         self.god._updateCritc(loss)
         log.info(f"Updated criticLoss for {self.name}")
-
+        log.debug(f"Criti UnLock with {self.name}")
         self.god._criticSemaphore.release()
         return

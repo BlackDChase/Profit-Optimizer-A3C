@@ -57,6 +57,7 @@ class LSTMEnv(gym.Env):
         # convert to numpy version
         np_model_input = np.array(self.model_input)
 
+        log.debug(f"Reset call")
         self.current_observation = self.model.forward(np_model_input, numpy=True)
         return self.current_observation
 
@@ -79,7 +80,8 @@ class LSTMEnv(gym.Env):
         new_price = self.get_new_price(action)
 
         # get reward
-        reward = self.get_reward(new_price)
+        # Ensure that numpy array shape is (1,), not () otherwise conversion to torch.Tensor will get messed up
+        reward = np.array([self.get_reward(new_price)])
 
         # We update the price in the current observation
         # This ensures that the model takes into account the action we just
