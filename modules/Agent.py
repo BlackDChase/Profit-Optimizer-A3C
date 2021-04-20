@@ -15,7 +15,8 @@ __author__ = 'BlackDChase,MR-TLL'
 __version__ = '0.1.3'
 
 # Imports
-from torch import nn, multiprocessing, device, Tensor
+from torch import nn, device, Tensor
+# from torch import multiprocessing
 from torch.distributions import Categorical
 import torch
 import numpy as np
@@ -35,7 +36,7 @@ hidden_dim = 128
 layer_dim = 1
 modelPath="ENV_MODEL/lstm_model.pt"
 envDATA="../Dataset/normalized_13_columns.csv"
-# ENV(LSTM,envDATA)
+# ENV(LSTM,envDATA,actionSpace)
 #"""
 
 
@@ -64,7 +65,7 @@ class GOD:
     @Input (From Enviorenment) :: The Current State.
     @Output (To enviorenment)  :: The Final Action Taken.
     """
-    def __init__(self,maxEpisode=100,nAgent=1,debug=False,trajectoryLength=25,stateSize=9,actionSpaceDeviation=5,name="GOD",path=None,alr=1e-3,clr=1e-3):
+    def __init__(self,maxEpisode=100,nAgent=1,debug=False,trajectoryLength=25,stateSize=9,actionSpace=[-15,-10,0,+10,+15],name="GOD",path=None,alr=1e-3,clr=1e-3):
         """
         Initialization of various GOD parameters, self evident from the code.
         #"""
@@ -75,11 +76,10 @@ class GOD:
         self._state = Tensor([0]*stateSize)
 
         # action space is the percent change of the current price.
-        self._actionSD = int(actionSpaceDeviation)
-        self.__makeActions()
+        self._actionSpace = Tensor(actionSpace)
         self.debug = debug
         self.price = 0
-        self.__nAgent=0
+        self.__nAgent=nAgent
         self.__bossAgent=[]
         if path==None:
             self.needTraining(maxEpisode,nAgent,trajectoryLength,alr,clr)
@@ -128,12 +128,17 @@ class GOD:
         self.__policyNet = Aktor()
         self.__criticNet = Kritc()
         #"""
+        
+        """
+        After using this, we might not need to have a semaphore when we use multiprocessesing
+        [Refer](https://pytorch.org/docs/stable/notes/multiprocessing.html)
+        To be sent to device before sharing
+        #"""
+        #"""
+        self.__policyNet.share_memory()
+        self.__criticNet.share_memory()
+        #"""
         return
-
-    def __makeActions(self):
-        log.info(f"Action Standard Deviation = {self._actionSD}")
-        actionSpace = [i/10 for i in range(-self._actionSD*25,self._actionSD*25+1,25)]
-        self._actionSpace = Tensor(actionSpace)
 
     def giveEnvironment(self,env):
         self.__env=env
@@ -155,12 +160,13 @@ class GOD:
         self.trajectoryLength = trajectoryLength
         return
 
-    """
-    Wont be needed as take action is called by enviornment and will provide current state
     def getState(self):
         # To be defined Later (Get the current state)
+        """
+        Wont be needed as take action is called by enviornment and will provide current state
+        #"""
         pass
-    #"""
+    
 
     def train(self):
         self.__trainBoss()
@@ -232,6 +238,7 @@ class GOD:
         """
         Initialize all the boss agents for training
         #"""
+        self.__bossAgent=[]
         for i in range(self.__nAgent):
             boss = BOSS(
                 god=self,
@@ -241,12 +248,10 @@ class GOD:
                 trajectoryLength=self.trajectoryLength,
                 stateSize=self.stateSize,
             )
-            if len(self.__bossAgent)<i+1:
-                self.__bossAgent.append(boss)
-            else:
-                self.__bossAgent[i] = boss
+            self.__bossAgent.insert(i,boss)
             if self.debug:
                 log.debug(f"Boss{str(i).zfill(2)} created")
+        print(self.__nAgent,self.__bossAgent)
         return self.__bossAgent
 
     def __trainBoss(self):
@@ -256,15 +261,25 @@ class GOD:
         for i in range(self.__nAgent):
             #multiThreadFactory = TqdmMultiThreadFactory()
             #process = multiprocessing.Process(target=self.__bossAgent[i].train,args=(multiThreadFactory,self.__nAgent,))
+            #"""
+            env=self.__makeENV(i)
+            self.__bossAgent[i].env = env
+            self.__bossAgent[i].train()
+            """
             process = multiprocessing.Process(target=self.__bossAgent[i].train)
+            env=self.__makeENV(i)
+            self.__bossAgent[i].env = env
             process.start()
             if self.debug:
                 log.debug(f"Boss{str(i).zfill(2)} training started via GOD")
             bossThreads.append(process)
+            """
+        """    
         for i in bossThreads:
             i.join()
-        """
+        #"""
         # Remove multiprocessing for @biribiri
+        """
         self.__bossAgent[0].train()
         if self.debug:
             log.debug(f"Boss00 training started via GOD")
@@ -272,6 +287,8 @@ class GOD:
         return
 
     def forwardP(self,actions):
+        if self.debug:
+            log.debug(f"Actions {actions.shape}")
         return self.__policyNet.forward(actions)
 
     def saveModel(self,path):
@@ -279,10 +296,24 @@ class GOD:
         torch.save(self.__criticNet.state_dict(),path+"/CritcModel.pt")
         return
     def loadModel(self,path):
-        self.__policyNet = torch.load(path+"/PolicyModel.pt")
-        self.__criticNet = torch.load(path+"/CritcModel.pt")
+        """
+        If using GPU, this has to be mapped to it while load .. torch.load(path,map_location=device)
+        #"""
+        self.__policyNet = torch.load_state_dict(path+"/PolicyModel.pt")
+        self.__criticNet = torch.load_state_dict(path+"/CritcModel.pt")
+        return
 
-    pass
+    def __makeENV(self,boss):
+        """
+        env = ENV(self.stateSize,self._actionSpace)
+        log.info(f"BOSS {str(i).zfill(2)}'s TempEnv made")
+        """
+        LSTM_instance = LSTM(output_size, input_dim, hidden_dim, layer_dim)
+        LSTM_instance.loadM(modelPath)
+        log.info(f"LSTM Model Declared in Agent = {LSTM_instance}")
+        env = ENV(model=LSTM_instance,dataset_path=envDATA,actionSpace=self._actionSpace)
+        log.info(f"BOSS{str(boss).zfill(2)}'s Env made")
+        return env
 
 class BOSS(GOD):
     """
@@ -322,22 +353,10 @@ class BOSS(GOD):
         self.advantage = torch.zeros(self.trajectoryLength)
         # If entropy H_t calculated, Init beta
         pass
-
-    def makeENV(self):
-        """
-        env = ENV(self.stateSize,self._actionSpace)
-        log.info(f"BOSS {str(i).zfill(2)}'s TempEnv made")
-        """
-        LSTM_instance = LSTM(output_size, input_dim, hidden_dim, layer_dim)
-        LSTM_instance.loadM(modelPath)
-        log.info(f"LSTM Model Declared in Agent = {LSTM_instance}")
-        self.env = ENV(LSTM_instance,envDATA)
-        log.info(f"{self.name}'s Env made")
         #"""
 
     #def train(self,factory,nAgent):
     def train(self):
-        self.makeENV()
         """
         The Actual function to train the network , the actor-critic actual logic.
         Eviorienment.step :: env.step has to give different outputs for different state trajectories by
@@ -494,7 +513,7 @@ class BOSS(GOD):
         for i in reversed(range(self.trajectoryLength-1)):
             self.advantage[i] = self.trajectoryR[i].clone() + self.ɤ*self.advantage[i+1].clone() - self.vPredicted[i].clone()
         if self.debug:
-            log.debug(f"Advantage = {self.advantage}")
+            log.debug(f"Advantage {self.name} = {self.advantage}")
         return
 
     def calculateAndUpdateL_P(self):
@@ -515,19 +534,20 @@ class BOSS(GOD):
         # Advantage detached because: Advantage is the result of critc, and if it is backpropagated here,
         critic model might face issues during it's own backpropagation
         #"""
-        self.god._policySemaphore.acquire()
-        log.debug(f"Policy Lock with {self.name}")
+        #self.god._policySemaphore.acquire()
+        #log.debug(f"Policy Lock with {self.name}")
         pd = self.god.forwardP(self.trajectoryS)
         dist = Categorical(pd)
         logProb = dist.log_prob(self.trajectoryA)
         advantage = self.advantage.detach()
-
+        if self.debug:
+            log.debug(f"Advantage detached for {self.name}")
         loss = -1*torch.mean(advantage*logProb)
         log.info(f"Policy loss = {loss}")
         self.god._updatePolicy(loss)
         log.info(f"Updated policyLoss for {self.name}")
-        log.debug(f"Policy UnLock with {self.name}")
-        self.god._policySemaphore.release()
+        #log.debug(f"Policy UnLock with {self.name}")
+        #self.god._policySemaphore.release()
         return
 
     def calculateAndUpdateL_C(self):
@@ -537,14 +557,14 @@ class BOSS(GOD):
         On the other hand vPredicted should be alligned in a way to reduces loss, hence model to be modifed
         by backpropagation keepint vPredicted attached
         #"""
-        self.god._criticSemaphore.acquire()
-        log.debug(f"Criti Lock with {self.name}")
+        #self.god._criticSemaphore.acquire()
+        #log.debug(f"Criti Lock with {self.name}")
         pred = self.vPredicted
         targ = self.vTarget.detach()
         loss = torch.mean(torch.pow(pred-targ,2))
         log.info(f"Critic loss = {loss}")
         self.god._updateCritc(loss)
         log.info(f"Updated criticLoss for {self.name}")
-        log.debug(f"Criti UnLock with {self.name}")
-        self.god._criticSemaphore.release()
+        #log.debug(f"Criti UnLock with {self.name}")
+        #self.god._criticSemaphore.release()
         return

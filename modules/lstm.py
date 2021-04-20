@@ -69,12 +69,18 @@ class LSTM(nn.Module):
         log.debug(f"Input batch: {input_batch.shape}")
         log.debug(f"Hidden shape: {hidden_state.shape}")
         log.debug(f"Cell shape: {cell_state.shape})")
-        out, (hn, cn) = self.lstm(input_batch, (hidden_state.detach(), cell_state.detach()))
+        
+        #out, (hn, cn) = self.lstm(input_batch, (hidden_state.detach(), cell_state.detach()))
+        out = torch.rand([input_batch.shape[0],13])
         log.debug("LSTM detached")
         # Index hidden state of last time step
         # out.size() --> 100, 28, 100 aka (batch_dim, seq_dim, feature_dim)
         # out[:, -1, :] --> 100, 100 --> just want last time step hidden states! (batch_dim, feature_dim)
-        out = self.fc(out[:, -1, :])
+        
+        # To be uncomemented later
+        #out = self.fc(out[:, -1, :])
+        
+        
         # out.size() --> 100, 10 (batch_dim, output_size)
 
         # if numpy, then return numpy ndarray

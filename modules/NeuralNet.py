@@ -116,7 +116,7 @@ class Aktor(nn.Module):
         super(Aktor,self).__init__()
         self.learningRate = 1e-3
         self.model = nn.Sequential(
-            nn.Linear(in_features=9,out_features=20),
+            nn.Linear(in_features=13,out_features=20),
             nn.Linear(in_features=20,out_features=11),
             nn.Softmax(),
         )
@@ -131,7 +131,7 @@ class Kritc(nn.Module):
         super(Kritc,self).__init__()
         self.learningRate = 1e-3
         self.model = nn.Sequential(
-            nn.Linear(in_features=9,out_features=20),
+            nn.Linear(in_features=13,out_features=20),
             nn.ELU(),
             nn.Linear(in_features=20,out_features=1),
             nn.LeakyReLU(),
