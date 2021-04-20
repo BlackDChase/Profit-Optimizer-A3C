@@ -395,6 +395,8 @@ class BOSS(GOD):
             # calculate critic loss and update critic network
             log.info(f"{self.name} episode {e} Completed")
             #progress.update(1)
+        log.info(f"{self.name} has completed training")
+        print(f"{self.name} has completed training")
         pass
 
 
