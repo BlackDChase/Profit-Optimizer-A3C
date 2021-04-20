@@ -16,43 +16,34 @@ Parameters:
 
 __author__ = 'BlackDChase,MR-TLL'
 __version__ = '0.1.3'
-# Imports
-"""
-from TempEnv import TempEnv as ENV
-"""
-from lstm import LSTM
-from env import LSTMEnv as ENV
-#"""
-from Agent import GOD
+# Input from outside
 import log
 import sys
-
-if __name__=="__main__":
-    keywords={
+keywords={
         "n":1,
         "e":10,
         "t":5,
-        "a":2,
+        "a":5,
         "d":True,
         "alr":1e-3,
         "clr":1e-3,
     }
-    stateSize = 13
-    log.info(f"stateSize = {stateSize}")
+stateSize = 13
+log.info(f"stateSize = {stateSize}")
 
-    for arg in sys.argv[1:]:
-        key,value = arg.split("=")
-        if key[1:]=="d":
-            keywords[key[1:]] = True if "t" in value.lower() else False
-            # For debug
-        elif key[1:]=="p":
-            keywords[key[1:]] = value
-            # For path (saved model)
-        else:
-            keywords[key[1:]] = float(value)
-        log.info(f"Parameter {key[1:]} is {value}")
-    if "h" in keywords:
-        print("""
+for arg in sys.argv[1:]:
+    key,value = arg.split("=")
+    if key[1:]=="d":
+        keywords[key[1:]] = True if "t" in value.lower() else False
+        # For debug
+    elif key[1:]=="p":
+        keywords[key[1:]] = value
+        # For path (saved model)
+    else:
+        keywords[key[1:]] = float(value)
+    log.info(f"Parameter {key[1:]} is {value}")
+if "h" in keywords:
+    print("""
 Main function
 python main.py -n=3 -e=100 -t=50 -a=7 -d=t -alr=0.001 -clr=0.001 -p="../Saved_model/Sun-04-04-21/"
 Parameters:
@@ -66,11 +57,33 @@ Parameters:
     - clr   Critic Learning rate
     - p     Path of folder which contains PolicModel.py, CriticModel.pt
     - h     Help""")
+        
+"""
+Making the action space
+"""
+n=keywords['a']//2
+if keywords['a']%2==0:    
+    actionSpace = [i for i in range(-n*2,n*2+1,2)]
+    actionSpace.pop(len(x)//2)
+else:
+    actionSpace = [i/10 for i in range(-n*25,n*25+1,25)]
+keywords['a']=actionSpace
+   
+    
+# Imports
+"""
+from TempEnv import TempEnv as ENV
+"""
+from lstm import LSTM
+from env import LSTMEnv as ENV
+#"""
+from Agent import GOD
 
+if __name__=="__main__":
     if "p" not in keywords.keys():
         god = GOD(
             stateSize=int(stateSize),
-            actionSpaceDeviation=int(keywords["a"]),
+            actionSpace=keywords["a"],
             debug=keywords["d"],
             maxEpisode=int(keywords["e"]),
             nAgent=int(keywords["n"]),
@@ -79,7 +92,6 @@ Parameters:
             clr=keywords["clr"]
         )
         log.info("GOD inititated")
-        actionSpace = god.getActionSpace()
         log.info(f"Action space: {actionSpace}")
 
         #"""
@@ -91,7 +103,7 @@ Parameters:
         model.loadM("ENV_MODEL/lstm_model.pt")
         log.info(f"LSTM Model = {model}")
         #env=ENV(model,"../Dataset/13_columns.csv")
-        env=ENV(model,"../Dataset/normalized_13_columns.csv")
+        env=ENV(model=model,dataset_path="../Dataset/normalized_13_columns.csv",actionSpace=actionSpace)
         """
         env = ENV(stateSize,actionSpace)
         #"""
@@ -113,7 +125,7 @@ Parameters:
         god = GOD(
             debug=keywords["d"],
             stateSize=int(stateSize),
-            actionSpaceDeviation=int(keywords["a"]),
+            actionSpace=keywords["a"],
             path=keywords["p"],
         )
         log.info("GOD inititated")
@@ -122,7 +134,7 @@ Parameters:
         #"""
         model=LSTM("ENV_MODEL/lstm_model.pt")
          #env=ENV(model,"../Dataset/13_columns.csv")
-        env=ENV(model,"../Dataset/normalized_13_columns.csv")
+        env=ENV(model=model,dataset_path="../Dataset/normalized_13_columns.csv",actionSpace=actionSpace)
         """
         env = ENV(stateSize,actionSpace)
         #"""

@@ -5,13 +5,6 @@ from collections import deque
 import random
 import log
 
-# increment / decrement price by x%
-# TODO Fix the names of variables in the entire file to reflect the changes Harsh made
-ACTION_INC_10 = 0
-ACTION_INC_15 = 1
-ACTION_DEC_10 = 2
-ACTION_DEC_15 = 3
-ACTION_HOLD = 4
 
 class DatasetHelper:
     def __init__(self, dataset_path, max_input_len):
@@ -29,7 +22,7 @@ class DatasetHelper:
         return self.first_input
 
 class LSTMEnv(gym.Env):
-    def __init__(self, model, dataset_path, max_input_len=25):
+    def __init__(self, model, dataset_path, max_input_len=25,actionSpace=[-15,-10,0,10,15]):
         """
         model = trained LSTM model from lstm.py
         """
@@ -42,13 +35,14 @@ class LSTMEnv(gym.Env):
 
         # create model input deque
         self.model_input = deque([], maxlen=max_input_len)
-
+        self.actionSpace=actionSpace
         # set self.current_observation
         self.reset()
 
     def reset(self):
         """
         Return a value within self.observation_space
+        Why clear input?
         """
         self.model_input.clear()
         dataset_helper_input = self.dataset_helper.reset()
@@ -67,7 +61,7 @@ class LSTMEnv(gym.Env):
         Calculate reward
         Return relevant data
         """
-        if action not in [0, 1, 2, 3, 4]:
+        if action<0 or action>=len(self.actionSpace):
             print("Illegal action")
             log.debug(f"action = {action}")
             import sys
@@ -105,22 +99,7 @@ class LSTMEnv(gym.Env):
         """
         price_index = 0
         old_price = self.current_observation[price_index]
-        if action == ACTION_HOLD:
-            return old_price
-        elif action == ACTION_INC_10:
-            return old_price * 1.1
-        elif action == ACTION_INC_15:
-            return old_price * 1.15
-        elif action == ACTION_DEC_10:
-            return old_price * 0.9
-        elif action == ACTION_DEC_15:
-            return old_price * 0.85
-        else:
-            print("WARNING: Illegal action")
-            log.debug(f"action = {action}")
-            # immediately exit
-            import sys
-            sys.exit()
+        return old_price*(1+self.actionSpace[action])
 
     def get_reward(self, new_price):
         """
