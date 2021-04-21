@@ -3,7 +3,8 @@ Temporary enviornment functional as standin
 Sends random states
 #"""
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.1.3'
+__version__ = '0.2.0'
+
 # Imports
 import torch
 from lstm import LSTM
@@ -18,7 +19,7 @@ class TempEnv:
     We don't have much info about environment step,reset method
     How it will cater multiple boss's trajectory
     #"""
-    def __init__(self,model,stateSize=13,dataset_path="../Dataset/normalized_13_columns.csv",actionSpace=[-15,-10,0,10,15]):
+    def __init__(self,model,stateSize=13,dataset_path="../Dataset/normalized_13_columns.csv",actionSpace=[-15,-10,0,10,15],debug=False):
         self.stateSize = stateSize
         self.actionSpace = actionSpace
         self.state = None
@@ -26,6 +27,7 @@ class TempEnv:
         self.data_path = dataset_path
         self.timeStep = 100
         self.reset()
+        self.debug=debug
         pass
 
     def step(self,action):

@@ -4,7 +4,7 @@ import numpy as np
 from collections import deque
 import random
 import log
-
+import multiprocessing
 
 class DatasetHelper:
     def __init__(self, dataset_path, max_input_len):
@@ -22,7 +22,7 @@ class DatasetHelper:
         return self.first_input
 
 class LSTMEnv(gym.Env):
-    def __init__(self, model, dataset_path, max_input_len=25,actionSpace=[-15,-10,0,10,15]):
+    def __init__(self, model, dataset_path, max_input_len=25,actionSpace=[-15,-10,0,10,15],debug=False):
         """
         model = trained LSTM model from lstm.py
         """
@@ -36,9 +36,10 @@ class LSTMEnv(gym.Env):
         # create model input deque
         self.model_input = deque([], maxlen=max_input_len)
         self.actionSpace=actionSpace
-        
 
-    def reset(self,deb=-1):
+        self.debug=debug
+
+    def reset(self):
         """
         Return a value within self.observation_space
         Why clear input?
@@ -49,10 +50,13 @@ class LSTMEnv(gym.Env):
 
         # convert to numpy version
         np_model_input = np.array(self.model_input)
-
-        log.debug(f"Reset call for {deb}")
-        self.current_observation = self.model.forward(np_model_input, numpy=True,deb=deb)
-        log.debug(f"Reset complete for {deb}")
+        
+        curr = multiprocessing.current_process()
+        if self.debug:
+            log.debug(f"Reset call for {curr.name}")
+        self.current_observation = self.model.forward(np_model_input, numpy=True)
+        if self.debug:
+            log.debug(f"Reset complete for {curr.name}")
         return self.current_observation
 
     def step(self, action):
@@ -63,7 +67,8 @@ class LSTMEnv(gym.Env):
         """
         if action<0 or action>=len(self.actionSpace):
             print("Illegal action")
-            log.debug(f"action = {action}")
+            if self.debug:
+                log.debug(f"Illegal action = {action}")
             import sys
             sys.exit()
 
@@ -107,6 +112,7 @@ class LSTMEnv(gym.Env):
         """
         market_demand_index = 1
         ontario_demand_index = 2
-        log.debug(f"self.current_observation.shape = {self.current_observation.shape}")
+        if self.debug:
+            log.debug(f"self.current_observation.shape = {self.current_observation.shape}")
         demand = self.current_observation[market_demand_index] + self.current_observation[ontario_demand_index]
         return demand * new_price
