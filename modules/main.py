@@ -61,10 +61,10 @@ Parameters:
 """
 Making the action space
 """
-n=keywords['a']//2
+n=int(keywords['a']//2)
 if keywords['a']%2==0:    
     actionSpace = [i for i in range(-n*2,n*2+1,2)]
-    actionSpace.pop(len(x)//2)
+    actionSpace.pop(len(actionSpace)//2)
 else:
     actionSpace = [i/10 for i in range(-n*25,n*25+1,25)]
 keywords['a']=actionSpace
@@ -104,6 +104,7 @@ if __name__=="__main__":
         log.info(f"LSTM Model = {model}")
         #env=ENV(model,"../Dataset/13_columns.csv")
         env=ENV(model=model,dataset_path="../Dataset/normalized_13_columns.csv",actionSpace=actionSpace)
+        env.reset()
         """
         env = ENV(stateSize,actionSpace)
         #"""

@@ -13,6 +13,7 @@ import log
 import random
 from tqdm import tqdm
 import numpy as np
+import multiprocessing
 
 class LSTM(nn.Module):
     """
@@ -40,7 +41,7 @@ class LSTM(nn.Module):
 
         self.fc =  nn.Linear(hidden_dim, output_size)
 
-    def forward(self, input_batch, batch=True, numpy=False):
+    def forward(self, input_batch, batch=True, numpy=False,deb=-1):
         """
         TODO Fix this if necessary, add sane comments
 
@@ -69,16 +70,18 @@ class LSTM(nn.Module):
         log.debug(f"Input batch: {input_batch.shape}")
         log.debug(f"Hidden shape: {hidden_state.shape}")
         log.debug(f"Cell shape: {cell_state.shape})")
-        
-        out, (hn, cn) = self.lstm(input_batch, (hidden_state.detach(), cell_state.detach()))
-        #out = torch.rand([input_batch.shape[0],13])
+        if deb!=-1:
+            curr = multiprocessing.current_process()
+            log.debug(f"Deb = {deb},currentP name,id,pid {curr.name},{curr._identity},{curr.pid}")
+        #out, (hn, cn) = self.lstm(input_batch, (hidden_state.detach(), cell_state.detach()))
+        out = torch.rand([input_batch.shape[0],13])
         log.debug("LSTM detached")
         # Index hidden state of last time step
         # out.size() --> 100, 28, 100 aka (batch_dim, seq_dim, feature_dim)
         # out[:, -1, :] --> 100, 100 --> just want last time step hidden states! (batch_dim, feature_dim)
         
         # To be uncomemented later
-        out = self.fc(out[:, -1, :])
+        #out = self.fc(out[:, -1, :])
         
         
         # out.size() --> 100, 10 (batch_dim, output_size)
@@ -88,7 +91,7 @@ class LSTM(nn.Module):
             out = out.detach().numpy()
             # reshape so that the output is (13), instead of (1, 13)
             out = out.squeeze()
-        log.debug("Forward finished")
+        log.debug(f"Forward finished {deb}")
         return out
 
     def create_datasets(self, csv_path):
