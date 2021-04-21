@@ -36,10 +36,9 @@ class LSTMEnv(gym.Env):
         # create model input deque
         self.model_input = deque([], maxlen=max_input_len)
         self.actionSpace=actionSpace
-        # set self.current_observation
-        self.reset()
+        
 
-    def reset(self):
+    def reset(self,deb=-1):
         """
         Return a value within self.observation_space
         Why clear input?
@@ -51,8 +50,9 @@ class LSTMEnv(gym.Env):
         # convert to numpy version
         np_model_input = np.array(self.model_input)
 
-        log.debug(f"Reset call")
-        self.current_observation = self.model.forward(np_model_input, numpy=True)
+        log.debug(f"Reset call for {deb}")
+        self.current_observation = self.model.forward(np_model_input, numpy=True,deb=deb)
+        log.debug(f"Reset complete for {deb}")
         return self.current_observation
 
     def step(self, action):
@@ -99,7 +99,7 @@ class LSTMEnv(gym.Env):
         """
         price_index = 0
         old_price = self.current_observation[price_index]
-        return old_price*(1+self.actionSpace[action])
+        return old_price*(1+self.actionSpace[action]/100)
 
     def get_reward(self, new_price):
         """

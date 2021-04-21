@@ -10,6 +10,7 @@ __version__ = '0.1.3'
 import torch
 import log
 from torch import nn, device
+import multiprocessing
 # GLOBAL
 #device = device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -104,10 +105,15 @@ class Network(nn.Module):
         Output for Policy network   : Probability Distribution Parameter
         Output for Critic network   : Advantage
         #"""
-        output = self.hypoThesis(currentState)
+        curr = multiprocessing.current_process()
         if self.debug:
-            log.debug(f"current state for {self.name} : {currentState}")
-            log.debug(f"output of model = {output}")
+            log.debug(f"current state for {self.name} of {curr.ident} : {currentState}")
+        if currentState.shape[0]!=1:
+            
+        else:
+            output = self.hypoThesis(currentState)
+        if self.debug:
+            log.debug(f"output of model for {self.name} of {curr.ident} = {output}")
         return output
     pass
 
