@@ -12,7 +12,7 @@ BOSS AGENT
 State = Ontario Price, Market Demand,Ontario Demand,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, Northwest Nigiria, West 
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.1.3'
+__version__ = '0.2.0'
 
 # Imports
 from torch import nn, device, Tensor
@@ -26,7 +26,6 @@ import sys
 from NeuralNet import Network #, Aktor, Kritc
 import multiprocessing
 from multiprocessing import Process, Lock
-import multiprocessing
 """
 from TempEnv import TempEnv as ENV
 """
@@ -168,31 +167,31 @@ class GOD:
 
     def _updatePolicy(self,lossP):
         curr = multiprocessing.current_process()
-        if self.debug():
+        if self.debug:
             log.debug(f"{curr.name},{curr.pid} Wants Policy")
         self._policySemaphore.acquire()
-        if self.debug():
+        if self.debug:
             log.debug(f"Policy Semaphore Acquired, {curr.ident}")
         self.__policyNet.optimizer.zero_grad()
         lossP.backward(retain_graph=True)
         self.__policyNet.optimizer.step()
         self._policySemaphore.release()
-        if self.debug():
+        if self.debug:
             log.debug(f"Policy Semaphore released, {curr.ident}")
         return
 
     def _updateCritc(self,lossC):
         curr = multiprocessing.current_process()
-        if self.debug():
+        if self.debug:
             log.debug(f"{curr.name},{curr.pid} Wants Critic")
         self._criticSemaphore.acquire()
-        if self.debug():
+        if self.debug:
             log.debug(f"Critic Semaphore Acquired, {curr.ident}")
         self.__criticNet.optimizer.zero_grad()
         lossC.backward(retain_graph=True)
         self.__criticNet.optimizer.step()
         self._criticSemaphore.release()
-        if self.debug():
+        if self.debug:
             log.debug(f"Critic Semaphore released, {curr.ident}")
         return
     '''
@@ -212,8 +211,9 @@ class GOD:
         probab = actionProb[actionIndex]
         nextState,reward,info = self.__env.step(actionIndex)
         nextState = torch.Tensor(nextState)
-        log.info(f"{self.name} step taken,{info}, rewards = {reward}")
+        
         if self.debug:
+            log.debug(f"{self.name} step taken,{info}, rewards = {reward}")
             log.debug(f"Expected next State: {nextState}")
         return actionIndex,probab
 
@@ -228,10 +228,10 @@ class GOD:
 
     def _getAction(self,state):
         curr = multiprocessing.current_process()
-        if self.debug():
+        if self.debug:
             log.debug(f"{curr.name},{curr.pid} Wants Policy")
         self._policySemaphore.acquire()
-        if self.debug():
+        if self.debug:
             log.debug(f"Policy Semaphore Acquired, {curr.ident}")
         actionProbab = self.__policyNet.forward(state)
         if self.debug:
@@ -278,7 +278,6 @@ class GOD:
             self.__bossAgent.insert(i,boss)
             if self.debug:
                 log.debug(f"Boss{str(i).zfill(2)} created")
-        print(self.__nAgent,self.__bossAgent)
         return self.__bossAgent
 
     def __trainBoss(self):
@@ -301,13 +300,13 @@ class GOD:
 
             self.__bossAgent[i].env = env
 
-            if self.debug:
-                log.debug(f"Boss{str(i).zfill(2)} training started via GOD")
             bossThreads.append(process)
             #"""
 
-        for i in bossThreads:
-            i.start()
+        for i in range(len(bossThreads)):
+            bossThreads[i].start()
+            log.info(f"Boss{str(i).zfill(2)} training started via GOD")
+            
         for i in bossThreads:
             i.join()
         #"""
@@ -426,28 +425,22 @@ class BOSS(GOD):
         different boss. it has to take in account the diff trajectories becouse diff bosses will go to
         different states.
         #"""
+        curr = multiprocessing.current_process()
         if self.debug:
-            curr = multiprocessing.current_process()
             log.debug(f"{self.name},currentP name,id,pid {curr.name},{curr._identity},{curr.pid}")
             log.debug(f"{curr.ident} training started inside BOSS")
         """
-        print(f'''
-              {self.name}  GOD = {self.god},
-              ENV = {self.env} at {hex(id(self.env))},
-              LSTM = {self.env.model} at {hex(id(self.env.model))},
-              Reset Semaphore = {resetSemaphore} at {hex(id(resetSemaphore))}
-              ''')
+        Here the main logic of training of A2C will be present
+        `with factory.create(int(self.name[-2:]),nAgent) as progress:`
+        This was for a multiproccessing TQDM, which failed.
         """
-        # here the main logic of training of A2C will be present
-        #with factory.create(int(self.name[-2:]),nAgent) as progress:
         for e in tqdm(range(self.maxEpisode),ascii=True,desc=self.name):
             if self.debug:
                 log.debug(f"{self.name} e = {e}")
             resetSemaphore.acquire()
             if self.debug:
                 log.debug(f"{self._resetSemaphore} acquired by {curr.ident}")
-            resetState = self.env.reset(self.name)
-            #print(f"Reset state {resetState}")
+            resetState = self.env.reset()
             resetSemaphore.release()
             if self.debug:
                 log.debug(f"{self._resetSemaphore} released by {curr.ident}")
@@ -456,6 +449,8 @@ class BOSS(GOD):
             if self.debug:
                 log.debug(f"{self.name} Start state = {self.startState}")
             self.gatherAndStore()
+            log.info(f"rewards = {self.trajectoryR}")
+
             """ @BOSS
             Do we need to intiallise here?? when we are re declaring it in the three cal methods
             Also, if we are declaring them lets declare them instart, and keep it in device
@@ -506,7 +501,6 @@ class BOSS(GOD):
             currentState=torch.Tensor(nextState)
         if self.debug:
             log.debug(f"Action = {self.trajectoryA}")
-            log.debug(f"rewards = {self.trajectoryR}")
             log.debug(f"vPred = {self.vPredicted}")
             log.debug(f"vTar = {self.vTarget}")
         pass
@@ -596,7 +590,7 @@ class BOSS(GOD):
         for i in reversed(range(self.trajectoryLength-1)):
             self.advantage[i] = self.trajectoryR[i].clone() + self.ɤ*self.advantage[i+1].clone() - self.vPredicted[i].clone()
         if self.debug:
-            log.debug(f"Advantage {self.name} = {self.advantage}")
+            log.info(f"Advantage {self.name} = {self.advantage}")
         return
 
     def calculateAndUpdateL_P(self):
@@ -623,7 +617,7 @@ class BOSS(GOD):
         logProb = dist.log_prob(self.trajectoryA)
         advantage = self.advantage.detach()
         if self.debug:
-            log.debug(f"Advantage detached for {self.name}")
+            log.debug(f" advantage detached for {self.name}")
         loss = -1*torch.mean(advantage*logProb)
         log.info(f"Policy loss = {loss}")
         self.god._updatePolicy(loss)

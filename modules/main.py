@@ -15,7 +15,7 @@ Parameters:
 #"""
 
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.1.3'
+__version__ = '0.2.0'
 # Input from outside
 import log
 import sys
@@ -91,6 +91,7 @@ if __name__=="__main__":
             alr=keywords["alr"],
             clr=keywords["clr"]
         )
+        print("Master Agent Made")
         log.info("GOD inititated")
         log.info(f"Action space: {actionSpace}")
 
@@ -99,12 +100,18 @@ if __name__=="__main__":
         input_dim = output_size
         hidden_dim = 128
         layer_dim = 1
-        model = LSTM(output_size, input_dim, hidden_dim, layer_dim)
+        model = LSTM(output_size, input_dim, hidden_dim, layer_dim,debug=keywords["d"])
         model.loadM("ENV_MODEL/lstm_model.pt")
         log.info(f"LSTM Model = {model}")
         #env=ENV(model,"../Dataset/13_columns.csv")
-        env=ENV(model=model,dataset_path="../Dataset/normalized_13_columns.csv",actionSpace=actionSpace)
+        env=ENV(
+            model=model,
+            dataset_path="../Dataset/normalized_13_columns.csv",
+            actionSpace=actionSpace,
+            debug=keywords["d"],
+        )
         env.reset()
+        print("Environment inititated")
         """
         env = ENV(stateSize,actionSpace)
         #"""
@@ -114,6 +121,7 @@ if __name__=="__main__":
         log.info("Environment parsed, Boss inititated")
         threadCount=0
         try:
+            print("Model starting it's training")
             god.train()
             god.saveModel("../Saved_model/")
         except Exception as catch:
@@ -129,13 +137,20 @@ if __name__=="__main__":
             actionSpace=keywords["a"],
             path=keywords["p"],
         )
+        print("Master Agent Made")
         log.info("GOD inititated")
         actionSpace = god.getActionSpace()
         log.info(f"Action space: {actionSpace}")
         #"""
-        model=LSTM("ENV_MODEL/lstm_model.pt")
+        model=LSTM("ENV_MODEL/lstm_model.pt",debug=keywords["d"])
          #env=ENV(model,"../Dataset/13_columns.csv")
-        env=ENV(model=model,dataset_path="../Dataset/normalized_13_columns.csv",actionSpace=actionSpace)
+        env=ENV(
+            model=model,
+            dataset_path="../Dataset/normalized_13_columns.csv",
+            actionSpace=actionSpace,
+            debug=keywords["d"],
+        )
+        print("Environment inititated")
         """
         env = ENV(stateSize,actionSpace)
         #"""
