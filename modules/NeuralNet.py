@@ -113,7 +113,7 @@ class Network(nn.Module):
         if len(currentState.shape)>1:
             """
             With multi threading, mulitple states are not parsed through the
-            model, they get stuck. 
+            model, they get stuck.
             We therefore parse them one state at a time, then make the stack
             and return it.
             """
