@@ -112,9 +112,11 @@ class Network(nn.Module):
         
         if len(currentState.shape)>1:
             """
-            This i done because, with multi threading mulitple states were not parsing through the model,
-            they got stuck. We parsed them one state at a time, then made the stack and returned it.
-            #"""
+            With multi threading, mulitple states are not parsed through the
+            model, they get stuck.
+            We therefore parse them one state at a time, then make the stack
+            and return it.
+            """
             if self.debug:
                 log.debug(f"Shape of current state {self.name} of {curr.ident} = {currentState.shape}")
             for i in currentState:
