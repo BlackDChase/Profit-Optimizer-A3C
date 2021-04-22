@@ -110,6 +110,11 @@ class LSTMEnv(gym.Env):
         """
         Calculate reward based on the new_price
         """
+        if new_price>1:
+            """
+            My way of saying very high price not allowed
+            """
+            new_price=-new_price
         market_demand_index = 1
         ontario_demand_index = 2
         if self.debug:
