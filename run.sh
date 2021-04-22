@@ -3,8 +3,8 @@
 # Version : 0.2.0
 cd modules
 n=5
-e=1000
-t=50
+e=10
+t=5
 a=7
 alr=0.01
 clr=0.01
