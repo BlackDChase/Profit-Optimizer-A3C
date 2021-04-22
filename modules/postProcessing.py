@@ -8,11 +8,11 @@ Post processing to produce graphs from logs
 Currently is a RIPOFF of postProcessing made for MIDAS
 #"""
 __author__ = 'BlackDChase'
-__version__ = '0.1.8'
+__version__ = '0.2.0'
 
 # Imports
 
-
+import os
 import matplotlib.pyplot as plt
 import sys
 import numpy as np
@@ -23,13 +23,6 @@ def getAvg(array):
         arr.append(float(i))
     return (sum(arr)/len(arr),len(arr))
 
-def rewardEnd(fileN):
-    arr = []
-    with open(fileN) as reward:
-        for line in reward:
-            lastReward = float(line.strip().split(",")[-1])
-            arr.append(lastReward)
-    return arr
 
 def uniqueColor():
     """There're better ways to generate unique colors, but this isn't awful."""
@@ -40,6 +33,10 @@ def rewardAvg(fileN):
     with open(fileN) as reward:
         for line in reward:
             avgReward = line.strip().split(",")
+            while  len(avgReward)>0 and avgReward[-1]=='':
+                avgReward.pop()
+            if len(avgReward)<=0:
+                continue
             arr.append(getAvg(avgReward))
     return arr
 
@@ -50,27 +47,6 @@ def modelLoss(fileN):
             l = line.strip()
             arr.append(float(l))
     return arr
-
-def modelBalance(fileN,episodeLength):
-    arr = []
-    with open(fileN) as totalBalance:
-        for line in totalBalance:
-            bal = line.strip()
-            arr.append(float(bal))
-    episodicStop = np.cumsum(episodeLength)
-    coords = []
-    start = 0
-    endBal = []
-    for end in episodicStop:
-        x = []
-        y = []
-        for i in range(start,end):
-            x.append(i)
-            y.append(arr[i])
-        endBal.append(y[-1])
-        start = end
-        coords.append((x,y))
-    return coords,endBal
 
 
 def rewardAvgLen(data):
@@ -83,58 +59,44 @@ def rewardAvgLen(data):
 
 if __name__ == '__main__':
     #print(sys.argv)
+    #print(os.path.dirname(os.path.realpath("")))
     folderName = sys.argv[1]
-    folderName = "Saved_model/"+folderName+"/"
-    lastReward = rewardEnd(folderName+"rewardLog.tsv")
+    folderName = ""
+    avgAdvantage,episodeLength = rewardAvgLen(rewardAvg(folderName+"advantageLog.tsv"))
     avgReward, episodeLength = rewardAvgLen(rewardAvg(folderName+"rewardLog.tsv"))
-    loss = modelLoss(folderName+"lossLog.tsv")
-
-    """
-    balanceSet,endBal = modelBalance(folderName+"balanceLog.tsv",episodeLength)
-
-    # Ploting balance
-    plt.figure(figsize=(1980,1080),dpi=40000)
-    fig, ax = plt.subplots()
-    fig
-    for x,y in balanceSet:
-        ax.plot(x, y, color=uniqueColor())
-    plt.xlabel("Iteration (Every episode in different color)")
-    plt.ylabel("Balance")
-    plt.yticks(np.arange(0, 5000, 100))
-    plt.draw()
-    fig.savefig(folderName+"balance.svg",dpi=400)
-    plt.close()
-    #"""
-
-    # Ploting final rewards
-    plt.figure()
-    plt.xlabel("Episode")
-    plt.ylabel("Final reward")
-    plt.plot(lastReward)
-    plt.savefig(folderName+"finalReward.svg")
-    plt.close()
-
+    criticLoss = modelLoss(folderName+"policyLossLog.tsv")
+    policyLoss = modelLoss(folderName+"criticLossLog.tsv")
 
     # Ploting average reward
     plt.figure()
     plt.xlabel("Episode")
     plt.ylabel("Average reward")
     plt.plot(avgReward)
+    baseLine = [0.142776477819396]*len(avgReward)
+    plt.plot(baseLine,color='r',label='Average Reward of dataset')
     plt.savefig(folderName+"avgReward.svg")
     plt.close()
 
-    # Ploting final rewards
+    # Ploting average advantage
     plt.figure()
     plt.xlabel("Episode")
-    plt.ylabel("Loss")
-    plt.plot(loss)
-    plt.savefig(folderName+"loss.svg")
+    plt.ylabel("Average advantage")
+    plt.plot(avgAdvantage)
+    plt.savefig(folderName+"avgAdvantage.svg")
     plt.close()
 
-    # Ploting end Balance
+    # Ploting episodic Policy Loss
     plt.figure()
     plt.xlabel("Episode")
-    plt.ylabel("Final Balance")
-    plt.plot(endBal)
-    plt.savefig(folderName+"final Balance.svg")
+    plt.ylabel("Policy Loss")
+    plt.plot(policyLoss)
+    plt.savefig(folderName+"policyLoss.svg")
+    plt.close()
+
+    # Ploting episodic Critic Loss
+    plt.figure()
+    plt.xlabel("Episode")
+    plt.ylabel("criticLoss")
+    plt.plot(criticLoss)
+    plt.savefig(folderName+"criticLoss.svg")
     plt.close()

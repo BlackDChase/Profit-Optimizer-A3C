@@ -9,36 +9,36 @@ GOD AGENT
 BOSS AGENT
 - Will Update the network
 
-State = ((Market Demand)**2+(Ontario Demand)**2),Ontario Price,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, (TIMEstamp - optional)
+State = Ontario Price, Market Demand,Ontario Demand,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, Northwest Nigiria, West 
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.1.3'
+__version__ = '0.2.0'
 
 # Imports
-from torch import nn, multiprocessing, device, Tensor
+from torch import nn, device, Tensor
 from torch.distributions import Categorical
 import torch
 import numpy as np
 from tqdm import tqdm
-from tqdm_multi_thread import TqdmMultiThreadFactory
 import threading
 import log
 import sys
-from NeuralNet import Network, Aktor, Kritc
-#"""
+
+from NeuralNet import Network #, Aktor, Kritc
+import multiprocessing
+from multiprocessing import Process, Lock
+"""
 from TempEnv import TempEnv as ENV
 """
 from env import LSTMEnv as ENV
-from lstm import LSTM as LSTMmodel
+from lstm import LSTM
 output_size = 13
 input_dim = output_size
 hidden_dim = 128
 layer_dim = 1
-LSTM = LSTMmodel(output_size, input_dim, hidden_dim, layer_dim)
-LSTM.loadM("ENV_MODEL/lstm_model.pt")
-log.info(f"LSTM Model Declared in Agent = {LSTM}")
-envDATA="../Dataset/13_columns.csv"
-# ENV(LSTM,envDATA)
+modelPath="ENV_MODEL/lstm_model.pt"
+envDATA="../Dataset/normalized_13_columns.csv"
+# ENV(LSTM,envDATA,actionSpace)
 #"""
 
 
@@ -51,7 +51,7 @@ else:
     log.info("Might missing")
 #"""
 
-torch.autograd.set_detect_anomaly(True)
+#torch.autograd.set_detect_anomaly(True)
 """
 Better error logging for inplace operations that throw errors in automatic differentiation.
 #"""
@@ -67,7 +67,7 @@ class GOD:
     @Input (From Enviorenment) :: The Current State.
     @Output (To enviorenment)  :: The Final Action Taken.
     """
-    def __init__(self,maxEpisode=100,nAgent=1,debug=False,trajectoryLength=25,stateSize=9,actionSpaceDeviation=5,name="GOD",path=None,alr=1e-3,clr=1e-3):
+    def __init__(self,maxEpisode=100,nAgent=1,debug=False,trajectoryLength=25,stateSize=9,actionSpace=[-15,-10,0,+10,+15],name="GOD",path=None,alr=1e-3,clr=1e-3):
         """
         Initialization of various GOD parameters, self evident from the code.
         #"""
@@ -78,11 +78,10 @@ class GOD:
         self._state = Tensor([0]*stateSize)
 
         # action space is the percent change of the current price.
-        self._actionSD = int(actionSpaceDeviation)
-        self.__makeActions()
+        self._actionSpace = Tensor(actionSpace)
         self.debug = debug
         self.price = 0
-        self.__nAgent=0
+        self.__nAgent=nAgent
         self.__bossAgent=[]
         if path==None:
             self.needTraining(maxEpisode,nAgent,trajectoryLength,alr,clr)
@@ -99,13 +98,13 @@ class GOD:
         self.__criticLR = clr
 
         # semaphores do deal with simultaneous updates of the policy and critic net by multiple bosses.
-        self._policySemaphore = threading.Semaphore()
-        self._criticSemaphore = threading.Semaphore()
-
+        self._policySemaphore = Lock()
+        self._criticSemaphore = Lock()
+        self._resetSemaphore = Lock()
         #"""
         ## defining the actual neural net itself, input is state output is probability for each action.
         self.__policyNet = Network(
-            len(self._state),
+            self.stateSize,
             len(self._actionSpace),
             lr=self.__actorLR,
             name="Policy Net",
@@ -119,7 +118,7 @@ class GOD:
         ## the critic network :: it's input is state and output is a scaler ( the value of the state)
 
         self.__criticNet = Network(
-            len(self._state),
+            self.stateSize,
             1,
             lr=self.__criticLR,
             name="Critic Net",
@@ -131,15 +130,20 @@ class GOD:
         self.__policyNet = Aktor()
         self.__criticNet = Kritc()
         #"""
+
+        """
+        After using this, we might not need to have a semaphore when we use multiprocessesing
+        [Refer](https://pytorch.org/docs/stable/notes/multiprocessing.html)
+        To be sent to device before sharing
+        #"""
+        """
+        self.__policyNet.share_memory()
+        self.__criticNet.share_memory()
+        #"""
         return
 
-    def __makeActions(self):
-        log.info(f"Action Standard Deviation = {self._actionSD}")
-        actionSpace = [i/10 for i in range(-self._actionSD*25,self._actionSD*25+1,25)]
-        self._actionSpace = Tensor(actionSpace)
-
     def giveEnvironment(self,env):
-        self.__env=env
+        self.env=env
         self.__initateBoss()
         return
 
@@ -158,29 +162,40 @@ class GOD:
         self.trajectoryLength = trajectoryLength
         return
 
-    """
-    Wont be needed as take action is called by enviornment and will provide current state
-    def getState(self):
-        # To be defined Later (Get the current state)
-        pass
-    #"""
-
     def train(self):
         self.__trainBoss()
         return
 
     def _updatePolicy(self,lossP):
+        curr = multiprocessing.current_process()
+        if self.debug:
+            log.debug(f"{curr.name},{curr.pid} Wants Policy")
+        self._policySemaphore.acquire()
+        if self.debug:
+            log.debug(f"Policy Semaphore Acquired, {curr.ident}")
         self.__policyNet.optimizer.zero_grad()
         lossP.backward(retain_graph=True)
         self.__policyNet.optimizer.step()
+        self._policySemaphore.release()
+        if self.debug:
+            log.debug(f"Policy Semaphore released, {curr.ident}")
         return
 
     def _updateCritc(self,lossC):
+        curr = multiprocessing.current_process()
+        if self.debug:
+            log.debug(f"{curr.name},{curr.pid} Wants Critic")
+        self._criticSemaphore.acquire()
+        if self.debug:
+            log.debug(f"Critic Semaphore Acquired, {curr.ident}")
         self.__criticNet.optimizer.zero_grad()
         lossC.backward(retain_graph=True)
         self.__criticNet.optimizer.step()
+        self._criticSemaphore.release()
+        if self.debug:
+            log.debug(f"Critic Semaphore released, {curr.ident}")
         return
-
+    '''
     def takeAction(self,state):
         """
         Take the final action according to the Policy Network.
@@ -195,9 +210,11 @@ class GOD:
         ## categorical probability distribution
         actionIndex = pd.sample()
         probab = actionProb[actionIndex]
-        nextState,reward,info = self.__env.step(actionIndex)
-        log.info(f"{self.name} step taken,{info}, rewards = {reward}")
+        nextState,reward,info = self.env.step(actionIndex)
+        nextState = torch.Tensor(nextState)
+
         if self.debug:
+            log.debug(f"{self.name} step taken,{info}, rewards = {reward}")
             log.debug(f"Expected next State: {nextState}")
         return actionIndex,probab
 
@@ -206,34 +223,50 @@ class GOD:
         Online dilemma
         will be used at training time , for updating the networks
         #"""
-        result = self.__env.step(state,action)
+        result = self.env.step(state,action)
         return result
+    '''
 
     def _getAction(self,state):
+        curr = multiprocessing.current_process()
+        if self.debug:
+            log.debug(f"{curr.name},{curr.pid} Wants Policy")
         self._policySemaphore.acquire()
+        if self.debug:
+            log.debug(f"Policy Semaphore Acquired, {curr.ident}")
         actionProbab = self.__policyNet.forward(state)
         if self.debug:
             log.debug(f"Policy result = {actionProbab}")
-        # Not sure if forward is the way to go
+            # Not sure if forward is the way to go
         self._policySemaphore.release()
+        if self.debug:
+            log.debug(f"Policy Semaphore Released, {curr.ident}")
         return actionProbab
 
     def _getCriticValue(self,state):
+        curr = multiprocessing.current_process()
+        if self.debug:
+            log.debug(f"{curr.name},{curr.pid} Wants Critic")
         self._criticSemaphore.acquire()
+        if self.debug:
+            log.debug(f"Critic Semaphore Acquired, {curr.ident}")
         vVlaue = self.__criticNet.forward(state)
         self._criticSemaphore.release()
+        if self.debug:
+            log.debug(f"Critic Semaphore Released, {curr.ident}")
         return vVlaue
 
     def reset(self):
-        return self.__env.reset()
+        return torch.Tensor(self.env.reset())
 
     def step(self,action):
-        return self.__env.step(action)
+        return self.env.step(action)
 
     def __initateBoss(self):
         """
         Initialize all the boss agents for training
         #"""
+        self.__bossAgent=[]
         for i in range(self.__nAgent):
             #"""
             env = ENV(self.stateSize,self._actionSpace)
@@ -241,20 +274,16 @@ class GOD:
             env = ENV(LSTM,envDATA)
             #"""
             log.info(f"BOSS {str(i).zfill(2)}'s TempEnv made")
+
             boss = BOSS(
                 god=self,
-                env=env,
                 name="BOSS "+str(i).zfill(2),
-                # depth=200, # Not using anymore
                 maxEpisode=self.maxEpisode,
                 debug=self.debug,
                 trajectoryLength=self.trajectoryLength,
                 stateSize=self.stateSize,
             )
-            if len(self.__bossAgent)<i+1:
-                self.__bossAgent.append(boss)
-            else:
-                self.__bossAgent[i] = boss
+            self.__bossAgent.insert(i,boss)
             if self.debug:
                 log.debug(f"Boss{str(i).zfill(2)} created")
         return self.__bossAgent
@@ -264,16 +293,32 @@ class GOD:
         #"""
         bossThreads=[]
         for i in range(self.__nAgent):
-            multiThreadFactory = TqdmMultiThreadFactory()
-            process = multiprocessing.Process(target=self.__bossAgent[i].train,args=(multiThreadFactory,self.__nAgent,))
-            process.start()
-            if self.debug:
-                log.debug(f"Boss{str(i).zfill(2)} training started via GOD")
+            """
+            env=self.__makeENV(i)
+            self.__bossAgent[i].env = env
+            self.__bossAgent[i].train()
+            """
+            process = Process(target=self.__bossAgent[i].train,args=(self._resetSemaphore,))
+            env=self.__makeENV(i)
+            self._resetSemaphore.acquire()
+            log.info(f"{self._resetSemaphore} acquired by {self}")
+            env.reset()
+            self._resetSemaphore.release()
+            log.info(f"{self._resetSemaphore} released by {self}")
+
+            self.__bossAgent[i].env = env
+
             bossThreads.append(process)
+            #"""
+
+        for i in range(len(bossThreads)):
+            bossThreads[i].start()
+            log.info(f"Boss{str(i).zfill(2)} training started via GOD")
         for i in bossThreads:
             i.join()
-        """
+        #"""
         # Remove multiprocessing for @biribiri
+        """
         self.__bossAgent[0].train()
         if self.debug:
             log.debug(f"Boss00 training started via GOD")
@@ -281,17 +326,63 @@ class GOD:
         return
 
     def forwardP(self,actions):
-        return self.__policyNet.forward(actions)
+        curr = multiprocessing.current_process()
+        if self.debug:
+            log.debug(f"{curr.name},{curr.pid} Wants Policy")
+        self._policySemaphore.acquire()
+        if self.debug:
+            log.debug(f"Policy Semaphore Acquired, {curr.ident}")
+        if self.debug:
+            log.debug(f"{curr.ident} Actions {actions.shape}")
+        actionProb = self.__policyNet.forward(actions)
+        self._policySemaphore.release()
+        if self.debug:
+            log.debug(f"Policy Semaphore Released, {curr.ident}")
+
+        return actionProb
 
     def saveModel(self,path):
         torch.save(self.__policyNet.state_dict(),path+"/PolicyModel.pt")
         torch.save(self.__criticNet.state_dict(),path+"/CritcModel.pt")
         return
     def loadModel(self,path):
-        self.__policyNet = torch.load(path+"/PolicyModel.pt")
-        self.__criticNet = torch.load(path+"/CritcModel.pt")
+        """
+        If using GPU, this has to be mapped to it while load .. torch.load(path,map_location=device)
+        #"""
+        curr = multiprocessing.current_process()
+        if self.debug:
+            log.debug(f"{curr.name},{curr.pid} Wants Policy")
+        self._policySemaphore.acquire()
+        if self.debug:
+            log.debug(f"Policy Semaphore Acquired, {curr.ident}")
+        self.__policyNet = torch.load_state_dict(path+"/PolicyModel.pt")
+        self._policySemaphore.release()
+        if self.debug:
+            log.debug(f"Policy Semaphore Released, {curr.ident}")
 
-    pass
+        curr = multiprocessing.current_process()
+        if self.debug:
+            log.debug(f"{curr.name},{curr.pid} Wants Critic")
+        self._criticSemaphore.acquire()
+        if self.debug:
+            log.debug(f"Critic Semaphore Acquired, {curr.ident}")
+        self.__criticNet = torch.load_state_dict(path+"/CritcModel.pt")
+        self._criticSemaphore.release()
+        if self.debug:
+            log.debug(f"Critic Semaphore Released, {curr.ident}")
+        return
+
+    def __makeENV(self,boss):
+        """
+        env = ENV(self.stateSize,self._actionSpace)
+        log.info(f"BOSS {str(i).zfill(2)}'s TempEnv made")
+        """
+        LSTM_instance = LSTM(output_size, input_dim, hidden_dim, layer_dim)
+        LSTM_instance.loadM(modelPath)
+        log.info(f"LSTM Model Declared in Agent = {LSTM_instance}")
+        env = ENV(model=LSTM_instance,dataset_path=envDATA,actionSpace=self._actionSpace)
+        log.info(f"BOSS{str(boss).zfill(2)}'s Env made")
+        return env
 
 class BOSS(GOD):
     """
@@ -312,7 +403,6 @@ class BOSS(GOD):
                  trajectoryLength,
                  stateSize,
                  name,
-                 env,
                  gamma=0.99,
                  # lamda=0.1, # Lambda was earlier used for GAE
                  # depth=200, # Not used anymore
@@ -320,7 +410,6 @@ class BOSS(GOD):
                  ):
         super(BOSS,self).__init__(maxEpisode=maxEpisode,debug=debug,trajectoryLength=trajectoryLength,stateSize=stateSize,name=name)
         self.god = god
-        self.env = env
         self.actionSpace = self.god._actionSpace
         self.trajectoryS = torch.zeros([self.trajectoryLength,self.stateSize])
         self.trajectoryR = torch.zeros(self.trajectoryLength)
@@ -333,42 +422,64 @@ class BOSS(GOD):
         self.advantage = torch.zeros(self.trajectoryLength)
         # If entropy H_t calculated, Init beta
         pass
+        #"""
 
-    def train(self,factory,nAgent):
+    #def train(self,factory,nAgent):
+    def train(self,resetSemaphore):
         """
         The Actual function to train the network , the actor-critic actual logic.
         Eviorienment.step :: env.step has to give different outputs for different state trajectories by
         different boss. it has to take in account the diff trajectories becouse diff bosses will go to
         different states.
         #"""
+        curr = multiprocessing.current_process()
         if self.debug:
-            log.debug(f"{self.name} training started inside BOSS")
+            log.debug(f"{self.name},currentP name,id,pid {curr.name},{curr._identity},{curr.pid}")
+            log.debug(f"{curr.ident} training started inside BOSS")
+        """
+        Here the main logic of training of A2C will be present
+        `with factory.create(int(self.name[-2:]),nAgent) as progress:`
+        This was for a multiproccessing TQDM, which failed.
+        """
+        for e in tqdm(range(self.maxEpisode),ascii=True,desc=self.name):
+            if self.debug:
+                log.debug(f"{self.name} e = {e}")
+            resetSemaphore.acquire()
+            if self.debug:
+                log.debug(f"{self._resetSemaphore} acquired by {curr.ident}")
+            resetState = self.env.reset()
+            resetSemaphore.release()
+            if self.debug:
+                log.debug(f"{self._resetSemaphore} released by {curr.ident}")
 
-        # here the main logic of training of A2C will be present
-        with factory.create(int(self.name[-2:]),nAgent) as progress:
-            for e in range(self.maxEpisode):
-                self.startState = self.env.reset()
-                self.gatherAndStore()
-                """ @BOSS
-                Do we need to intiallise here?? when we are re declaring it in the three cal methods
-                Also, if we are declaring them lets declare them instart, and keep it in device
-                and After each gatherAndStore reset it.
-                ## @BLACK :: NO we dont need to initialize here ,i have removed it.
-                Also what which advantage function are we calling? @Black :: Nstep advantage.
-                #"""
-                self.calculateV_p()
-                self.calculateV_tar()
-                self.calculateNSTEPAdvantage()
+            self.startState = torch.Tensor(resetState)
+            if self.debug:
+                log.debug(f"{self.name} Start state = {self.startState}")
+            self.gatherAndStore()
+            log.info(f"rewards = {self.trajectoryR}")
 
-                """
-                Question to be figured out :: Exactly when should the boss agents update the networks??
-                #"""
-                self.calculateAndUpdateL_P()
-                # calculate  policy loss and update policy network
-                self.calculateAndUpdateL_C()
-                # calculate critic loss and update critic network
-                log.info(f"{self.name} episode {e} Completed")
-                progress.update(1)
+            """ @BOSS
+            Do we need to intiallise here?? when we are re declaring it in the three cal methods
+            Also, if we are declaring them lets declare them instart, and keep it in device
+            and After each gatherAndStore reset it.
+            ## @BLACK :: NO we dont need to initialize here ,i have removed it.
+            Also what which advantage function are we calling? @Black :: Nstep advantage.
+            #"""
+            self.calculateV_p()
+            self.calculateV_tar()
+            self.calculateNSTEPAdvantage()
+
+            """
+            Question to be figured out :: Exactly when should the boss agents update the networks??
+            #"""
+            self.calculateAndUpdateL_P()
+            # calculate  policy loss and update policy network
+            self.calculateAndUpdateL_C()
+            # calculate critic loss and update critic network
+            log.info(f"{self.name} episode {e} Completed")
+            #progress.update(1)
+        log.info(f"{self.name} has completed training")
+        print(f"{self.name} has completed training")
         pass
 
 
@@ -384,18 +495,19 @@ class BOSS(GOD):
         for i in range(self.trajectoryLength):
             action = self.getAction(currentState)
             #nextState,reward,info = self.god.step(action)
-            nextState,reward,info = self.env.step(action)
+            nextState,reward,_,info = self.env.step(action)
             ## Oi generous env , please tell me the next state and reward for the action i have taken
-            log.info(f"{self.name},  {info}")
+            log.info(f"{self.name}, {i},  {info}")
+            if self.debug:
+                log.debug(f"Reward and Shape = {reward}, {reward.shape}")
             self.trajectoryS[i] = currentState
             self.trajectoryA[i] = action
-            self.trajectoryR[i] = reward
+            self.trajectoryR[i] = torch.Tensor(reward)
             if self.debug:
-                log.debug(f"Action = {action}")
-            currentState=nextState
+                log.debug(f"Action for {self.name} {i} = {action}, {type(action)}")
+            currentState=torch.Tensor(nextState)
         if self.debug:
             log.debug(f"Action = {self.trajectoryA}")
-            log.debug(f"rewards = {self.trajectoryR}")
             log.debug(f"vPred = {self.vPredicted}")
             log.debug(f"vTar = {self.vTarget}")
         pass
@@ -467,12 +579,6 @@ class BOSS(GOD):
             # v_tar_currentState = reward + gamma* v_tar_nextState
         return
 
-    def calculateGAE(self):
-        # calculate the Advantage using the critic network
-        # gae is put on hold at this time
-        # To be declared at latter stage
-        raise NotImplementedError("You disturb BOSS for this?")
-
     def calculateNSTEPAdvantage(self):
         """
         Calculate Advantage using TD error/N-STEP , logic similar to vTarget calculation
@@ -483,7 +589,7 @@ class BOSS(GOD):
         for i in reversed(range(self.trajectoryLength-1)):
             self.advantage[i] = self.trajectoryR[i].clone() + self.ɤ*self.advantage[i+1].clone() - self.vPredicted[i].clone()
         if self.debug:
-            log.debug(f"Advantage = {self.advantage}")
+            log.info(f"Advantage {self.name} = {self.advantage}")
         return
 
     def calculateAndUpdateL_P(self):
@@ -504,18 +610,17 @@ class BOSS(GOD):
         # Advantage detached because: Advantage is the result of critc, and if it is backpropagated here,
         critic model might face issues during it's own backpropagation
         #"""
-        self.god._policySemaphore.acquire()
 
         pd = self.god.forwardP(self.trajectoryS)
         dist = Categorical(pd)
         logProb = dist.log_prob(self.trajectoryA)
         advantage = self.advantage.detach()
-
+        if self.debug:
+            log.debug(f" advantage detached for {self.name}")
         loss = -1*torch.mean(advantage*logProb)
         log.info(f"Policy loss = {loss}")
         self.god._updatePolicy(loss)
         log.info(f"Updated policyLoss for {self.name}")
-        self.god._policySemaphore.release()
         return
 
     def calculateAndUpdateL_C(self):
@@ -525,14 +630,10 @@ class BOSS(GOD):
         On the other hand vPredicted should be alligned in a way to reduces loss, hence model to be modifed
         by backpropagation keepint vPredicted attached
         #"""
-        self.god._criticSemaphore.acquire()
-
         pred = self.vPredicted
         targ = self.vTarget.detach()
         loss = torch.mean(torch.pow(pred-targ,2))
         log.info(f"Critic loss = {loss}")
         self.god._updateCritc(loss)
         log.info(f"Updated criticLoss for {self.name}")
-
-        self.god._criticSemaphore.release()
         return

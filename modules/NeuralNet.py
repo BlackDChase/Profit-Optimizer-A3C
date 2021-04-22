@@ -4,12 +4,13 @@ Primarily We would be using Network Class as it is more robust to change
 Aktor, Kritc are standins for testing
 #"""
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.1.3'
+__version__ = '0.2.0'
 
 # Imports
 import torch
 import log
 from torch import nn, device
+import multiprocessing
 # GLOBAL
 device = device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -108,10 +109,26 @@ class Network(nn.Module):
         Output for Policy network   : Probability Distribution Parameter
         Output for Critic network   : Advantage
         #"""
-        output = self.hypoThesis(currentState)
+        output=[]
+        curr = multiprocessing.current_process()
         if self.debug:
-            log.debug(f"current state for {self.name} : {currentState}")
-            log.debug(f"output of model = {output}")
+            log.debug(f"current state for {self.name} of {curr.ident} : {currentState}")
+        
+        if len(currentState.shape)>1:
+            """
+            This i done because, with multi threading mulitple states were not parsing through the model,
+            they got stuck. We parsed them one state at a time, then made the stack and returned it.
+            #"""
+            if self.debug:
+                log.debug(f"Shape of current state {self.name} of {curr.ident} = {currentState.shape}")
+            for i in currentState:
+                step = self.hypoThesis(i)
+                output.append(step)
+            output = torch.stack(output)
+        else:
+            output = self.hypoThesis(currentState)
+        if self.debug:
+            log.debug(f"output of model for {self.name} of {curr.ident} = {output}")
         return output
     pass
 
@@ -120,7 +137,7 @@ class Aktor(nn.Module):
         super(Aktor,self).__init__()
         self.learningRate = 1e-3
         self.model = nn.Sequential(
-            nn.Linear(in_features=9,out_features=20),
+            nn.Linear(in_features=13,out_features=20),
             nn.Linear(in_features=20,out_features=11),
             nn.Softmax(),
         )
@@ -136,7 +153,7 @@ class Kritc(nn.Module):
         super(Kritc,self).__init__()
         self.learningRate = 1e-3
         self.model = nn.Sequential(
-            nn.Linear(in_features=9,out_features=20),
+            nn.Linear(in_features=13,out_features=20),
             nn.ELU(),
             nn.Linear(in_features=20,out_features=1),
             nn.LeakyReLU(),

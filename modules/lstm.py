@@ -13,13 +13,14 @@ import log
 import random
 from tqdm import tqdm
 import numpy as np
+import multiprocessing
 
 class LSTM(nn.Module):
     """
     LSTM that takes the custom processed Ontario dataset as input and trains
     itself and now can be used to output predicted next datapoints.
     """
-    def __init__(self, output_size, input_dim, hidden_dim, layer_dim=1):
+    def __init__(self, output_size, input_dim, hidden_dim, layer_dim=1,debug=False):
         super(LSTM, self).__init__()
         self.output_size = output_size
 
@@ -33,6 +34,7 @@ class LSTM(nn.Module):
         # output of the LSTM will be of the equal to hidden_dim, not input_dim
         self.hidden_dim = hidden_dim
 
+        self.debug=debug
 
         # batch_first=True causes input/output tensors to be of shape
         # (batch_dim, seq_dim, feature_dim)
@@ -59,22 +61,42 @@ class LSTM(nn.Module):
         # TODO Is this sensible?
         hidden_state = torch.zeros(self.layer_dim, input_batch.size(0), self.hidden_dim).requires_grad_()
         cell_state = torch.zeros(self.layer_dim, input_batch.size(0), self.hidden_dim).requires_grad_()
+        
+        curr = multiprocessing.current_process()
+        if self.debug:
+            log.debug(f"Hidden, cell state made {curr.name}")
 
         # Propagate input through LSTM
         # We need to detach as we are doing truncated backpropagation through time (BPTT)
         # If we don't, we'll backprop all the way to the start even after going through another batch
-        out, (hn, cn) = self.lstm(input_batch, (hidden_state.detach(), cell_state.detach()))
-
+        hidden_state.detach()
+        cell_state.detach()
+        
+        if self.debug:
+            log.debug(f"Input batch: {input_batch.shape}, {curr.name}")
+            log.debug(f"Hidden shape: {hidden_state.shape}, {curr.name}")
+            log.debug(f"Cell shape: {cell_state.shape}, {curr.name}")
+        #out, (hn, cn) = self.lstm(input_batch, (hidden_state.detach(), cell_state.detach()))
+        out = torch.rand([input_batch.shape[0],13])
+        if self.debug:
+            log.debug(f"LSTM detached {curr.name}")
         # Index hidden state of last time step
         # out.size() --> 100, 28, 100 aka (batch_dim, seq_dim, feature_dim)
         # out[:, -1, :] --> 100, 100 --> just want last time step hidden states! (batch_dim, feature_dim)
-        out = self.fc(out[:, -1, :])
+        
+        # To be uncomemented later
+        #out = self.fc(out[:, -1, :])
+        
+        
         # out.size() --> 100, 10 (batch_dim, output_size)
 
         # if numpy, then return numpy ndarray
         if numpy:
-            out = numpy.array(out)
-
+            out = out.detach().numpy()
+            # reshape so that the output is (13), instead of (1, 13)
+            out = out.squeeze()
+        if self.debug:
+            log.debug(f"Forward finished {curr.name}")
         return out
 
     def create_datasets(self, csv_path):
@@ -85,21 +107,26 @@ class LSTM(nn.Module):
         3. splitting the dataset into training and testing
         """
         df = pd.read_csv(csv_path)
-        log.debug(f"df.head(5) = {df.head(5)}")
+        if self.debug:
+            log.debug(f"df.head(5) = {df.head(5)}")
 
         # Ontario price
         # df.iloc[row slice, column slice]
         y = df.iloc[:,0:1]
-        log.debug(f"Any negative values in Ontario price: {(y < 0).any().any()}")
+        if self.debug:
+            log.debug(f"Any negative values in Ontario price: {(y < 0).any().any()}")
 
         size = len(df)
-        log.debug(f"size = {size}")
+        if self.debug:
+            log.debug(f"size = {size}")
         # split the dataset 9:1 into train and test
         # TODO Do I need to enable grad on them to make them "differentiable"?
         train = torch.Tensor(df.iloc[:int(0.9 * size), :].values)
-        log.debug(f"train.shape = {train.shape}")
+        if self.debug:
+            log.debug(f"train.shape = {train.shape}")
         test = torch.Tensor(df.iloc[int(0.9 * size):, :].values)
-        log.debug(f"test.shape = {test.shape}")
+        if self.debug:
+            log.debug(f"test.shape = {test.shape}")
 
         return train, test
 
@@ -107,7 +134,6 @@ class LSTM(nn.Module):
             train_batch,
             model_parameters,
             loss_fn=torch.nn.MSELoss(),
-            csv_path="datasets/newData.csv",
             num_epochs=10000,
             num_timesteps_per_batch=100,
             input_history_length=50,
@@ -134,12 +160,15 @@ class LSTM(nn.Module):
                 rand_start_index = random.randint(0, train_batch_size - input_history_length - 1)
 
                 input_plus_label = train_batch[rand_start_index : rand_start_index + input_history_length]
-                log.debug(f"Input plus label shape {input_plus_label.shape}")
+                if self.debug:
+                    log.debug(f"Input plus label shape {input_plus_label.shape}")
                 inputData = input_plus_label[:-1]
                 label = input_plus_label[-1]
-                log.debug(f"input data shape = {inputData}")
+                if self.debug:
+                    log.debug(f"input data shape = {inputData}")
                 label = label.reshape(-1, label.shape[0])
-                log.debug(f"label shape = {label.shape}")
+                if self.debug:
+                    log.debug(f"label shape = {label.shape}")
 
                 # Convert 2D row to batch
                 inputData = self.convert_to_batch(inputData)
@@ -159,11 +188,13 @@ class LSTM(nn.Module):
             # forward pass
 
             output = self.forward(input_batch)
-            log.debug(f"Output shape = {output.shape}")
-            log.debug(f"Label Batch shape = {label_batch.shape}")
+            if self.debug:
+                log.debug(f"Output shape = {output.shape}")
+                log.debug(f"Label Batch shape = {label_batch.shape}")
             # get loss output
             loss = loss_fn(output, label_batch)
-            log.debug(f"loss = {loss}")
+            if self.debug:
+                log.debug(f"loss = {loss}")
 
             # get gradients
             loss.backward()
@@ -191,7 +222,8 @@ class LSTM(nn.Module):
 
             # get loss output
             loss = loss_fn(output, label)
-            log.debug(f"loss = {loss}")
+            if self.debug:
+                log.debug(f"loss = {loss}")
             total_loss = total_loss + loss
 
         log.info(f"total_loss = {total_loss}")
@@ -203,7 +235,8 @@ class LSTM(nn.Module):
         batch = non_batch.reshape(-1, non_batch.shape[0], non_batch.shape[1])
 
         # TODO Verify conversion is correct
-        log.debug(f"batch.shape = {batch.shape}")
+        if self.debug:
+            log.debug(f"batch.shape = {batch.shape}")
 
         return batch
 
