@@ -97,11 +97,7 @@ class LSTM(nn.Module):
         # Index hidden state of last time step
         # out.size() --> 100, 28, 100 aka (batch_dim, seq_dim, feature_dim)
         # out[:, -1, :] --> 100, 100 --> just want last time step hidden states! (batch_dim, feature_dim)
-        
-        # To be uncomemented later
-        #out = self.fc(out[:, -1, :])
-        
-        
+        out = self.fc(out[:, -1, :])
         # out.size() --> 100, 10 (batch_dim, output_size)
 
         # if numpy, then return numpy ndarray
