@@ -76,8 +76,22 @@ class LSTM(nn.Module):
             log.debug(f"Input batch: {input_batch.shape}, {curr.name}")
             log.debug(f"Hidden shape: {hidden_state.shape}, {curr.name}")
             log.debug(f"Cell shape: {cell_state.shape}, {curr.name}")
-        #out, (hn, cn) = self.lstm(input_batch, (hidden_state.detach(), cell_state.detach()))
-        out = torch.rand([input_batch.shape[0],13])
+
+
+        # With multi threading, mulitple states are not parsed through the
+        # model, they get stuck.
+        # We therefore parse them one state at a time, then make the stack
+        # and return it.
+        if input_batch.shape[0] > 1:
+            temp = []
+            for i in input_batch:
+                batch, _ = self.lstm(i, (hidden_state.detach(), cell_state.detach()))
+                temp.append(batch)
+            out = torch.stack(temp)
+        else:
+            out, (hn, cn) = self.lstm(input_batch, (hidden_state.detach(), cell_state.detach()))
+
+        # out = torch.rand([input_batch.shape[0],13])
         if self.debug:
             log.debug(f"LSTM detached {curr.name}")
         # Index hidden state of last time step
