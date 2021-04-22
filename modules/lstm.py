@@ -82,7 +82,7 @@ class LSTM(nn.Module):
         # model, they get stuck.
         # We therefore parse them one state at a time, then make the stack
         # and return it.
-        if input_batch.shape[0] > 1:
+        if len(input_batch.shape) > 1:
             temp = []
             for i in input_batch:
                 batch, _ = self.lstm(i, (hidden_state.detach(), cell_state.detach()))
