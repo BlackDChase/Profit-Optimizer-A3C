@@ -97,9 +97,7 @@ class LSTM(nn.Module):
         else:
             out, (hn, cn) = self.lstm(input_batch, (hidden_state.detach(), cell_state.detach()))
 
-        # out = torch.rand([input_batch.shape[0],13])
-        if self.debug:
-            log.debug(f"LSTM detached {curr.name}")
+        log.debug(f"LSTM detached {curr.name}")
         # Index hidden state of last time step
         # out.size() --> 100, 28, 100 aka (batch_dim, seq_dim, feature_dim)
         # out[:, -1, :] --> 100, 100 --> just want last time step hidden states! (batch_dim, feature_dim)
