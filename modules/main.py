@@ -57,19 +57,18 @@ Parameters:
     - clr   Critic Learning rate
     - p     Path of folder which contains PolicModel.py, CriticModel.pt
     - h     Help""")
-        
+
 """
 Making the action space
 """
 n=int(keywords['a']//2)
-if keywords['a']%2==0:    
+if keywords['a']%2==0:
     actionSpace = [i for i in range(-n*2,n*2+1,2)]
     actionSpace.pop(len(actionSpace)//2)
 else:
     actionSpace = [i/10 for i in range(-n*25,n*25+1,25)]
 keywords['a']=actionSpace
-   
-    
+
 # Imports
 """
 from TempEnv import TempEnv as ENV
@@ -124,6 +123,12 @@ if __name__=="__main__":
             print("Model starting it's training")
             god.train()
             god.saveModel("../Saved_model/")
+        except KeyboardInterrupt:
+            god.saveModel("../Saved_model/")
+            threadCount+=1
+            log.info(f"Terminated on a {threadCount}\t{catch}")
+            log.info(f"Traceback for the {threadCount} Exception\t{sys.exc_info()}")
+            print(f"{threadCount} thread Terminated, check log {log.name}")
         except Exception as catch:
             #log.debug(f"Terminaion Trace back {catch.with_traceback()}")
             threadCount+=1
