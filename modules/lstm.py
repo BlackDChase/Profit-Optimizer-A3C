@@ -85,7 +85,13 @@ class LSTM(nn.Module):
         if input_batch.shape[0] > 1:
             temp = []
             for i in input_batch:
-                batch, _ = self.lstm(i.reshape(-1, i.shape), (hidden_state.detach(), cell_state.detach()))
+                reshaped_i = i.reshape(1, i.shape[0], i.shape[1])
+                hidden_state = torch.zeros(self.layer_dim, reshaped_i.size(0), self.hidden_dim).requires_grad_()
+                cell_state = torch.zeros(self.layer_dim, reshaped_i.size(0), self.hidden_dim).requires_grad_()
+                log.debug(f"reshaped_i.shape = {reshaped_i.shape}")
+                log.debug(f"hidden_state.shape = {hidden_state.shape}")
+                log.debug(f"cell_state.shape = {cell_state.shape}")
+                batch, _ = self.lstm(reshaped_i, (hidden_state.detach(), cell_state.detach()))
                 temp.append(batch)
             out = torch.stack(temp)
         else:
