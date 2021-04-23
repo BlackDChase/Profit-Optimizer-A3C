@@ -1,0 +1,525 @@
+2021-04-23 12:13:35	INFO	New session initiated
+2021-04-23 12:13:35	DEBUG	Hidden, cell state made Process-1
+2021-04-23 12:13:35	DEBUG	Input batch: torch.Size([1, 10, 13]), Process-1
+2021-04-23 12:13:35	DEBUG	Hidden shape: torch.Size([1, 1, 128]), Process-1
+2021-04-23 12:13:35	DEBUG	Cell shape: torch.Size([1, 1, 128]), Process-1
+2021-04-23 12:13:35	DEBUG	Hidden, cell state made Process-2
+2021-04-23 12:13:35	DEBUG	Input batch: torch.Size([1, 10, 13]), Process-2
+2021-04-23 12:13:35	DEBUG	Hidden shape: torch.Size([1, 1, 128]), Process-2
+2021-04-23 12:13:35	DEBUG	Cell shape: torch.Size([1, 1, 128]), Process-2
+2021-04-23 12:13:35	DEBUG	Hidden, cell state made Process-3
+2021-04-23 12:13:35	DEBUG	Input batch: torch.Size([1, 10, 13]), Process-3
+2021-04-23 12:13:35	DEBUG	Hidden shape: torch.Size([1, 1, 128]), Process-3
+2021-04-23 12:13:35	DEBUG	Cell shape: torch.Size([1, 1, 128]), Process-3
+2021-04-23 12:13:35	DEBUG	LSTM made Process-1
+2021-04-23 12:13:35	DEBUG	Forward finished Process-1
+2021-04-23 12:13:35	DEBUG	Hidden, cell state made Process-4
+2021-04-23 12:13:35	DEBUG	Input batch: torch.Size([1, 10, 13]), Process-4
+2021-04-23 12:13:35	DEBUG	Hidden shape: torch.Size([1, 1, 128]), Process-4
+2021-04-23 12:13:35	DEBUG	Cell shape: torch.Size([1, 1, 128]), Process-4
+2021-04-23 12:13:35	DEBUG	Hidden, cell state made Process-5
+2021-04-23 12:13:35	DEBUG	Input batch: torch.Size([1, 10, 13]), Process-5
+2021-04-23 12:13:35	DEBUG	Hidden shape: torch.Size([1, 1, 128]), Process-5
+2021-04-23 12:13:35	DEBUG	Cell shape: torch.Size([1, 1, 128]), Process-5
+2021-04-23 12:13:35	DEBUG	LSTM made Process-2
+2021-04-23 12:13:35	DEBUG	Forward finished Process-2
+2021-04-23 12:13:35	DEBUG	LSTM made Process-4
+2021-04-23 12:13:35	DEBUG	Forward finished Process-4
+2021-04-23 12:13:35	DEBUG	LSTM made Process-3
+2021-04-23 12:13:35	DEBUG	Forward finished Process-3
+2021-04-23 12:13:35	DEBUG	LSTM made Process-5
+2021-04-23 12:13:35	DEBUG	Forward finished Process-5
+2021-04-23 12:13:35	DEBUG	Hidden, cell state made Process-6
+2021-04-23 12:13:35	DEBUG	Input batch: torch.Size([10, 10, 13]), Process-6
+2021-04-23 12:13:35	DEBUG	Hidden shape: torch.Size([1, 10, 128]), Process-6
+2021-04-23 12:13:35	DEBUG	Cell shape: torch.Size([1, 10, 128]), Process-6
+2021-04-23 12:13:35	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:35	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:35	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:35	DEBUG	Hidden, cell state made Process-7
+2021-04-23 12:13:35	DEBUG	Input batch: torch.Size([10, 10, 13]), Process-7
+2021-04-23 12:13:35	DEBUG	Hidden shape: torch.Size([1, 10, 128]), Process-7
+2021-04-23 12:13:35	DEBUG	Cell shape: torch.Size([1, 10, 128]), Process-7
+2021-04-23 12:13:35	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:35	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:35	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:35	DEBUG	Hidden, cell state made Process-8
+2021-04-23 12:13:35	DEBUG	Input batch: torch.Size([10, 10, 13]), Process-8
+2021-04-23 12:13:35	DEBUG	Hidden shape: torch.Size([1, 10, 128]), Process-8
+2021-04-23 12:13:35	DEBUG	Cell shape: torch.Size([1, 10, 128]), Process-8
+2021-04-23 12:13:35	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:35	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:35	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:35	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:35	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:35	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:35	DEBUG	Hidden, cell state made Process-9
+2021-04-23 12:13:35	DEBUG	Input batch: torch.Size([10, 10, 13]), Process-9
+2021-04-23 12:13:35	DEBUG	Hidden shape: torch.Size([1, 10, 128]), Process-9
+2021-04-23 12:13:35	DEBUG	Cell shape: torch.Size([1, 10, 128]), Process-9
+2021-04-23 12:13:35	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:35	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:35	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:35	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:35	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:35	DEBUG	Hidden, cell state made Process-10
+2021-04-23 12:13:35	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:35	DEBUG	Input batch: torch.Size([10, 10, 13]), Process-10
+2021-04-23 12:13:35	DEBUG	Hidden shape: torch.Size([1, 10, 128]), Process-10
+2021-04-23 12:13:35	DEBUG	Cell shape: torch.Size([1, 10, 128]), Process-10
+2021-04-23 12:13:35	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:35	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:35	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:36	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:36	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:36	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:36	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:36	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:36	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:36	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:36	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:36	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:36	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:36	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:36	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:36	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:36	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:36	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:36	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:36	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:36	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:36	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:36	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:37	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:37	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:37	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:37	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:37	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:37	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:37	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:37	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:37	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:37	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:37	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:37	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:37	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:37	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:37	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:37	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	LSTM made Process-10
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	Forward finished Process-10
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	LSTM made Process-9
+2021-04-23 12:13:38	DEBUG	Forward finished Process-9
+2021-04-23 12:13:38	DEBUG	LSTM made Process-7
+2021-04-23 12:13:38	DEBUG	Forward finished Process-7
+2021-04-23 12:13:38	DEBUG	LSTM made Process-6
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	Forward finished Process-6
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	LSTM made Process-8
+2021-04-23 12:13:38	DEBUG	Forward finished Process-8
+2021-04-23 12:13:38	DEBUG	Hidden, cell state made Process-11
+2021-04-23 12:13:38	DEBUG	Input batch: torch.Size([1, 1, 13]), Process-11
+2021-04-23 12:13:38	DEBUG	Hidden shape: torch.Size([1, 1, 128]), Process-11
+2021-04-23 12:13:38	DEBUG	Cell shape: torch.Size([1, 1, 128]), Process-11
+2021-04-23 12:13:38	DEBUG	LSTM made Process-11
+2021-04-23 12:13:38	DEBUG	Hidden, cell state made Process-12
+2021-04-23 12:13:38	DEBUG	Input batch: torch.Size([1, 1, 13]), Process-12
+2021-04-23 12:13:38	DEBUG	Hidden shape: torch.Size([1, 1, 128]), Process-12
+2021-04-23 12:13:38	DEBUG	Cell shape: torch.Size([1, 1, 128]), Process-12
+2021-04-23 12:13:38	DEBUG	Forward finished Process-11
+2021-04-23 12:13:38	DEBUG	Hidden, cell state made Process-13
+2021-04-23 12:13:38	DEBUG	Input batch: torch.Size([1, 1, 13]), Process-13
+2021-04-23 12:13:38	DEBUG	Hidden shape: torch.Size([1, 1, 128]), Process-13
+2021-04-23 12:13:38	DEBUG	Cell shape: torch.Size([1, 1, 128]), Process-13
+2021-04-23 12:13:38	DEBUG	Hidden, cell state made Process-14
+2021-04-23 12:13:38	DEBUG	Hidden, cell state made Process-15
+2021-04-23 12:13:38	DEBUG	Input batch: torch.Size([1, 1, 13]), Process-14
+2021-04-23 12:13:38	DEBUG	Input batch: torch.Size([1, 1, 13]), Process-15
+2021-04-23 12:13:38	DEBUG	LSTM made Process-12
+2021-04-23 12:13:38	DEBUG	Forward finished Process-12
+2021-04-23 12:13:38	DEBUG	LSTM made Process-13
+2021-04-23 12:13:38	DEBUG	Forward finished Process-13
+2021-04-23 12:13:38	DEBUG	Hidden shape: torch.Size([1, 1, 128]), Process-14
+2021-04-23 12:13:38	DEBUG	Hidden shape: torch.Size([1, 1, 128]), Process-15
+2021-04-23 12:13:38	DEBUG	Cell shape: torch.Size([1, 1, 128]), Process-14
+2021-04-23 12:13:38	DEBUG	Cell shape: torch.Size([1, 1, 128]), Process-15
+2021-04-23 12:13:38	DEBUG	LSTM made Process-15
+2021-04-23 12:13:38	DEBUG	LSTM made Process-14
+2021-04-23 12:13:38	DEBUG	Forward finished Process-15
+2021-04-23 12:13:38	DEBUG	Forward finished Process-14
+2021-04-23 12:13:38	DEBUG	Hidden, cell state made Process-16
+2021-04-23 12:13:38	DEBUG	Input batch: torch.Size([10, 1, 13]), Process-16
+2021-04-23 12:13:38	DEBUG	Hidden shape: torch.Size([1, 10, 128]), Process-16
+2021-04-23 12:13:38	DEBUG	Cell shape: torch.Size([1, 10, 128]), Process-16
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	Hidden, cell state made Process-17
+2021-04-23 12:13:38	DEBUG	Input batch: torch.Size([10, 1, 13]), Process-17
+2021-04-23 12:13:38	DEBUG	Hidden shape: torch.Size([1, 10, 128]), Process-17
+2021-04-23 12:13:38	DEBUG	Cell shape: torch.Size([1, 10, 128]), Process-17
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	Hidden, cell state made Process-18
+2021-04-23 12:13:38	DEBUG	Input batch: torch.Size([10, 1, 13]), Process-18
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	Hidden shape: torch.Size([1, 10, 128]), Process-18
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	Cell shape: torch.Size([1, 10, 128]), Process-18
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	Hidden, cell state made Process-19
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	Input batch: torch.Size([10, 1, 13]), Process-19
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	Hidden shape: torch.Size([1, 10, 128]), Process-19
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	Cell shape: torch.Size([1, 10, 128]), Process-19
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	Hidden, cell state made Process-20
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	Input batch: torch.Size([10, 1, 13]), Process-20
+2021-04-23 12:13:38	DEBUG	Hidden shape: torch.Size([1, 10, 128]), Process-20
+2021-04-23 12:13:38	DEBUG	Cell shape: torch.Size([1, 10, 128]), Process-20
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	LSTM made Process-16
+2021-04-23 12:13:38	DEBUG	Forward finished Process-16
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	LSTM made Process-18
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	Forward finished Process-18
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	LSTM made Process-20
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	Forward finished Process-20
+2021-04-23 12:13:38	DEBUG	LSTM made Process-17
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	Forward finished Process-17
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	LSTM made Process-19
+2021-04-23 12:13:38	DEBUG	Forward finished Process-19
+2021-04-23 12:13:38	DEBUG	Hidden, cell state made MainProcess
+2021-04-23 12:13:38	DEBUG	Input batch: torch.Size([1, 10, 13]), MainProcess
+2021-04-23 12:13:38	DEBUG	Hidden shape: torch.Size([1, 1, 128]), MainProcess
+2021-04-23 12:13:38	DEBUG	Cell shape: torch.Size([1, 1, 128]), MainProcess
+2021-04-23 12:13:38	DEBUG	LSTM made MainProcess
+2021-04-23 12:13:38	DEBUG	Forward finished MainProcess
+2021-04-23 12:13:38	DEBUG	Hidden, cell state made MainProcess
+2021-04-23 12:13:38	DEBUG	Input batch: torch.Size([10, 10, 13]), MainProcess
+2021-04-23 12:13:38	DEBUG	Hidden shape: torch.Size([1, 10, 128]), MainProcess
+2021-04-23 12:13:38	DEBUG	Cell shape: torch.Size([1, 10, 128]), MainProcess
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 10, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	LSTM made MainProcess
+2021-04-23 12:13:38	DEBUG	Forward finished MainProcess
+2021-04-23 12:13:38	DEBUG	Hidden, cell state made MainProcess
+2021-04-23 12:13:38	DEBUG	Input batch: torch.Size([1, 1, 13]), MainProcess
+2021-04-23 12:13:38	DEBUG	Hidden shape: torch.Size([1, 1, 128]), MainProcess
+2021-04-23 12:13:38	DEBUG	Cell shape: torch.Size([1, 1, 128]), MainProcess
+2021-04-23 12:13:38	DEBUG	LSTM made MainProcess
+2021-04-23 12:13:38	DEBUG	Forward finished MainProcess
+2021-04-23 12:13:38	DEBUG	Hidden, cell state made MainProcess
+2021-04-23 12:13:38	DEBUG	Input batch: torch.Size([10, 1, 13]), MainProcess
+2021-04-23 12:13:38	DEBUG	Hidden shape: torch.Size([1, 10, 128]), MainProcess
+2021-04-23 12:13:38	DEBUG	Cell shape: torch.Size([1, 10, 128]), MainProcess
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	reshaped_i.shape = torch.Size([1, 1, 13])
+2021-04-23 12:13:38	DEBUG	hidden_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	cell_state.shape = torch.Size([1, 1, 128])
+2021-04-23 12:13:38	DEBUG	LSTM made MainProcess
+2021-04-23 12:13:38	DEBUG	Forward finished MainProcess
+2021-04-23 12:13:38	DEBUG	Hidden, cell state made Process-21
+2021-04-23 12:13:38	DEBUG	Input batch: torch.Size([1, 10, 13]), Process-21
+2021-04-23 12:13:38	DEBUG	Hidden shape: torch.Size([1, 1, 128]), Process-21
+2021-04-23 12:13:38	DEBUG	Cell shape: torch.Size([1, 1, 128]), Process-21
+2021-04-23 12:13:38	DEBUG	Hidden, cell state made Process-22
+2021-04-23 12:13:38	DEBUG	Input batch: torch.Size([1, 10, 13]), Process-22
+2021-04-23 12:13:38	DEBUG	Hidden shape: torch.Size([1, 1, 128]), Process-22
+2021-04-23 12:13:38	DEBUG	Cell shape: torch.Size([1, 1, 128]), Process-22
+2021-04-23 12:13:38	DEBUG	Hidden, cell state made Process-23
+2021-04-23 12:13:38	DEBUG	Input batch: torch.Size([1, 10, 13]), Process-23
+2021-04-23 12:13:38	DEBUG	Hidden shape: torch.Size([1, 1, 128]), Process-23
+2021-04-23 12:13:38	DEBUG	Cell shape: torch.Size([1, 1, 128]), Process-23
+2021-04-23 12:13:38	DEBUG	Hidden, cell state made Process-24
+2021-04-23 12:13:38	DEBUG	Input batch: torch.Size([1, 10, 13]), Process-24
+2021-04-23 12:13:38	DEBUG	Hidden shape: torch.Size([1, 1, 128]), Process-24
+2021-04-23 12:13:38	DEBUG	Cell shape: torch.Size([1, 1, 128]), Process-24
+2021-04-23 12:13:38	DEBUG	Hidden, cell state made Process-25
+2021-04-23 12:13:38	DEBUG	Input batch: torch.Size([1, 10, 13]), Process-25
+2021-04-23 12:13:38	DEBUG	Hidden shape: torch.Size([1, 1, 128]), Process-25
+2021-04-23 12:13:38	DEBUG	Cell shape: torch.Size([1, 1, 128]), Process-25
