@@ -88,16 +88,17 @@ class LSTM(nn.Module):
                 reshaped_i = i.reshape(1, i.shape[0], i.shape[1])
                 hidden_state = torch.zeros(self.layer_dim, reshaped_i.size(0), self.hidden_dim).requires_grad_()
                 cell_state = torch.zeros(self.layer_dim, reshaped_i.size(0), self.hidden_dim).requires_grad_()
-                log.debug(f"reshaped_i.shape = {reshaped_i.shape}")
-                log.debug(f"hidden_state.shape = {hidden_state.shape}")
-                log.debug(f"cell_state.shape = {cell_state.shape}")
+                if self.debug:
+                    log.debug(f"reshaped_i.shape = {reshaped_i.shape}")
+                    log.debug(f"hidden_state.shape = {hidden_state.shape}")
+                    log.debug(f"cell_state.shape = {cell_state.shape}")
                 batch, _ = self.lstm(reshaped_i, (hidden_state.detach(), cell_state.detach()))
                 temp.append(batch)
             out = torch.stack(temp)
         else:
             out, (hn, cn) = self.lstm(input_batch, (hidden_state.detach(), cell_state.detach()))
-
-        log.debug(f"LSTM detached {curr.name}")
+        if self.debug:
+            log.debug(f"LSTM made {curr.name}")
         # Index hidden state of last time step
         # out.size() --> 100, 28, 100 aka (batch_dim, seq_dim, feature_dim)
         # out[:, -1, :] --> 100, 100 --> just want last time step hidden states! (batch_dim, feature_dim)

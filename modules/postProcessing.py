@@ -57,10 +57,18 @@ def rewardAvgLen(data):
         rewardLen.append(length)
     return avgReward,rewardLen
 
+def getMostRecent(folder):
+    path=os.path.dirname(os.path.realpath(""))
+    pwd = path.split("/")[0]
+    if pwd=='Saved_model':
+        all_subdirs = [d for d in os.listdir('.') if os.path.isdir(d)]
+        latest_subdir = max(all_subdirs, key=os.path.getmtime)
+    raise NotImplemented
+
 if __name__ == '__main__':
     #print(sys.argv)
     #print(os.path.dirname(os.path.realpath("")))
-    folderName = sys.argv[1]
+    #folderName = getMostRecent(sys.argv[1])
     folderName = ""
     avgAdvantage,episodeLength = rewardAvgLen(rewardAvg(folderName+"advantageLog.tsv"))
     avgReward, episodeLength = rewardAvgLen(rewardAvg(folderName+"rewardLog.tsv"))
