@@ -72,8 +72,8 @@ if __name__ == '__main__':
     folderName = ""
     avgAdvantage,episodeLength = rewardAvgLen(rewardAvg(folderName+"advantageLog.tsv"))
     avgReward, episodeLength = rewardAvgLen(rewardAvg(folderName+"rewardLog.tsv"))
-    criticLoss = modelLoss(folderName+"policyLossLog.tsv")
-    policyLoss = modelLoss(folderName+"criticLossLog.tsv")
+    policyLoss = modelLoss(folderName+"policyLossLog.tsv")
+    criticLoss = modelLoss(folderName+"criticLossLog.tsv")
 
     # Ploting average reward
     plt.figure()
