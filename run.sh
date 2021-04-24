@@ -3,9 +3,9 @@
 # Version : 0.2.0
 cd modules
 n=5
-e=10
-t=5
-a=7
+e=15
+t=10
+a=5
 alr=0.01
 clr=0.01
 d=True
