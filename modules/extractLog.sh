@@ -1,6 +1,5 @@
 #!/bin/bash
-
-name=$(ls ../logs -Art | grep ".tsv" | tail -n 1)
+name=$(ls ../logs -Art | grep "O.tsv" | tail -n 1)
 IFS='.'
 read -ra name <<< "$name"
 name="${name[0]}"

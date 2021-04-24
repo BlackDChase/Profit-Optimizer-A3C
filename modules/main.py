@@ -122,13 +122,10 @@ if __name__=="__main__":
         try:
             print("Model starting it's training")
             god.train()
-            god.saveModel("../Saved_model/")
+            god.saveModel("../Saved_model")
         except KeyboardInterrupt:
-            god.saveModel("../Saved_model/")
-            threadCount+=1
-            log.info(f"Terminated on a {threadCount}\t{catch}")
-            log.info(f"Traceback for the {threadCount} Exception\t{sys.exc_info()}")
-            print(f"{threadCount} thread Terminated, check log {log.name}")
+            god.saveModel("../Saved_model")
+            raise KeyboardInterrupt
         except Exception as catch:
             #log.debug(f"Terminaion Trace back {catch.with_traceback()}")
             threadCount+=1

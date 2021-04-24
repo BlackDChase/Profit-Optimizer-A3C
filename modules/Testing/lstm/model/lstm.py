@@ -48,7 +48,7 @@ class LSTM(nn.Module):
 
         If numpy=True, then assume input is 2D numpy array, and convert to
         appropriate tensor, do the forward, and then return a numpy array.
-        """
+        #"""
         if numpy:
             # we have 2D numpy input
             # convert to tensor
@@ -82,7 +82,11 @@ class LSTM(nn.Module):
         # model, they get stuck.
         # We therefore parse them one state at a time, then make the stack
         # and return it.
-        if input_batch.shape[0] > 1:
+        #"""
+        print("Here")
+        #if input_batch.shape[0] > 1:
+        if False:
+            print("In if")
             temp = []
             for i in input_batch:
                 reshaped_i = i.reshape(1, i.shape[0], i.shape[1])
@@ -95,13 +99,23 @@ class LSTM(nn.Module):
                 batch, _ = self.lstm(reshaped_i, (hidden_state.detach(), cell_state.detach()))
                 temp.append(batch)
             out = torch.stack(temp)
+            print("After If")
         else:
+            print(f"{curr.ident} Before")
             out, (hn, cn) = self.lstm(input_batch, (hidden_state.detach(), cell_state.detach()))
+            print(f"{curr.ident} After")
+        #"""
         if self.debug:
             log.debug(f"LSTM made {curr.name}")
+            
         # Index hidden state of last time step
         # out.size() --> 100, 28, 100 aka (batch_dim, seq_dim, feature_dim)
         # out[:, -1, :] --> 100, 100 --> just want last time step hidden states! (batch_dim, feature_dim)
+        
+        
+        #out = torch.rand(1,1,13)
+        
+        
         out = self.fc(out[:, -1, :])
         # out.size() --> 100, 10 (batch_dim, output_size)
 
@@ -256,7 +270,7 @@ class LSTM(nn.Module):
         return batch
 
     def saveM(self,name):
-        torch.save(self.state_dict(),name+".pt")
+        torch.save(self.lstm.state_dict(),name+".pt")
 
     def loadM(self,path):
-        self.load_state_dict(torch.load(path))
+        self.lstm.load_state_dict(torch.load(path))

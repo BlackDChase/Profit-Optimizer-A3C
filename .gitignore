@@ -7,5 +7,6 @@ lib/*
 bin/*
 lib64/*
 logs/*
+*.tsv
 temp/
 Saved_model/*
