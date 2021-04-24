@@ -121,4 +121,6 @@ class LSTMEnv(gym.Env):
         if self.debug:
             log.debug(f"self.current_observation.shape = {self.current_observation.shape}")
         demand = self.current_observation[market_demand_index] + self.current_observation[ontario_demand_index]
+        if new_price>1000:
+            new_price=1000-new_price
         return demand * new_price
