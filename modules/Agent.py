@@ -12,10 +12,10 @@ BOSS AGENT
 State = Ontario Price, Market Demand,Ontario Demand,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, Northwest Nigiria, West
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.2.0'
+__version__ = '0.3.0'
 
 # Imports
-from torch import nn, device, Tensor
+from torch import nn, Tensor
 from torch.distributions import Categorical
 import torch
 import numpy as np
@@ -142,7 +142,6 @@ class GOD:
 
     def giveEnvironment(self,env):
         self.__env=env
-        self.__initateBoss()
         return
 
     def setNumberOfAgent(self,nAgent):
@@ -161,6 +160,7 @@ class GOD:
         return
 
     def train(self):
+        self.__initateBoss()
         self.__trainBoss()
         return
 
@@ -193,6 +193,7 @@ class GOD:
         if self.debug:
             log.debug(f"Critic Semaphore released, {curr.ident}")
         return
+    
     '''
     def takeAction(self,state):
         """
@@ -222,7 +223,7 @@ class GOD:
         #"""
         result = self.__env.step(state,action)
         return result
-    '''
+    #'''
 
     def _getAction(self,state):
         curr = multiprocessing.current_process()
@@ -281,7 +282,6 @@ class GOD:
     def __trainBoss(self):
         # To be defined Later :: the actual function to train multiple bosses.
         #"""
-        
         bossThreads=[]
         for i in range(self.__nAgent):
             process = Process(target=self.__bossAgent[i].train,args=(self._resetSemaphore,))
@@ -318,8 +318,8 @@ class GOD:
         return actionProb
 
     def saveModel(self,path):
-        torch.save(self.__policyNet.state_dict(),path+"/PolicyModel.pt")
-        torch.save(self.__criticNet.state_dict(),path+"/CritcModel.pt")
+        self.__policyNet.saveM(path+"/PolicyModel.pt")
+        self.__criticNet.saveM(path+"/CritcModel.pt")
         return
 
     def loadModel(self,path):
@@ -375,7 +375,8 @@ class BOSS(GOD):
                  ):
         super(BOSS,self).__init__(maxEpisode=maxEpisode,debug=debug,trajectoryLength=trajectoryLength,stateSize=stateSize,name=name)
         self.god = god
-        self.actionSpace = self.god._actionSpace
+        self._actionSpace = self.god._actionSpace
+        log.info(f"{self.name}\tAction Space\t{self._actionSpace}")
         self.trajectoryS = torch.zeros([self.trajectoryLength,self.stateSize])
         self.trajectoryR = torch.zeros(self.trajectoryLength)
         self.trajectoryA = torch.zeros(self.trajectoryLength)
@@ -391,22 +392,9 @@ class BOSS(GOD):
 
     #def train(self,factory,nAgent):
     def train(self,resetSemaphore):
-        """
-        Making enviornment here
-        Because of #35472 on pytorch : https://github.com/pytorch/pytorch/issues/35472#issue-588591481
-        Proposed solution is: https://github.com/pytorch/pytorch/issues/35472#issuecomment-604775738
-        #"""
-        """
-        resetSemaphore.acquire()
-        log.info(f"{resetSemaphore} acquired by {self}")
-        #"""
         self.makeENV(resetSemaphore)
         log.info(f"{self.name}'s Env made")
-        self.env.reset()
-        """
-        resetSemaphore.release()
-        log.info(f"{resetSemaphore} released by {self}")
-        #"""
+
         """
         The Actual function to train the network , the actor-critic actual logic.
         Eviorienment.step :: env.step has to give different outputs for different state trajectories by
@@ -468,25 +456,27 @@ class BOSS(GOD):
 
     def makeENV(self,resetSemaphore):
         """
-        env = ENV(self.stateSize,self._actionSpace)
-        log.info(f"BOSS {str(i).zfill(2)}'s TempEnv made")
+        Making enviornment here
+        Because of #35472 on pytorch : https://github.com/pytorch/pytorch/issues/35472#issue-588591481
+        Proposed solution is: https://github.com/pytorch/pytorch/issues/35472#issuecomment-604775738
         #"""
-        #print(modelPath)
         LSTM_instance = LSTM(output_size, input_dim, hidden_dim, layer_dim,debug=self.debug)
         if self.debug:
             log.info(f"LSTM instance created for {self.name} = {LSTM_instance}")
+
         resetSemaphore.acquire()
         log.info(f"{resetSemaphore} acquired by {self}")
 
         LSTM_instance.loadM("ENV_MODEL/lstm_model.pt")
         log.info(f"{self.name}'s Env made")
+
+        log.info(f"LSTM instance loaded for {self.name} = {LSTM_instance}")
+        self.env = ENV(model=LSTM_instance,dataset_path=envDATA,actionSpace=self._actionSpace,debug=self.debug)
         self.env.reset()
 
         resetSemaphore.release()
         log.info(f"{resetSemaphore} released by {self}")
 
-        log.info(f"LSTM instance loaded for {self.name} = {LSTM_instance}")
-        self.env = ENV(model=LSTM_instance,dataset_path=envDATA,actionSpace=self._actionSpace)
         return
 
     def gatherAndStore(self):
@@ -509,7 +499,6 @@ class BOSS(GOD):
             self.trajectoryS[i] = currentState
             self.trajectoryA[i] = action
             self.trajectoryR[i] = torch.Tensor(reward)
-            nextState = nextState.detach()
             if self.debug:
                 log.debug(f"Action for {self.name} {i} = {action}, {type(action)}")
                 log.debug(f"Detached Next state {nextState}")

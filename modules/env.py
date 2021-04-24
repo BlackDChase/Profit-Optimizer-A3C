@@ -69,6 +69,7 @@ class LSTMEnv(gym.Env):
             print("Illegal action")
             if self.debug:
                 log.debug(f"Illegal action = {action}")
+                log.debug(f"Action Space = {self.actionSpace}")
             import sys
             sys.exit()
 

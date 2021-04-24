@@ -13,5 +13,5 @@ echo "'Model will start training with $n agents, training $e episodes of $t leng
 python main.py -n=$n -e=$e -t=$t -a=$a -alr=$alr -clr=$clr -d=$d
 #python main.py -a=7 -d=t -p="../Saved_model/Sun-04-04-21/"
 echo "'Model Trained, extracting usefull info'"
-#./sh extractLog.sh
+./extractLog.sh
 echo "'Models saved with $n agents training $e episodes of $t length with $a actions as Hyperparameter'"
