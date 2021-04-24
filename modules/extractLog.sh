@@ -12,9 +12,11 @@ awk "/Critic loss/ {print}" $name.tsv > "criticLossLog.tsv"
 awk "/\tAdvantage/ {print}" $name.tsv > "advantageLog.tsv"
 echo "'Sub logs made'"
 
+critic=$(ls ../ -Art | grep "CritcModel." | tail -n 1)
+actor=$(ls ../ -Art | grep "PolicyModel." | tail -n 1)
 
-mv "../CritcModel.pt" "./"
-mv "../PolicyModel.pt" "./"
+mv "../$critic" "./"
+mv "../$actor" "./"
 
 vim policyLossLog.tsv  -c ':%s/.*loss = //g' -c ':wq'
 vim rewardLog.tsv  -c ':%s/.*tensor//g' -c ':%s/(\[//g'  -c ':%s/\].*//g' -c ':wq'

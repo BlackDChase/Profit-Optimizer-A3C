@@ -130,7 +130,7 @@ class Network(nn.Module):
         return output
         
     def saveM(self,name):
-        torch.save(self.hypoThesis.state_dict(),name+".pt")
+        torch.save(self.hypoThesis.state_dict(),name)
         log.info(f"{self.name} saved = {self.hypoThesis}")
 
     def loadM(self,path):
