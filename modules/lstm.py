@@ -248,6 +248,5 @@ class LSTM(nn.Module):
         log.info(f"LSTM saved = {self.lstm}")
 
     def loadM(self,path):
-        print("Trying to load")
         self.lstm.load_state_dict(torch.load(path))
         log.info(f"LSTM loaded = {self.lstm}")
