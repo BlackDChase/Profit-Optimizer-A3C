@@ -4,12 +4,12 @@ Primarily We would be using Network Class as it is more robust to change
 Aktor, Kritc are standins for testing
 #"""
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.2.0'
+__version__ = '0.3.0'
 
 # Imports
 import torch
 import log
-from torch import nn, device
+from torch import nn
 import multiprocessing
 # GLOBAL
 #device = device("cuda" if torch.cuda.is_available() else "cpu")
@@ -128,7 +128,15 @@ class Network(nn.Module):
         if self.debug:
             log.debug(f"output of model for {self.name} of {curr.ident} = {output}")
         return output
+        
+    def saveM(self,name):
+        torch.save(self.hypoThesis.state_dict(),name+".pt")
+        log.info(f"{self.name} saved = {self.hypoThesis}")
 
+    def loadM(self,path):
+        print("Trying to load")
+        self.hypoThesis.load_state_dict(torch.load(path))
+        log.info(f"{self.name} loaded = {self.hypoThesis}")
     pass
 
 class Aktor(nn.Module):
@@ -142,9 +150,20 @@ class Aktor(nn.Module):
         )
         self.params = self.model.parameters()
         self.optimizer = torch.optim.SGD(self.params,lr=self.learningRate)
+
     def forward(self,currentState):
         output = self.model(currentState)
         return output
+
+    def saveM(self,name):
+        torch.save(self.model.state_dict(),name+".pt")
+        log.info(f"Kritc saved = {self.model}")
+
+    def loadM(self,path):
+        print("Trying to load")
+        self.model.load_state_dict(torch.load(path))
+        log.info(f"Kritc loaded = {self.model}")
+    pass
 
 class Kritc(nn.Module):
     def __init__(self):
@@ -158,6 +177,17 @@ class Kritc(nn.Module):
         )
         self.params = self.model.parameters()
         self.optimizer = torch.optim.SGD(self.params,lr=self.learningRate)
+
     def forward(self,currentState):
         output = self.model(currentState)
         return output
+
+    def saveM(self,name):
+        torch.save(self.model.state_dict(),name+".pt")
+        log.info(f"Kritc saved = {self.model}")
+
+    def loadM(self,path):
+        print("Trying to load")
+        self.model.load_state_dict(torch.load(path))
+        log.info(f"Kritc loaded = {self.model}")
+    pass
