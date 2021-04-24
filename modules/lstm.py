@@ -61,7 +61,7 @@ class LSTM(nn.Module):
         # TODO Is this sensible?
         hidden_state = torch.zeros(self.layer_dim, input_batch.size(0), self.hidden_dim).requires_grad_()
         cell_state = torch.zeros(self.layer_dim, input_batch.size(0), self.hidden_dim).requires_grad_()
-        
+
         curr = multiprocessing.current_process()
         if self.debug:
             log.debug(f"Hidden, cell state made {curr.name}")
@@ -71,7 +71,7 @@ class LSTM(nn.Module):
         # If we don't, we'll backprop all the way to the start even after going through another batch
         hidden_state.detach()
         cell_state.detach()
-        
+
         if self.debug:
             log.debug(f"Input batch: {input_batch.shape}, {curr.name}")
             log.debug(f"Hidden shape: {hidden_state.shape}, {curr.name}")
@@ -82,23 +82,11 @@ class LSTM(nn.Module):
         # model, they get stuck.
         # We therefore parse them one state at a time, then make the stack
         # and return it.
-        if input_batch.shape[0] > 1:
-            temp = []
-            for i in input_batch:
-                reshaped_i = i.reshape(1, i.shape[0], i.shape[1])
-                hidden_state = torch.zeros(self.layer_dim, reshaped_i.size(0), self.hidden_dim).requires_grad_()
-                cell_state = torch.zeros(self.layer_dim, reshaped_i.size(0), self.hidden_dim).requires_grad_()
-                if self.debug:
-                    log.debug(f"reshaped_i.shape = {reshaped_i.shape}")
-                    log.debug(f"hidden_state.shape = {hidden_state.shape}")
-                    log.debug(f"cell_state.shape = {cell_state.shape}")
-                batch, _ = self.lstm(reshaped_i, (hidden_state.detach(), cell_state.detach()))
-                temp.append(batch)
-            out = torch.stack(temp)
-        else:
-            out, (hn, cn) = self.lstm(input_batch, (hidden_state.detach(), cell_state.detach()))
+        out, (hn, cn) = self.lstm(input_batch, (hidden_state.detach(), cell_state.detach()))
         if self.debug:
-            log.debug(f"LSTM made {curr.name}")
+            log.debug(f"LSTM forwarded {curr.name}")
+            log.debug(f"hn = {hn}")
+            log.debug(f"cn = {cn}")
         # Index hidden state of last time step
         # out.size() --> 100, 28, 100 aka (batch_dim, seq_dim, feature_dim)
         # out[:, -1, :] --> 100, 100 --> just want last time step hidden states! (batch_dim, feature_dim)
@@ -256,7 +244,10 @@ class LSTM(nn.Module):
         return batch
 
     def saveM(self,name):
-        torch.save(self.state_dict(),name+".pt")
+        torch.save(self.lstm.state_dict(),name+".pt")
+        log.info(f"LSTM saved = {self.lstm}")
 
     def loadM(self,path):
-        self.load_state_dict(torch.load(path))
+        print("Trying to load")
+        self.lstm.load_state_dict(torch.load(path))
+        log.info(f"LSTM loaded = {self.lstm}")

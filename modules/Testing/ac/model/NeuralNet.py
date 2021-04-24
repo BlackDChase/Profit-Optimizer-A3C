@@ -109,26 +109,13 @@ class Network(nn.Module):
         curr = multiprocessing.current_process()
         if self.debug:
             log.debug(f"current state for {self.name} of {curr.ident} : {currentState}")
-        
-        if len(currentState.shape)>1:
-            """
-            With multi threading, mulitple states are not parsed through the
-            model, they get stuck.
-            We therefore parse them one state at a time, then make the stack
-            and return it.
-            """
-            if self.debug:
-                log.debug(f"Shape of current state {self.name} of {curr.ident} = {currentState.shape}")
-            for i in currentState:
-                step = self.hypoThesis(i)
-                output.append(step)
-            output = torch.stack(output)
-        else:
-            output = self.hypoThesis(currentState)
+
+        # TODO only else statement should have stayed
+
+        output = self.hypoThesis(currentState)
         if self.debug:
             log.debug(f"output of model for {self.name} of {curr.ident} = {output}")
         return output
-
     pass
 
 class Aktor(nn.Module):

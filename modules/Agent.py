@@ -9,7 +9,7 @@ GOD AGENT
 BOSS AGENT
 - Will Update the network
 
-State = Ontario Price, Market Demand,Ontario Demand,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, Northwest Nigiria, West 
+State = Ontario Price, Market Demand,Ontario Demand,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, Northwest Nigiria, West
 """
 __author__ = 'BlackDChase,MR-TLL'
 __version__ = '0.2.0'
@@ -20,12 +20,12 @@ from torch.distributions import Categorical
 import torch
 import numpy as np
 from tqdm import tqdm
-import threading
 import log
 import sys
 from NeuralNet import Network #, Aktor, Kritc
 import multiprocessing
 from multiprocessing import Process, Lock
+multiprocessing.set_start_method('fork')
 """
 from TempEnv import TempEnv as ENV
 """
@@ -35,7 +35,6 @@ output_size = 13
 input_dim = output_size
 hidden_dim = 128
 layer_dim = 1
-modelPath="ENV_MODEL/lstm_model.pt"
 envDATA="../Dataset/normalized_13_columns.csv"
 # ENV(LSTM,envDATA,actionSpace)
 #"""
@@ -211,7 +210,6 @@ class GOD:
         probab = actionProb[actionIndex]
         nextState,reward,info = self.__env.step(actionIndex)
         nextState = torch.Tensor(nextState)
-        
         if self.debug:
             log.debug(f"{self.name} step taken,{info}, rewards = {reward}")
             log.debug(f"Expected next State: {nextState}")
@@ -283,35 +281,20 @@ class GOD:
     def __trainBoss(self):
         # To be defined Later :: the actual function to train multiple bosses.
         #"""
+        
         bossThreads=[]
         for i in range(self.__nAgent):
-            """
-            env=self.__makeENV(i)
-            self.__bossAgent[i].env = env
-            self.__bossAgent[i].train()
-            """
             process = Process(target=self.__bossAgent[i].train,args=(self._resetSemaphore,))
-            env=self.__makeENV(i)
-            self._resetSemaphore.acquire()
-            log.info(f"{self._resetSemaphore} acquired by {self}")
-            env.reset()
-            self._resetSemaphore.release()
-            log.info(f"{self._resetSemaphore} released by {self}")
-
-            self.__bossAgent[i].env = env
-
             bossThreads.append(process)
-            #"""
 
         for i in range(len(bossThreads)):
             bossThreads[i].start()
             log.info(f"Boss{str(i).zfill(2)} training started via GOD")
-            
         for i in bossThreads:
             i.join()
-        #"""
-        # Remove multiprocessing for @biribiri
+
         """
+        # Remove multiprocessing for @biribiri
         self.__bossAgent[0].train()
         if self.debug:
             log.debug(f"Boss00 training started via GOD")
@@ -338,6 +321,7 @@ class GOD:
         torch.save(self.__policyNet.state_dict(),path+"/PolicyModel.pt")
         torch.save(self.__criticNet.state_dict(),path+"/CritcModel.pt")
         return
+
     def loadModel(self,path):
         """
         If using GPU, this has to be mapped to it while load .. torch.load(path,map_location=device)
@@ -348,7 +332,7 @@ class GOD:
         self._policySemaphore.acquire()
         if self.debug:
             log.debug(f"Policy Semaphore Acquired, {curr.ident}")
-        self.__policyNet = torch.load_state_dict(path+"/PolicyModel.pt")
+        self.__policyNet.loadM(path+"/PolicyModel.pt")
         self._policySemaphore.release()
         if self.debug:
             log.debug(f"Policy Semaphore Released, {curr.ident}")
@@ -359,23 +343,11 @@ class GOD:
         self._criticSemaphore.acquire()
         if self.debug:
             log.debug(f"Critic Semaphore Acquired, {curr.ident}")
-        self.__criticNet = torch.load_state_dict(path+"/CritcModel.pt")
+        self.__criticNet.loadM(path+"/CritcModel.pt")
         self._criticSemaphore.release()
         if self.debug:
             log.debug(f"Critic Semaphore Released, {curr.ident}")
         return
-
-    def __makeENV(self,boss):
-        """
-        env = ENV(self.stateSize,self._actionSpace)
-        log.info(f"BOSS {str(i).zfill(2)}'s TempEnv made")
-        """
-        LSTM_instance = LSTM(output_size, input_dim, hidden_dim, layer_dim)
-        LSTM_instance.loadM(modelPath)
-        log.info(f"LSTM Model Declared in Agent = {LSTM_instance}")
-        env = ENV(model=LSTM_instance,dataset_path=envDATA,actionSpace=self._actionSpace)
-        log.info(f"BOSS{str(boss).zfill(2)}'s Env made")
-        return env
 
 class BOSS(GOD):
     """
@@ -420,6 +392,22 @@ class BOSS(GOD):
     #def train(self,factory,nAgent):
     def train(self,resetSemaphore):
         """
+        Making enviornment here
+        Because of #35472 on pytorch : https://github.com/pytorch/pytorch/issues/35472#issue-588591481
+        Proposed solution is: https://github.com/pytorch/pytorch/issues/35472#issuecomment-604775738
+        #"""
+        """
+        resetSemaphore.acquire()
+        log.info(f"{resetSemaphore} acquired by {self}")
+        #"""
+        self.makeENV(resetSemaphore)
+        log.info(f"{self.name}'s Env made")
+        self.env.reset()
+        """
+        resetSemaphore.release()
+        log.info(f"{resetSemaphore} released by {self}")
+        #"""
+        """
         The Actual function to train the network , the actor-critic actual logic.
         Eviorienment.step :: env.step has to give different outputs for different state trajectories by
         different boss. it has to take in account the diff trajectories becouse diff bosses will go to
@@ -427,8 +415,7 @@ class BOSS(GOD):
         #"""
         curr = multiprocessing.current_process()
         if self.debug:
-            log.debug(f"{self.name},currentP name,id,pid {curr.name},{curr._identity},{curr.pid}")
-            log.debug(f"{curr.ident} training started inside BOSS")
+            log.debug(f"{self.name},currentP name,id,pid {curr.name},{curr.ident},{curr.pid}")
         """
         Here the main logic of training of A2C will be present
         `with factory.create(int(self.name[-2:]),nAgent) as progress:`
@@ -437,14 +424,18 @@ class BOSS(GOD):
         for e in tqdm(range(self.maxEpisode),ascii=True,desc=self.name):
             if self.debug:
                 log.debug(f"{self.name} e = {e}")
+
+            """
             resetSemaphore.acquire()
             if self.debug:
                 log.debug(f"{self._resetSemaphore} acquired by {curr.ident}")
+            #"""
             resetState = self.env.reset()
+            """
             resetSemaphore.release()
             if self.debug:
                 log.debug(f"{self._resetSemaphore} released by {curr.ident}")
-
+            #"""
             self.startState = torch.Tensor(resetState)
             if self.debug:
                 log.debug(f"{self.name} Start state = {self.startState}")
@@ -475,6 +466,28 @@ class BOSS(GOD):
         print(f"{self.name} has completed training")
         pass
 
+    def makeENV(self,resetSemaphore):
+        """
+        env = ENV(self.stateSize,self._actionSpace)
+        log.info(f"BOSS {str(i).zfill(2)}'s TempEnv made")
+        #"""
+        #print(modelPath)
+        LSTM_instance = LSTM(output_size, input_dim, hidden_dim, layer_dim,debug=self.debug)
+        if self.debug:
+            log.info(f"LSTM instance created for {self.name} = {LSTM_instance}")
+        resetSemaphore.acquire()
+        log.info(f"{resetSemaphore} acquired by {self}")
+
+        LSTM_instance.loadM("ENV_MODEL/lstm_model.pt")
+        log.info(f"{self.name}'s Env made")
+        self.env.reset()
+
+        resetSemaphore.release()
+        log.info(f"{resetSemaphore} released by {self}")
+
+        log.info(f"LSTM instance loaded for {self.name} = {LSTM_instance}")
+        self.env = ENV(model=LSTM_instance,dataset_path=envDATA,actionSpace=self._actionSpace)
+        return
 
     def gatherAndStore(self):
         # gather a trajectory by acting in the enviornment using current policy
@@ -496,8 +509,10 @@ class BOSS(GOD):
             self.trajectoryS[i] = currentState
             self.trajectoryA[i] = action
             self.trajectoryR[i] = torch.Tensor(reward)
+            nextState = nextState.detach()
             if self.debug:
                 log.debug(f"Action for {self.name} {i} = {action}, {type(action)}")
+                log.debug(f"Detached Next state {nextState}")
             currentState=torch.Tensor(nextState)
         if self.debug:
             log.debug(f"Action = {self.trajectoryA}")
