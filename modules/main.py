@@ -109,6 +109,7 @@ if __name__=="__main__":
             god.saveModel("../Saved_model")
         except KeyboardInterrupt:
             god.saveModel("../Saved_model")
+            sys.exit()
             raise KeyboardInterrupt
         except Exception as catch:
             #log.debug(f"Terminaion Trace back {catch.with_traceback()}")

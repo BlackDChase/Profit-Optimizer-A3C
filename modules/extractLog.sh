@@ -10,6 +10,7 @@ awk "/\trewards/ {print}" $name.tsv > "rewardLog.tsv"
 awk "/Policy loss/ {print}" $name.tsv > "policyLossLog.tsv"
 awk "/Critic loss/ {print}" $name.tsv > "criticLossLog.tsv"
 awk "/\tAdvantage/ {print}" $name.tsv > "advantageLog.tsv"
+awk "/\tState set/ {print}" $name.tsv > "stateLog.tsv"
 echo "'Sub logs made'"
 
 critic=$(ls ../ -Art | grep "CritcModel." | tail -n 1)
@@ -22,6 +23,7 @@ vim policyLossLog.tsv  -c ':%s/.*loss = //g' -c ':wq'
 vim rewardLog.tsv  -c ':%s/.*tensor//g' -c ':%s/(\[//g'  -c ':%s/\].*//g' -c ':wq'
 vim criticLossLog.tsv  -c ':%s/.*loss = //g' -c ':wq'
 vim advantageLog.tsv  -c ':%s/.*tensor//g' -c ':%s/(\[//g'  -c ':%s/\].*//g' -c ':wq'
+vim stateLog.tsv -c ':%s/.*set=//g' -c ':wq'
 echo "'Post Processing Logs was a success'"
 python ../../modules/postProcessing.py
 #echo "'Ploting was success'"

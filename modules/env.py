@@ -35,6 +35,7 @@ class LSTMEnv(gym.Env):
 
         # create model input deque
         self.model_input = deque([], maxlen=max_input_len)
+        self.max_input_len = max_input_len
         self.actionSpace=actionSpace
 
         self.debug=debug
@@ -50,14 +51,44 @@ class LSTMEnv(gym.Env):
 
         # convert to numpy version
         np_model_input = np.array(self.model_input)
-        
+
+        """
+        Saving starting states for testing
+        """
+        self.startState = []
+        [self.startState.append(element) for element in dataset_helper_input]
+
         curr = multiprocessing.current_process()
         if self.debug:
             log.debug(f"Reset call for {curr.name}")
-        self.current_observation = self.model.forward(np_model_input, numpy=True)
+        current_observation = self.model.forward(np_model_input, numpy=True)
+
+        """
+        Rectifying for LSTM's Negetive Start
+        """
+        current_observation[0] = random.random()
+        current_observation[1] = random.random()
+        current_observation[2] = random.random()
+
+
+        self.current_observation = current_observation
         if self.debug:
             log.debug(f"Reset complete for {curr.name}")
         return self.current_observation
+
+    def possibleState(self,time=100):
+        states = []
+        model_input = deque([], maxlen=self.max_input_len)
+        [model_input.append(element) for element in states]
+
+        for i in range(time+1):
+            np_model_input = np.array(model_input)
+            observation = self.model.forward(np_model_input, numpy=True)
+            log.info(f"Possible set {i} = {observation}")
+            model_input.append(observation)
+            states.append(observation)
+        return np.array(states)
+
 
     def step(self, action):
         """
@@ -105,22 +136,23 @@ class LSTMEnv(gym.Env):
         """
         price_index = 0
         old_price = self.current_observation[price_index]
-        return old_price*(1+self.actionSpace[action]/100)
+        new_price = old_price*(1+self.actionSpace[action]/100)
+        demand = self.current_observation[1] + self.current_observation[2]
+        log.info(f"State set={old_price},{new_price},{demand}")
+        return new_price
 
     def get_reward(self, new_price):
         """
         Calculate reward based on the new_price
         """
-        if new_price>1:
+        if new_price>1000:
             """
             My way of saying very high price not allowed
             """
-            new_price=-new_price
+            new_price=1000-new_price
         market_demand_index = 1
         ontario_demand_index = 2
         if self.debug:
             log.debug(f"self.current_observation.shape = {self.current_observation.shape}")
         demand = self.current_observation[market_demand_index] + self.current_observation[ontario_demand_index]
-        if new_price>1000:
-            new_price=1000-new_price
         return demand * new_price
