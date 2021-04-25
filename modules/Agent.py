@@ -164,6 +164,39 @@ class GOD:
         self.__trainBoss()
         return
 
+    def test(self,time=100):
+        currentState = self.__env.reset()
+        a3cState=[]
+        for i in range(time):
+            log.info(f"a3cState={currentState}")
+            a3cState.append(currentState)
+            action = self._getAction(currentState)
+            nextState,reward,_,info = self.__env.step(action)
+            ## Oi generous env , please tell me the next state and reward for the action i have taken
+            log.info(f"{self.name}, {i},  {info}")
+            if self.debug:
+                log.debug(f"Reward and Shape = {reward}, {reward.shape}")
+                log.debug(f"Action for {self.name} {i} = {action}, {type(action)}")
+            currentState=torch.Tensor(nextState)
+        a3cState.append(currentState)
+        a3cState = np.array(a3cState)
+        return a3cState
+
+    def compare(self,a3cState,time=100,normalState=None):
+        if normalState==None:
+            normalState=self.getNormalStates(time)
+        profit=[]
+        profitA3C=[]
+        for i in range(len(a3cState)):
+            profit.append(normalState[i][0]*(normalState[i][2]+normalState[i][1]))
+            profitA3C.append(a3cState[i][0]*(a3cState[i][2]+a3cState[i][1]))
+        return profit,profitA3C
+
+    def getNormalStates(self,time=100):
+        normalState=self.__env.possibleState(time)
+        return normalState
+
+
     def _updatePolicy(self,lossP):
         curr = multiprocessing.current_process()
         if self.debug:
@@ -578,8 +611,7 @@ class BOSS(GOD):
         self.advantage[-1]=vPredLast
         for i in reversed(range(self.trajectoryLength-1)):
             self.advantage[i] = self.trajectoryR[i].clone() + self.ɤ*self.advantage[i+1].clone() - self.vPredicted[i].clone()
-        if self.debug:
-            log.info(f"Advantage {self.name} = {self.advantage}")
+        log.info(f"Advantage {self.name} = {self.advantage}")
         return
 
     def calculateAndUpdateL_P(self):
