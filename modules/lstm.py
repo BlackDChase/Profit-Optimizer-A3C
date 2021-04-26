@@ -42,12 +42,19 @@ class LSTM(nn.Module):
 
         self.fc =  nn.Linear(hidden_dim, output_size)
 
-    def forward(self, input_batch, batch=True, numpy=False):
+        # list of min / max values for each of the 13 columns used for wrapping inputs and unwrapping outputs
+        self.min_max_values = pd.read_csv("../Dataset/min_max_values_13_columns.csv")
+
+    def forward(self, input_batch, batch=True, numpy=False, wrapped=False):
         """
         TODO Fix this if necessary, add sane comments
 
         If numpy=True, then assume input is 2D numpy array, and convert to
         appropriate tensor, do the forward, and then return a numpy array.
+
+        If wrapped=True
+        Normalize input before doing a forward().
+        Unnormalize the input before returning
         """
         if numpy:
             # we have 2D numpy input
@@ -56,6 +63,18 @@ class LSTM(nn.Module):
 
             # convert to batch
             input_batch = self.convert_to_batch(input_batch)
+
+        if wrapped:
+            # we have unnormalized input
+            # normalize it
+            # assuming shape (batch_dim, seq_dim, feature_dim)
+            for batch in range(input_batch.shape[0]):
+                for seq in range(input_batch.shape[1]):
+                    for feature in range(input_batch.shape[2]):
+                        minv = self.min_max_values["min"][feature]
+                        maxv = self.min_max_values["max"][feature]
+                        value = input_batch[batch][seq][feature]
+                        input_batch[batch][seq][feature] = (value - minv + 1)/(maxv - minv)
 
         # Initialize initial hidden and cell state to zero
         # TODO Is this sensible?
@@ -92,6 +111,17 @@ class LSTM(nn.Module):
         # out[:, -1, :] --> 100, 100 --> just want last time step hidden states! (batch_dim, feature_dim)
         out = self.fc(out[:, -1, :])
         # out.size() --> 100, 10 (batch_dim, output_size)
+
+        if wrapped:
+            # Unnormalize
+            # assuming shape (batch_dim, seq_dim, feature_dim)
+            for batch in range(input_batch.shape[0]):
+                for seq in range(input_batch.shape[1]):
+                    for feature in range(input_batch.shape[2]):
+                        minv = self.min_max_values["min"][feature]
+                        maxv = self.min_max_values["max"][feature]
+                        value = input_batch[batch][seq][feature]
+                        input_batch[batch][seq][feature] = (value * (maxv - minv)) + minv - 1
 
         # if numpy, then return numpy ndarray
         if numpy:
