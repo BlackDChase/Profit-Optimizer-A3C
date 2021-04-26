@@ -61,7 +61,7 @@ class LSTMEnv(gym.Env):
         curr = multiprocessing.current_process()
         if self.debug:
             log.debug(f"Reset call for {curr.name}")
-        current_observation = self.model.forward(np_model_input, numpy=True)
+        current_observation = self.model.forward(np_model_input, numpy=True, wrapped=True)
 
         """
         Rectifying for LSTM's Negetive Start
@@ -83,7 +83,7 @@ class LSTMEnv(gym.Env):
 
         for i in range(time+1):
             np_model_input = np.array(model_input)
-            observation = self.model.forward(np_model_input, numpy=True)
+            observation = self.model.forward(np_model_input, numpy=True, wrapped=True)
             log.info(f"Possible set {i} = {observation}")
             model_input.append(observation)
             states.append(observation)
@@ -125,7 +125,7 @@ class LSTMEnv(gym.Env):
 
         # get the next observation
         numpy_model_input = np.array(self.model_input)
-        self.current_observation = self.model.forward(numpy_model_input, numpy=True)
+        self.current_observation = self.model.forward(numpy_model_input, numpy=True, wrapped=True)
 
         return self.current_observation, reward, done, {}
 
