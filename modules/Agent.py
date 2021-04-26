@@ -35,7 +35,7 @@ output_size = 13
 input_dim = output_size
 hidden_dim = 128
 layer_dim = 1
-envDATA="../Dataset/normalized_13_columns.csv"
+envDATA="../Dataset/col13data1.csv"
 # ENV(LSTM,envDATA,actionSpace)
 #"""
 
