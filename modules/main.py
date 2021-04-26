@@ -124,7 +124,7 @@ if __name__=="__main__":
         #env=ENV(model,"../Dataset/13_columns.csv")
         env=ENV(
             model=model,
-            dataset_path="../Dataset/normalized_13_columns.csv",
+            dataset_path="../Dataset/col13data1.csv",
             actionSpace=actionSpace,
             debug=keywords["d"],
         )
@@ -153,7 +153,7 @@ if __name__=="__main__":
          #env=ENV(model,"../Dataset/13_columns.csv")
         env=ENV(
             model=model,
-            dataset_path="../Dataset/normalized_13_columns.csv",
+            dataset_path="../Dataset/col13data1.csv",
             actionSpace=actionSpace,
             debug=keywords["d"],
         )

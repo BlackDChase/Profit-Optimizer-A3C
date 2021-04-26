@@ -19,7 +19,7 @@ class TempEnv:
     We don't have much info about environment step,reset method
     How it will cater multiple boss's trajectory
     #"""
-    def __init__(self,model,stateSize=13,dataset_path="../Dataset/normalized_13_columns.csv",actionSpace=[-15,-10,0,10,15],debug=False):
+    def __init__(self,model,stateSize=13,dataset_path="../Dataset/col13data1.csv",actionSpace=[-15,-10,0,10,15],debug=False):
         self.stateSize = stateSize
         self.actionSpace = actionSpace
         self.state = None
