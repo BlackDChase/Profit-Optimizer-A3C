@@ -241,21 +241,19 @@ class GOD:
     
     def decideAction(self,state):
         """
-        Take the final action according to the Policy Network.
-        This method is not called inside GOD.
-        This method is only called by ENV, every time it decides to take price for next time step.
-        Enviorenment will send current state and this take action will return an action via env.step
-        This will be done using pretrained policyNetwork.
+        Responsible for taking the correct action from the given state using the neural net.
+        @input :: current state
+        @output :: the index of action which must be taken from this states, and probability of that action
         #"""
+        state = state.float()
         actionProb = self._getAction(state)
-        probabD = Categorical(probs=actionProb)
-        ## create a catagorical distribution acording to the actionProb
+        ## This creates state-action probability vector from the policy net. 
+        probabDistribution = Categorical(probs=actionProb) ## create a catagorical distribution acording to the actionProb
         ## categorical probability distribution
-        actionIndex = probabD.sample()
-        probab = actionProb[actionIndex]
+        actionIndex = probabDistribution.sample() ## sample the action according to the probability distribution.
         if self.debug:
-            log.debug(f"{self.name} actionIndex : {actionIndex}")
-        return actionIndex,probab
+            log.debug(f"Action: {actionIndex}, actionProbab = {actionProb}")
+        return actionIndex,actionProb
 
     def _peakAction(self,state,action):
         """
@@ -536,18 +534,7 @@ class BOSS(GOD):
         pass
 
     def getAction(self,state):
-        """
-        Responsible for taking the correct action from the given state using the neural net.
-        @input :: current state
-        @output :: the index of action which must be taken from this states, and probability of that action
-        #"""
-        state = state.float()
-        actionProb = self.god._getAction(state)
-        ## This creates state-action probability vector from the policy net. 
-        pd = Categorical(probs=actionProb) ## create a catagorical distribution acording to the actionProb
-        ## categorical probability distribution
-        actionIndex = pd.sample() ## sample the action according to the probability distribution.
-
+        actionIndex,probab = self.god.decideAction(state)
         return actionIndex
 
     def calculateV_p(self):
