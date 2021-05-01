@@ -43,7 +43,7 @@ class LSTM(nn.Module):
         self.fc =  nn.Linear(hidden_dim, output_size)
 
         # list of min / max values for each of the 13 columns used for wrapping inputs and unwrapping outputs
-        self.min_max_values = pd.read_csv("../Dataset/min_max_values_13_columns.csv")
+        self.min_max_values = pd.read_csv("../datasets/min_max_values_13_columns_with_supply.csv")
 
     def forward(self, input_batch, batch=True, numpy=False, wrapped=False):
         """
@@ -226,8 +226,7 @@ class LSTM(nn.Module):
                 log.debug(f"Label Batch shape = {label_batch.shape}")
             # get loss output
             loss = loss_fn(output, label_batch)
-            if self.debug:
-                log.debug(f"loss = {loss}")
+            log.info(f"loss = {loss}")
 
             # get gradients
             loss.backward()

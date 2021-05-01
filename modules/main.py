@@ -121,10 +121,9 @@ if __name__=="__main__":
         model = LSTM(output_size, input_dim, hidden_dim, layer_dim,debug=keywords["d"])
         model.loadM("ENV_MODEL/lstm_model.pt")
         log.info(f"LSTM Model = {model}")
-        #env=ENV(model,"../Dataset/13_columns.csv")
         env=ENV(
             model=model,
-            dataset_path="../Dataset/col13data1.csv",
+            dataset_path="../datasets/normalized_weird_13_columns_with_supply.csv",
             actionSpace=actionSpace,
             debug=keywords["d"],
         )
@@ -153,7 +152,7 @@ if __name__=="__main__":
          #env=ENV(model,"../Dataset/13_columns.csv")
         env=ENV(
             model=model,
-            dataset_path="../Dataset/col13data1.csv",
+            dataset_path="../datasets/normalized_weird_13_columns_with_supply.csv",
             actionSpace=actionSpace,
             debug=keywords["d"],
         )

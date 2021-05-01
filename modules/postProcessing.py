@@ -70,13 +70,15 @@ def stateExtract(fileN,order=None):
         old=[]
         new=[]
         demand=[]
+        supply=[]
         temp=order
-        x,y,z=0,0,0
+        x,y,z,w=0,0,0,0
         for i in state:
             sp = i.strip().split(",")
             x+=float(sp[0])
             y+=float(sp[1])
             z+=float(sp[2])
+            w+=float(sp[3])
             if temp==0:
                 temp=order
             if temp==order:
@@ -84,13 +86,15 @@ def stateExtract(fileN,order=None):
                     x/=order
                     y/=order
                     z/=order
+                    w/=order
                 old.append(x)
                 new.append(y)
                 demand.append(z)
-                z,y,z=0,0,0
+                supply.append(w)
+                x,y,z,w=0,0,0,0
             if order!=None:
                 temp-=1
-    return old,new,demand
+    return old,new,demand,supply
 
 
 
@@ -103,63 +107,67 @@ if __name__ == '__main__':
     avgReward, episodeLength = rewardAvgLen(rewardAvg(folderName+"rewardLog.tsv"))
     policyLoss = modelLoss(folderName+"policyLossLog.tsv")
     criticLoss = modelLoss(folderName+"criticLossLog.tsv")
-    oldAvg,newAvg,demandAvg = stateExtract(folderName+"stateLog.tsv",len(episodeLength)/4)
-    old,new,demand = stateExtract(folderName+"stateLog.tsv")
-
-    # Ploting AVG LSTM Price vs Demand 
+    oldAvg,newAvg,demandAvg,supplyAvg = stateExtract(folderName+"stateLog.tsv",len(episodeLength)/4)
+    old,new,demand,supply = stateExtract(folderName+"stateLog.tsv")
+    demSupAvg = [supplyAvg[i]-demandAvg[i] for i in range(len(demandAvg))]
+    demSup = [supply[i]-demand[i] for i in range(len(demand))]
+    
+    # Ploting Demand, Supply 
     plt.figure(dpi=400)
     plt.xlabel(f"Average of Per {len(episodeLength)/4} Episode")
-    plt.plot(oldAvg,label="Actual Price")
+    #plt.plot(oldAvg,label="Actual Price")
     plt.plot(demandAvg,label="Demand")
+    plt.plot(supplyAvg,label="Supply")
+    plt.plot(demSupAvg,label="Supply-Demand")
     plt.legend()
-    plt.savefig(folderName+"AVG Actual Price vs Demand.svg")
+    plt.savefig(folderName+"Supply vs Demand.svg")
     plt.close()
 
-    # Ploting AVG A3C Price vs Demand
+    # Ploting AVG A3C Price vs Exchange
     plt.figure(dpi=400)
     plt.xlabel(f"Average of Per {len(episodeLength)/4} Episode")
     plt.plot(newAvg,label="Model Price")
-    plt.plot(demandAvg,label="Demand")
+    plt.plot(demSupAvg,label="Exchange")
     plt.legend()
-    plt.savefig(folderName+"AVG Model Price vs Demand.svg")
+    plt.savefig(folderName+"AVG Model Price vs Exchange.svg")
     plt.close()
 
 
     # Ploting AVG LSTM Price vs Actual Price
-    plt.figure(dpi=400)
-    plt.xlabel(f"Average of Per {len(episodeLength)/4} Episode")
-    plt.plot(newAvg,label="Model Price")
-    plt.plot(oldAvg,label="Actual Price")
-    plt.legend()
-    plt.savefig(folderName+"AVG Model Price vs Actual Price.svg")
-    plt.close()
+    #plt.figure(dpi=400)
+    #plt.xlabel(f"Average of Per {len(episodeLength)/4} Episode")
+    #plt.plot(newAvg,label="Model Price")
+    #plt.plot(oldAvg,label="Actual Price")
+    #plt.legend()
+    #plt.savefig(folderName+"AVG Model Price vs Actual Price.svg")
+    #plt.close()
 
     # Ploting LSTM Price vs Demand 
-    plt.figure(dpi=400)
-    plt.xlabel(f"Episode")
-    plt.plot(old,label="Actual Price")
-    plt.plot(demand,label="Demand")
-    plt.legend()
-    plt.savefig(folderName+"Actual Price vs Demand.svg")
-    plt.close()
+    #plt.figure(dpi=400)
+    #plt.xlabel(f"Episode")
+    #plt.plot(old,label="Actual Price")
+    #plt.plot(demand,label="Demand")
+    #plt.legend()
+    #plt.savefig(folderName+"Actual Price vs Demand.svg")
+    #plt.close()
 
-    # Ploting A3C Price vs Demand
+    # Ploting A3C Price vs Exchange
     plt.figure(dpi=400)
     plt.xlabel(f"Episode")
     plt.plot(new,label="Model Price")
-    plt.plot(demand,label="Demand")
+    plt.plot(demSup,label="Exchange")
     plt.legend()
-    plt.savefig(folderName+"Model Price vs Demand.svg")
+    plt.savefig(folderName+"Price VS Exchange.svg")
     plt.close()
 
     # Ploting LSTM Price vs Actual Price
-    plt.figure(dpi=400)
-    plt.xlabel(f"Episode")
-    plt.plot(new,label="Model Price")
-    plt.plot(old,label="Actual Price")
-    plt.legend()
-    plt.savefig(folderName+"Model Price vs Actual Price.svg")
-    plt.close()
+    #plt.figure(dpi=400)
+    #plt.xlabel(f"Episode")
+    #plt.plot(new,label="Model Price")
+    #plt.plot(old,label="Actual Price")
+    #plt.legend()
+    #plt.savefig(folderName+"Model Price vs Actual Price.svg")
+    #plt.close()
 
 
     # Ploting average reward

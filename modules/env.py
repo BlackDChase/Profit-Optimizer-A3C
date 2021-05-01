@@ -63,14 +63,6 @@ class LSTMEnv(gym.Env):
             log.debug(f"Reset call for {curr.name}")
         current_observation = self.model.forward(np_model_input, numpy=True, wrapped=True)
 
-        """
-        Rectifying for LSTM's Negetive Start
-        """
-        current_observation[0] = random.random()
-        current_observation[1] = random.random()
-        current_observation[2] = random.random()
-
-
         self.current_observation = current_observation
         if self.debug:
             log.debug(f"Reset complete for {curr.name}")
@@ -131,28 +123,35 @@ class LSTMEnv(gym.Env):
 
     def get_new_price(self, action):
         """
-        Modify the price according to the action taken.
-        10,15 % change rather than 10,50
+        Modify the price by a percentage according to the action taken.
         """
         price_index = 0
         old_price = self.current_observation[price_index]
-        new_price = old_price*(1+self.actionSpace[action]/100)
-        demand = self.current_observation[1] + self.current_observation[2]
-        log.info(f"State set={old_price},{new_price},{demand}")
+        # Increase or decrease the old price by a percentage, as defined by actions
+        new_price = old_price * (1 + self.actionSpace[action] / 100)
+        ontario_demand_index = 1
+        demand = self.current_observation[ontario_demand_index]
+        supply_index = 2
+        supply = self.current_observation[supply_index]
+        log.info(f"State set={old_price},{new_price},{demand},{supply}")
         return new_price
 
     def get_reward(self, new_price):
         """
         Calculate reward based on the new_price
+
+        Demand is always positive in the dataset
+        Prices can be negative in the dataset
+
+        We cannot use min(demand, supply) * price because it does not take into
+        account times when supply is greater than demand, meaning the
+        electricity would either be sent at a loss, or would be bought from
+        these smaller producers.
         """
-        if new_price>1:
-            """
-            My way of saying very high price not allowed
-            """
-            new_price=1-new_price
-        market_demand_index = 1
-        ontario_demand_index = 2
+        ontario_demand_index = 1
+        supply_index = 2
         if self.debug:
             log.debug(f"self.current_observation.shape = {self.current_observation.shape}")
-        demand = self.current_observation[market_demand_index] + self.current_observation[ontario_demand_index]
-        return demand * new_price
+        demand = self.current_observation[ontario_demand_index]
+        supply = self.current_observation[supply_index]
+        return (demand - supply) * new_price

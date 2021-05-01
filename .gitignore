@@ -1,7 +1,7 @@
 modules/.ipynb_checkpoints/*
 share/
 __pycache__/
-Dataset/
+datasets/
 pyvenv.cfg
 lib/*
 bin/*
