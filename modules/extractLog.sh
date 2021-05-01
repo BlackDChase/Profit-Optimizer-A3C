@@ -23,7 +23,7 @@ vim policyLossLog.tsv  -c ':%s/.*loss = //g' -c ':wq'
 vim rewardLog.tsv  -c ':%s/.*tensor//g' -c ':%s/(\[//g'  -c ':%s/\].*//g' -c ':wq'
 vim criticLossLog.tsv  -c ':%s/.*loss = //g' -c ':wq'
 vim advantageLog.tsv  -c ':%s/.*tensor//g' -c ':%s/(\[//g'  -c ':%s/\].*//g' -c ':wq'
-vim stateLog.tsv -c ':%s/.*set=//g' -c ':wq'
+vim stateLog.tsv -c ':%s/.*set = //g' -c ':wq'
 echo "'Post Processing Logs was a success'"
 python ../../modules/postProcessing.py
 #echo "'Ploting was success'"

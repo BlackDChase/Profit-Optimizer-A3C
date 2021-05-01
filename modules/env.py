@@ -157,19 +157,7 @@ class LSTMEnv(gym.Env):
             old_price = self.current_observation[price_index]
         # Increase or decrease the old price by a percentage, as defined by actions
         new_price = old_price * (1 + self.actionSpace[action] / 100)
-
-        # unrelated logging function
-        self.log_state_set(old_price, new_price, denormalize)
-
         return new_price
-
-    def log_state_set(self, old_price, new_price, denormalize):
-        ontario_demand_index = 1
-        if denormalize:
-            demand = self.denormalized_current_observation[ontario_demand_index]
-        else:
-            demand = self.current_observation[ontario_demand_index]
-        log.info(f"State set={old_price},{new_price},{demand}")
 
     def get_reward(self, new_price, denormalize=False):
         """
@@ -193,7 +181,18 @@ class LSTMEnv(gym.Env):
             log.debug(f"self.current_observation.shape = {self.current_observation.shape}")
             demand = self.current_observation[ontario_demand_index]
             supply = self.current_observation[supply_index]
-        return (demand - supply) * new_price
+
+
+        """
+        Correction is made so that it is punished for values bigger than max
+        But is also punished for values which are very high
+        """
+        correction = self.min_max_values["max"][0] - new_price
+        if correction>0:
+            correction/=((new_price)**(1/3))
+        
+        log.info(f"State set = {new_price}, {correction}, {demand}, {supply}")
+        return (demand - supply) * new_price * correction
 
     def denormalize(self, array):
         """
