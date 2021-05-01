@@ -87,14 +87,14 @@ def stateExtract(fileN,order=None):
                     y/=order
                     z/=order
                     w/=order
-                old.append(x)
-                new.append(y)
+                price.append(x)
+                corre.append(y)
                 demand.append(z)
                 supply.append(w)
                 x,y,z,w=0,0,0,0
             if order!=None:
                 temp-=1
-    return old,new,demand,supply
+    return price,corre,demand,supply
 
 
 

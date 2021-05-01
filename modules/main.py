@@ -139,23 +139,6 @@ if __name__=="__main__":
 
         god.giveEnvironment(env)
         log.info("Environment parsed, Boss inititated")
-        
-        # Testing
-        """
-        time=int(keyword['s'])
-        a3cStates = god.test(time=time)
-        normalStates = god.getNormalStates(time=time)
-        profit,profitA3C = god.compare(a3cState=a3cStates,normalState=normalStates)
-        
-        # Plotting
-        plt.figure(dpi=100)
-        plt.xlabel("Episode")
-        plt.ylabel("Scalled Profit")
-        plt.plot(profit,label='Profits without A3C')
-        plt.plot(profitA3C,label='Profits with A3C')
-        plt.legend()
-        plt.save("Test.svg")
-        """
     else:
         god = GOD(
             debug=keywords["d"],
