@@ -11,11 +11,12 @@ Parameters:
     - alr = Actor Learning rate
     - clr = Critic Learning rate
     - p = Path of folder which contains PolicModel.py, CriticModel.pt
+    - s = Times steps to test for
     - h = Help
 #"""
 
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.3.0'
+__version__ = '0.3.3'
 # Input from outside
 import log
 import sys
@@ -27,6 +28,7 @@ keywords={
         "d":True,
         "alr":1e-3,
         "clr":1e-3,
+        "s":100,
     }
 stateSize = 13
 log.info(f"stateSize = {stateSize}")
@@ -56,6 +58,7 @@ Parameters:
     - alr   Actor Learning rate
     - clr   Critic Learning rate
     - p     Path of folder which contains PolicModel.py, CriticModel.pt
+    - s     Times steps to test for
     - h     Help""")
 
 """
@@ -136,6 +139,22 @@ if __name__=="__main__":
 
         god.giveEnvironment(env)
         log.info("Environment parsed, Boss inititated")
+        
+        # Training
+        time=int(keyword['s'])
+        a3cStates = god.test(time=time)
+        normalStates = god.getNormalStates(time=time)
+        profit,profitA3C = god.compare(a3cState=a3cStates,normalState=normalStates)
+        
+        # Plotting
+        plt.figure(dpi=100)
+        plt.xlabel("Episode")
+        plt.ylabel("Scalled Profit")
+        plt.plot(profit,label='Profits without A3C')
+        plt.plot(profitA3C,label='Profits with A3C')
+        plt.legend()
+        plt.save("Test.svg")
+        
     else:
         god = GOD(
             debug=keywords["d"],

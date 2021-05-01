@@ -84,21 +84,25 @@ class LSTMEnv(gym.Env):
 
         # return unnormalized observation to agent
         self.denormalized_current_observation = self.denormalize(self.current_observation)
+        #return self.current_observation
         return self.denormalized_current_observation
 
     # TODO What is this function for
-    def possibleState(self,
-                      time=100):
+    def possibleState(self,time=100):
+        """
+        Output  : Return the output of the enviornment for `time` number of steps without the feedback of A3C agent.
+        """
         states = []
         model_input = deque([], maxlen=self.max_input_len)
-        [model_input.append(element) for element in states]
+        [model_input.append(element) for element in self.startState]
 
         for i in range(time+1):
             np_model_input = np.array(model_input)
-            observation = self.model.forward(np_model_input, numpy=True)
-            log.info(f"Possible set {i} = {observation}")
-            model_input.append(observation)
-            states.append(observation)
+            current_observation = self.model.forward(np_model_input, numpy=True)
+            model_input.append(current_observation)
+            current_observation = self.denormalize(current_observation)
+            log.info(f"Possible set {i} = {current_observation}")
+            states.append(current_observation)
         return np.array(states)
 
     def step(self, action):
@@ -196,19 +200,21 @@ class LSTMEnv(gym.Env):
         Take any numpy array of 13 elements and de-normalize it, that is, undo
         the normalization done to the data, and then return it.
         """
-        for feature in range(array.shape):
+        for feature in range(array.shape[0]):
             minv = self.min_max_values["min"][feature]
             maxv = self.min_max_values["max"][feature]
-            value = array_batch[feature]
+            value = array[feature]
             array[feature] = (value * (maxv - minv)) + minv - 1
+        return array
 
     def normalize(self, array):
         """
         Take any numpy array of 13 elements and normalize it according to
         pre-defined values.
         """
-        for feature in range(array.shape):
+        for feature in range(array.shape[0]):
             minv = self.min_max_values["min"][feature]
             maxv = self.min_max_values["max"][feature]
             value = array[feature]
             array[feature] = (value - minv + 1)/(maxv - minv)
+        return array

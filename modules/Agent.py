@@ -12,7 +12,7 @@ BOSS AGENT
 State = Ontario Price, Market Demand,Ontario Demand,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, Northwest Nigiria, West
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.3.0'
+__version__ = '0.3.3'
 
 # Imports
 from torch import nn, Tensor
@@ -165,12 +165,15 @@ class GOD:
         return
 
     def test(self,time=100):
+        """
+        Output   : Returns the `time` number of states which occured on the basis of Agent's response.
+        """
         currentState = self.__env.reset()
         a3cState=[]
         for i in range(time):
             log.info(f"a3cState={currentState}")
             a3cState.append(currentState)
-            action = self._getAction(currentState)
+            action,_ = self.decideAction(torch.Tensor(currentState))
             nextState,reward,_,info = self.__env.step(action)
             ## Oi generous env , please tell me the next state and reward for the action i have taken
             log.info(f"{self.name}, {i},  {info}")
@@ -183,13 +186,21 @@ class GOD:
         return a3cState
 
     def compare(self,a3cState,time=100,normalState=None):
-        if normalState==None:
+        """
+        Input:
+        a3cState     : Output of states with a3C's feedback
+        normalStates : Output of states without a3c's feedback
+        """
+        if type(normalState)==None:
             normalState=self.getNormalStates(time)
         profit=[]
         profitA3C=[]
+        supply_index = 2
+        demand_index = 1
+        price_index = 0
         for i in range(len(a3cState)):
-            profit.append(normalState[i][0]*(normalState[i][2]+normalState[i][1]))
-            profitA3C.append(a3cState[i][0]*(a3cState[i][2]+a3cState[i][1]))
+            profit.append(normalState[i][price_index]*(normalState[i][demand_index]-normalState[i][supply_index]))
+            profitA3C.append(a3cState[i][price_index]*(a3cState[i][demand_index]-a3cState[i][supply_index]))
         return profit,profitA3C
 
     def getNormalStates(self,time=100):
@@ -227,8 +238,8 @@ class GOD:
             log.debug(f"Critic Semaphore released, {curr.ident}")
         return
     
-    '''
-    def takeAction(self,state):
+    
+    def decideAction(self,state):
         """
         Take the final action according to the Policy Network.
         This method is not called inside GOD.
@@ -237,16 +248,13 @@ class GOD:
         This will be done using pretrained policyNetwork.
         #"""
         actionProb = self._getAction(state)
-        pd = Categorical(probs=actionProb)
+        probabD = Categorical(probs=actionProb)
         ## create a catagorical distribution acording to the actionProb
         ## categorical probability distribution
-        actionIndex = pd.sample()
+        actionIndex = probabD.sample()
         probab = actionProb[actionIndex]
-        nextState,reward,info = self.__env.step(actionIndex)
-        nextState = torch.Tensor(nextState)
         if self.debug:
-            log.debug(f"{self.name} step taken,{info}, rewards = {reward}")
-            log.debug(f"Expected next State: {nextState}")
+            log.debug(f"{self.name} actionIndex : {actionIndex}")
         return actionIndex,probab
 
     def _peakAction(self,state,action):
@@ -256,7 +264,7 @@ class GOD:
         #"""
         result = self.__env.step(state,action)
         return result
-    #'''
+  
 
     def _getAction(self,state):
         curr = multiprocessing.current_process()
