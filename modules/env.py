@@ -22,9 +22,21 @@ class DatasetHelper:
         return self.first_input
 
 class LSTMEnv(gym.Env):
-    def __init__(self, model, dataset_path, max_input_len=25,actionSpace=[-15,-10,0,10,15],debug=False):
+    def __init__(self,
+                 model,
+                 dataset_path="../datasets/normalized_weird_13_columns_with_supply.csv",
+                 min_max_values_csv_file="../datasets/min_max_values_13_columns_with_supply.csv",
+                 max_input_len=25,
+                 actionSpace=[-15,-10,0,10,15],
+                 debug=False):
         """
         model = trained LSTM model from lstm.py
+
+        By default, all the data (including the dataset helper's dataset) are
+        all normalized.
+        Only when sending data to the agent, is the data de-normalized before
+        sending it. This includes second-order data sent to the agent such as
+        reward.
         """
         self.model = model
         self.dataset_helper = DatasetHelper(dataset_path,max_input_len)
@@ -37,6 +49,9 @@ class LSTMEnv(gym.Env):
         self.model_input = deque([], maxlen=max_input_len)
         self.max_input_len = max_input_len
         self.actionSpace=actionSpace
+
+        # list of min / max values for each of the 13 columns used for wrapping inputs and unwrapping outputs
+        self.min_max_values = pd.read_csv(min_max_values_csv_file)
 
         self.debug=debug
 
@@ -61,26 +76,30 @@ class LSTMEnv(gym.Env):
         curr = multiprocessing.current_process()
         if self.debug:
             log.debug(f"Reset call for {curr.name}")
-        current_observation = self.model.forward(np_model_input, numpy=True, wrapped=True)
+        current_observation = self.model.forward(np_model_input, numpy=True)
 
         self.current_observation = current_observation
         if self.debug:
             log.debug(f"Reset complete for {curr.name}")
-        return self.current_observation
 
-    def possibleState(self,time=100):
+        # return unnormalized observation to agent
+        self.denormalized_current_observation = self.denormalize(self.current_observation)
+        return self.denormalized_current_observation
+
+    # TODO What is this function for
+    def possibleState(self,
+                      time=100):
         states = []
         model_input = deque([], maxlen=self.max_input_len)
         [model_input.append(element) for element in states]
 
         for i in range(time+1):
             np_model_input = np.array(model_input)
-            observation = self.model.forward(np_model_input, numpy=True, wrapped=True)
+            observation = self.model.forward(np_model_input, numpy=True)
             log.info(f"Possible set {i} = {observation}")
             model_input.append(observation)
             states.append(observation)
         return np.array(states)
-
 
     def step(self, action):
         """
@@ -88,11 +107,9 @@ class LSTMEnv(gym.Env):
         Calculate reward
         Return relevant data
         """
-        if action<0 or action>=len(self.actionSpace):
-            print("Illegal action")
-            if self.debug:
-                log.debug(f"Illegal action = {action}")
-                log.debug(f"Action Space = {self.actionSpace}")
+        if action < 0 or action >= len(self.actionSpace):
+            log.info(f"Illegal action = {action}")
+            log.debug(f"Action Space = {self.actionSpace}")
             import sys
             sys.exit()
 
@@ -101,10 +118,11 @@ class LSTMEnv(gym.Env):
 
         # Implement effects of action
         new_price = self.get_new_price(action)
+        new_price_denormalized = self.get_new_price(action, denormalize=True)
 
         # get reward
         # Ensure that numpy array shape is (1,), not () otherwise conversion to torch.Tensor will get messed up
-        reward = np.array([self.get_reward(new_price)])
+        reward = np.array([self.get_reward(new_price_denormalized, denormalize=True)])
 
         # We update the price in the current observation
         # This ensures that the model takes into account the action we just
@@ -117,26 +135,39 @@ class LSTMEnv(gym.Env):
 
         # get the next observation
         numpy_model_input = np.array(self.model_input)
-        self.current_observation = self.model.forward(numpy_model_input, numpy=True, wrapped=True)
+        self.current_observation = self.model.forward(numpy_model_input, numpy=True)
 
-        return self.current_observation, reward, done, {}
+        # return unnormalized observation to agent
+        self.denormalized_current_observation = self.denormalize(self.current_observation)
 
-    def get_new_price(self, action):
+        return self.denormalized_current_observation, reward, done, {}
+
+    def get_new_price(self, action, denormalize=False):
         """
         Modify the price by a percentage according to the action taken.
         """
         price_index = 0
-        old_price = self.current_observation[price_index]
+        if denormalize:
+            old_price = self.denormalized_current_observation[price_index]
+        else:
+            old_price = self.current_observation[price_index]
         # Increase or decrease the old price by a percentage, as defined by actions
         new_price = old_price * (1 + self.actionSpace[action] / 100)
-        ontario_demand_index = 1
-        demand = self.current_observation[ontario_demand_index]
-        supply_index = 2
-        supply = self.current_observation[supply_index]
-        log.info(f"State set={old_price},{new_price},{demand},{supply}")
+
+        # unrelated logging function
+        self.log_state_set(old_price, new_price, denormalize)
+
         return new_price
 
-    def get_reward(self, new_price):
+    def log_state_set(self, old_price, new_price, denormalize):
+        ontario_demand_index = 1
+        if denormalize:
+            demand = self.denormalized_current_observation[ontario_demand_index]
+        else:
+            demand = self.current_observation[ontario_demand_index]
+        log.info(f"State set={old_price},{new_price},{demand}")
+
+    def get_reward(self, new_price, denormalize=False):
         """
         Calculate reward based on the new_price
 
@@ -150,8 +181,34 @@ class LSTMEnv(gym.Env):
         """
         ontario_demand_index = 1
         supply_index = 2
-        if self.debug:
+        if denormalize:
+            log.debug(f"self.denormalized_current_observation.shape = {self.denormalized_current_observation.shape}")
+            demand = self.denormalized_current_observation[ontario_demand_index]
+            supply = self.denormalized_current_observation[supply_index]
+        else:
             log.debug(f"self.current_observation.shape = {self.current_observation.shape}")
-        demand = self.current_observation[ontario_demand_index]
-        supply = self.current_observation[supply_index]
+            demand = self.current_observation[ontario_demand_index]
+            supply = self.current_observation[supply_index]
         return (demand - supply) * new_price
+
+    def denormalize(self, array):
+        """
+        Take any numpy array of 13 elements and de-normalize it, that is, undo
+        the normalization done to the data, and then return it.
+        """
+        for feature in range(array.shape):
+            minv = self.min_max_values["min"][feature]
+            maxv = self.min_max_values["max"][feature]
+            value = array_batch[feature]
+            array[feature] = (value * (maxv - minv)) + minv - 1
+
+    def normalize(self, array):
+        """
+        Take any numpy array of 13 elements and normalize it according to
+        pre-defined values.
+        """
+        for feature in range(array.shape):
+            minv = self.min_max_values["min"][feature]
+            maxv = self.min_max_values["max"][feature]
+            value = array[feature]
+            array[feature] = (value - minv + 1)/(maxv - minv)
