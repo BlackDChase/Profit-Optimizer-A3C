@@ -12,7 +12,7 @@ BOSS AGENT
 State = Ontario Price, Market Demand,Ontario Demand,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, Northwest Nigiria, West
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.3.3'
+__version__ = '0.3.5'
 
 # Imports
 from torch import nn, Tensor
