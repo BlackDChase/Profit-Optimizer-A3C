@@ -79,9 +79,11 @@ class LSTMEnv(gym.Env):
         current_observation = self.model.forward(np_model_input, numpy=True)
 
         self.current_observation = current_observation
+        self.denormalized_current_observation = self.normalize(self.current_observation)
         if self.debug:
             log.debug(f"Reset complete for {curr.name}")
-
+            log.debug(f">current_observation = {self.current_observation}")
+            log.debug(f">denormalized_current_observation = {self.denormalized_current_observation}")
         return self.current_observation
 
     # TODO What is this function for
@@ -138,6 +140,11 @@ class LSTMEnv(gym.Env):
         # get the next observation
         numpy_model_input = np.array(self.model_input)
         self.current_observation = self.model.forward(numpy_model_input, numpy=True)
+        self.denormalized_current_observation = self.normalize(self.current_observation)
+
+        if self.debug:
+            log.debug(f">current_observation = {self.current_observation}")
+            log.debug(f">denormalized_current_observation = {self.denormalized_current_observation}")
 
         return self.current_observation, denormalized_reward, done, {}
 
