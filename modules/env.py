@@ -82,10 +82,7 @@ class LSTMEnv(gym.Env):
         if self.debug:
             log.debug(f"Reset complete for {curr.name}")
 
-        # return unnormalized observation to agent
-        self.denormalized_current_observation = self.denormalize(self.current_observation)
         return self.current_observation
-        #return self.denormalized_current_observation
 
     # TODO What is this function for
     def possibleState(self,time=100):
@@ -126,7 +123,8 @@ class LSTMEnv(gym.Env):
 
         # get reward
         # Ensure that numpy array shape is (1,), not () otherwise conversion to torch.Tensor will get messed up
-        reward = np.array([self.get_reward(new_price_denormalized, denormalize=True)])
+        # Use denormalized new price to get denormalized reward
+        denormalized_reward = np.array([self.get_reward(new_price_denormalized, denormalize=True)])
 
         # We update the price in the current observation
         # This ensures that the model takes into account the action we just
@@ -141,12 +139,7 @@ class LSTMEnv(gym.Env):
         numpy_model_input = np.array(self.model_input)
         self.current_observation = self.model.forward(numpy_model_input, numpy=True)
 
-        # return unnormalized observation to agent
-        self.denormalized_current_observation = self.denormalize(self.current_observation)
-        if self.debug:
-            log.debug(f"current_observation = {self.current_observation}")
-        return self.current_observation, reward, done, {}
-        #return self.denormalized_current_observation, reward, done, {}
+        return self.current_observation, denormalized_reward, done, {}
 
     def get_new_price(self, action, denormalize=False):
         """
@@ -176,6 +169,8 @@ class LSTMEnv(gym.Env):
         ontario_demand_index = 1
         supply_index = 2
         if denormalize:
+            self.denormalized_current_observation = self.denormalize(self.current_observation)
+
             log.debug(f"self.denormalized_current_observation.shape = {self.denormalized_current_observation.shape}")
             demand = self.denormalized_current_observation[ontario_demand_index]
             supply = self.denormalized_current_observation[supply_index]
