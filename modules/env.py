@@ -196,8 +196,8 @@ class LSTMEnv(gym.Env):
         But is also punished for values which are very high
         """
         correction = self.min_max_values["max"][0] - new_price
-        if correction>0:
-            correction/=((new_price)**(1/3))
+        # if correction>0:
+        #     correction/=((new_price)**(1/3))
         
         log.info(f"State set = {new_price}, {correction}, {demand}, {supply}")
         return (demand - supply) * new_price * correction
