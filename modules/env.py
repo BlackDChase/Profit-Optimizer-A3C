@@ -147,7 +147,11 @@ class LSTMEnv(gym.Env):
         """
         price_index = 0
         if denormalize:
-            old_price = self.denormalized_current_observation[price_index]
+            try:
+                old_price = self.denormalized_current_observation[price_index]
+            except:
+                self.denormalized_current_observation = self.normalize(self.current_observation)
+                old_price = self.denormalized_current_observation[price_index]
         else:
             old_price = self.current_observation[price_index]
         # Increase or decrease the old price by a percentage, as defined by actions
