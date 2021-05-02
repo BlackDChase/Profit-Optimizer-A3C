@@ -6,6 +6,9 @@ import random
 import log
 import multiprocessing
 
+__author__ = 'Biribiri,BlackDChase'
+__version__ = '0.3.7'
+
 class DatasetHelper:
     def __init__(self, dataset_path, max_input_len):
         self.dataset_path = dataset_path
@@ -79,7 +82,7 @@ class LSTMEnv(gym.Env):
         current_observation = self.model.forward(np_model_input, numpy=True)
 
         self.current_observation = current_observation
-        self.denormalized_current_observation = self.normalize(self.current_observation)
+        self.denormalized_current_observation = self.denormalize(self.current_observation)
         if self.debug:
             log.debug(f"Reset complete for {curr.name}")
             log.debug(f">current_observation = {self.current_observation}")
@@ -140,7 +143,7 @@ class LSTMEnv(gym.Env):
         # get the next observation
         numpy_model_input = np.array(self.model_input)
         self.current_observation = self.model.forward(numpy_model_input, numpy=True)
-        self.denormalized_current_observation = self.normalize(self.current_observation)
+        self.denormalized_current_observation = self.denormalize(self.current_observation)
 
         if self.debug:
             log.debug(f">current_observation = {self.current_observation}")
@@ -157,7 +160,7 @@ class LSTMEnv(gym.Env):
             try:
                 old_price = self.denormalized_current_observation[price_index]
             except:
-                self.denormalized_current_observation = self.normalize(self.current_observation)
+                self.denormalized_current_observation = self.denormalize(self.current_observation)
                 old_price = self.denormalized_current_observation[price_index]
         else:
             old_price = self.current_observation[price_index]
@@ -177,6 +180,7 @@ class LSTMEnv(gym.Env):
         electricity would either be sent at a loss, or would be bought from
         these smaller producers.
         """
+        price_index = 0
         ontario_demand_index = 1
         supply_index = 2
         if denormalize:
@@ -192,13 +196,21 @@ class LSTMEnv(gym.Env):
 
 
         """
-        Correction is made so that it is punished for values bigger than max
-        But is also punished for values which are very high
+        Acc to dataset minAllowed is 0, maxAllowed is arround 2.3k.
+        Three cases:
+        if newPrice < minAllowed                : Reward will be negetive because of newPrice is negative
+                                                  while correction is positive (Penalized)
+                                                  Unless Supply is more than demand and thus as a broker we
+                                                  are still earning a profit (Rewarded)
+        if minAllowed < newPrice <maxAllowed    : Reward will be possitve but correction will make sure its
+                                                  not to high to overshoot (Rewarded)
+        if maxAllowed < newPrice                : correction will be negetive hence reward will be negetive
+                                                  (Penalized)
+        This forces the model to find ways to maximize (demand - supply)
         """
-        correction = self.min_max_values["max"][0] - new_price
+        correction = self.min_max_values["max"][price_index] - new_price
         if correction>0:
-            correction/=((new_price)**(1/3))
-        
+            correction/=self.min_max_values["max"][price_index]
         log.info(f"State set = {new_price}, {correction}, {demand}, {supply}")
         return (demand - supply) * new_price * correction
 

@@ -9,10 +9,10 @@ GOD AGENT
 BOSS AGENT
 - Will Update the network
 
-State = Ontario Price, Market Demand,Ontario Demand,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, Northwest Nigiria, West
+State = Ontario Price, Ontario Demand, Ontario Supply,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, Northwest Nigiria, West
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.3.5'
+__version__ = '0.3.7'
 
 # Imports
 from torch import nn, Tensor
@@ -24,7 +24,7 @@ import log
 import sys
 from NeuralNet import Network #, Aktor, Kritc
 import multiprocessing
-from multiprocessing import Process, Lock
+from multiprocessing import Process #, Lock
 multiprocessing.set_start_method('fork')
 """
 from TempEnv import TempEnv as ENV
@@ -324,10 +324,10 @@ class GOD:
         #"""
         curr = multiprocessing.current_process()
         #self._policySemaphore.acquire()
-        self.__policyNet.loadM(path+"/PolicyModel.pt")
+        self.__policyNet.loadM(path+"PolicyModel.pt")
         #self._policySemaphore.release()
         #self._criticSemaphore.acquire()
-        self.__criticNet.loadM(path+"/CritcModel.pt")
+        self.__criticNet.loadM(path+"CritcModel.pt")
         #self._criticSemaphore.release()
         return
 

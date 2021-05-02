@@ -119,7 +119,7 @@ if __name__=="__main__":
             threadCount+=1
             log.info(f"Terminated on a {threadCount}\t{catch}")
             log.info(f"Traceback for the {threadCount} Exception\t{sys.exc_info()}")
-            print(f"{threadCount} thread Terminated, check log {log.name}")
+            print(f"{threadCount} thread Terminated, check log")
         print("Trained")
         model = LSTM(output_size, input_dim, hidden_dim, layer_dim,debug=keywords["d"])
         model.loadM("ENV_MODEL/lstm_model.pt")
