@@ -324,10 +324,10 @@ class GOD:
         #"""
         curr = multiprocessing.current_process()
         #self._policySemaphore.acquire()
-        self.__policyNet.loadM(path+"/PolicyModel.pt")
+        self.__policyNet.loadM(path+"PolicyModel.pt")
         #self._policySemaphore.release()
         #self._criticSemaphore.acquire()
-        self.__criticNet.loadM(path+"/CritcModel.pt")
+        self.__criticNet.loadM(path+"CritcModel.pt")
         #self._criticSemaphore.release()
         return
 
