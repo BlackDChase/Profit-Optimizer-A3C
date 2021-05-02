@@ -82,7 +82,7 @@ from env import LSTMEnv as ENV
 from Agent import GOD
 
 if __name__=="__main__":
-    if "p" not in keywords.keys():
+    if "p" not in keywords.keys() or keywords["p"] is not None:
         god = GOD(
             stateSize=int(stateSize),
             actionSpace=keywords["a"],
