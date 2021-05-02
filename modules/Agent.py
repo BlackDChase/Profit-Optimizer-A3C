@@ -95,10 +95,15 @@ class GOD:
         self.__actorLR = alr
         self.__criticLR = clr
 
-        # semaphores do deal with simultaneous updates of the policy and critic net by multiple bosses.
+        """
+        Semaphores do deal with simultaneous updates of the policy and critic net by multiple bosses.
+        Not required, as model works without it.
+        """
+        """
         self._policySemaphore = Lock()
         self._criticSemaphore = Lock()
         self._resetSemaphore = Lock()
+        #"""
         #"""
         ## defining the actual neural net itself, input is state output is probability for each action.
         self.__policyNet = Network(
@@ -166,15 +171,16 @@ class GOD:
 
     def test(self,time=100):
         """
-        Output   : Returns the `time` number of states which occured on the basis of Agent's response.
+        @input      : Number of time steps for which this odel is going to be tested
+        @output     : Returns the `time` number of states which occured on the basis of Agent's response.
         """
-        currentState = self.__env.reset()
+        currentState = self.reset()
         a3cState=[]
         for i in range(time):
             log.info(f"a3cState={currentState}")
             a3cState.append(currentState)
             action,_ = self.decideAction(torch.Tensor(currentState))
-            nextState,reward,_,info = self.__env.step(action)
+            nextState,reward,_,info = self.step(action)
             ## Oi generous env , please tell me the next state and reward for the action i have taken
             log.info(f"{self.name}, {i},  {info}")
             if self.debug:
@@ -187,9 +193,10 @@ class GOD:
 
     def compare(self,a3cState,time=100,normalState=None):
         """
-        Input:
-        a3cState     : Output of states with a3C's feedback
-        normalStates : Output of states without a3c's feedback
+        @input          : a3cState,time,normalState
+        a3cState        : Output of states with a3C's feedback
+        normalState     : Output of states without a3c's feedback
+        time            : Timesteps for which this model in being tested
         """
         if type(normalState)==None:
             normalState=self.getNormalStates(time)
@@ -209,88 +216,46 @@ class GOD:
 
 
     def _updatePolicy(self,lossP):
-        curr = multiprocessing.current_process()
-        if self.debug:
-            log.debug(f"{curr.name},{curr.pid} Wants Policy")
-        #self._policySemaphore.acquire()
-        if self.debug:
-            log.debug(f"Policy Semaphore Acquired, {curr.ident}")
         self.__policyNet.optimizer.zero_grad()
         lossP.backward(retain_graph=True)
         self.__policyNet.optimizer.step()
-        #self._policySemaphore.release()
-        if self.debug:
-            log.debug(f"Policy Semaphore released, {curr.ident}")
         return
 
     def _updateCritc(self,lossC):
-        curr = multiprocessing.current_process()
-        if self.debug:
-            log.debug(f"{curr.name},{curr.pid} Wants Critic")
-        #self._criticSemaphore.acquire()
-        if self.debug:
-            log.debug(f"Critic Semaphore Acquired, {curr.ident}")
         self.__criticNet.optimizer.zero_grad()
         lossC.backward(retain_graph=True)
         self.__criticNet.optimizer.step()
-        #self._criticSemaphore.release()
-        if self.debug:
-            log.debug(f"Critic Semaphore released, {curr.ident}")
         return
-    
-    
+
     def decideAction(self,state):
         """
         Responsible for taking the correct action from the given state using the neural net.
         @input :: current state
         @output :: the index of action which must be taken from this states, and probability of that action
         #"""
+
         state = state.float()
         actionProb = self._getAction(state)
-        ## This creates state-action probability vector from the policy net. 
-        probabDistribution = Categorical(probs=actionProb) ## create a catagorical distribution acording to the actionProb
-        ## categorical probability distribution
-        actionIndex = probabDistribution.sample() ## sample the action according to the probability distribution.
+        """
+        actionProb  ::  State-action probability vector from the policy net.
+        Categorical ::  Create a catagorical distribution acording to the actionProb
+        #"""
+        probabDistribution = Categorical(probs=actionProb)
+
+        if self.debug:
+            log.debug(f"Deciding action for {state}")
+        actionIndex = probabDistribution.sample()
+        ## sample the action according to the probability distribution.
         if self.debug:
             log.debug(f"Action: {actionIndex}, actionProbab = {actionProb}")
         return actionIndex,actionProb
 
-    def _peakAction(self,state,action):
-        """
-        Online dilemma
-        will be used at training time , for updating the networks
-        #"""
-        result = self.__env.step(state,action)
-        return result
-  
-
     def _getAction(self,state):
-        curr = multiprocessing.current_process()
-        if self.debug:
-            log.debug(f"{curr.name},{curr.pid} Wants Policy")
-        #self._policySemaphore.acquire()
-        if self.debug:
-            log.debug(f"Policy Semaphore Acquired, {curr.ident}")
         actionProbab = self.__policyNet.forward(state)
-        if self.debug:
-            log.debug(f"Policy result = {actionProbab}")
-            # Not sure if forward is the way to go
-        #self._policySemaphore.release()
-        if self.debug:
-            log.debug(f"Policy Semaphore Released, {curr.ident}")
         return actionProbab
 
     def _getCriticValue(self,state):
-        curr = multiprocessing.current_process()
-        if self.debug:
-            log.debug(f"{curr.name},{curr.pid} Wants Critic")
-        #self._criticSemaphore.acquire()
-        if self.debug:
-            log.debug(f"Critic Semaphore Acquired, {curr.ident}")
         vVlaue = self.__criticNet.forward(state)
-        #self._criticSemaphore.release()
-        if self.debug:
-            log.debug(f"Critic Semaphore Released, {curr.ident}")
         return vVlaue
 
     def reset(self):
@@ -323,7 +288,10 @@ class GOD:
         #"""
         bossThreads=[]
         for i in range(self.__nAgent):
-            process = Process(target=self.__bossAgent[i].train,args=(self._resetSemaphore,))
+            process = Process(
+                target=self.__bossAgent[i].train,
+                #args=(self._resetSemaphore,),
+            )
             bossThreads.append(process)
 
         for i in range(len(bossThreads)):
@@ -430,9 +398,12 @@ class BOSS(GOD):
         pass
         #"""
 
-    #def train(self,factory,nAgent):
-    def train(self,resetSemaphore):
-        self.makeENV(resetSemaphore)
+
+    def train(
+            self,
+            #resetSemaphore
+    ):
+        self.makeENV()
         log.info(f"{self.name}'s Env made")
 
         """
@@ -452,7 +423,7 @@ class BOSS(GOD):
         for e in tqdm(range(self.maxEpisode),ascii=True,desc=self.name):
             if self.debug:
                 log.debug(f"{self.name} e = {e}")
-            resetState = self.env.reset()
+            resetState = self.reset()
             self.startState = torch.Tensor(resetState)
             if self.debug:
                 log.debug(f"{self.name} Start state = {self.startState}")
@@ -483,7 +454,7 @@ class BOSS(GOD):
         print(f"{self.name} has completed training")
         pass
 
-    def makeENV(self,resetSemaphore):
+    def makeENV(self):
         """
         Making enviornment here
         Because of #35472 on pytorch : https://github.com/pytorch/pytorch/issues/35472#issue-588591481
@@ -493,19 +464,18 @@ class BOSS(GOD):
         if self.debug:
             log.info(f"LSTM instance created for {self.name} = {LSTM_instance}")
 
-        #resetSemaphore.acquire()
-        log.info(f"{resetSemaphore} acquired by {self}")
 
         LSTM_instance.loadM("ENV_MODEL/lstm_model.pt")
         log.info(f"{self.name}'s Env made")
 
         log.info(f"LSTM instance loaded for {self.name} = {LSTM_instance}")
-        self.env = ENV(model=LSTM_instance,dataset_path=envDATA,actionSpace=self._actionSpace,debug=self.debug)
-        self.env.reset()
-
-        #resetSemaphore.release()
-        log.info(f"{resetSemaphore} released by {self}")
-
+        self.__env = ENV(
+            model=LSTM_instance,
+            dataset_path=envDATA,
+            actionSpace=self._actionSpace,
+            debug=self.debug,
+        )
+        self.reset()
         return
 
     def gatherAndStore(self):
@@ -515,7 +485,7 @@ class BOSS(GOD):
         for i in range(self.trajectoryLength):
             action = self.getAction(currentState)
             #nextState,reward,info = self.god.step(action)
-            nextState,reward,_,info = self.env.step(action)
+            nextState,reward,_,info = self.step(action)
             ## Oi generous env , please tell me the next state and reward for the action i have taken
             log.info(f"{self.name}, {i},  {info}")
             if self.debug:
