@@ -197,20 +197,16 @@ class LSTMEnv(gym.Env):
 
         """
         Acc to dataset minAllowed is 0, maxAllowed is arround 2.3k.
-        Three cases:
-        if newPrice < minAllowed                : Reward will be negetive because of newPrice is negative
-                                                  while correction is positive (Penalized)
-                                                  Unless Supply is more than demand and thus as a broker we
-                                                  are still earning a profit (Rewarded)
-        if minAllowed < newPrice <maxAllowed    : Reward will be possitve but correction will make sure its
-                                                  not to high to overshoot (Rewarded)
-        if maxAllowed < newPrice                : correction will be negetive hence reward will be negetive
-                                                  (Penalized)
-        This forces the model to find ways to maximize (demand - supply)
+        Considering three cases:
+        abs(Price) ∉ (minAllowed,maxAllowed): Heavily Punished by High Correction Value
+        Demand - Supply, Price same sign    : Profit, Rewarded if correction is positive, punished otherwise
+        Demand - Supply, Price opposite sign: Loss, punished
         """
-        correction = self.min_max_values["max"][price_index] - new_price
+        correction = self.min_max_values["max"][price_index] - abs(new_price)
         if correction>0:
             correction/=self.min_max_values["max"][price_index]
+        if ((demand-supply) * new_price<0 )&(correction<0):
+            correction=-correction
         log.info(f"State set = {new_price}, {correction}, {demand}, {supply}")
         return (demand - supply) * new_price * correction
 
