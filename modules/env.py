@@ -79,13 +79,12 @@ class LSTMEnv(gym.Env):
         current_observation = self.model.forward(np_model_input, numpy=True)
 
         self.current_observation = current_observation
+        self.denormalized_current_observation = self.normalize(self.current_observation)
         if self.debug:
             log.debug(f"Reset complete for {curr.name}")
-
-        # return unnormalized observation to agent
-        self.denormalized_current_observation = self.denormalize(self.current_observation)
-        #return self.current_observation
-        return self.denormalized_current_observation
+            log.debug(f">current_observation = {self.current_observation}")
+            log.debug(f">denormalized_current_observation = {self.denormalized_current_observation}")
+        return self.current_observation
 
     # TODO What is this function for
     def possibleState(self,time=100):
@@ -126,7 +125,8 @@ class LSTMEnv(gym.Env):
 
         # get reward
         # Ensure that numpy array shape is (1,), not () otherwise conversion to torch.Tensor will get messed up
-        reward = np.array([self.get_reward(new_price_denormalized, denormalize=True)])
+        # Use denormalized new price to get denormalized reward
+        denormalized_reward = np.array([self.get_reward(new_price_denormalized, denormalize=True)])
 
         # We update the price in the current observation
         # This ensures that the model takes into account the action we just
@@ -140,11 +140,13 @@ class LSTMEnv(gym.Env):
         # get the next observation
         numpy_model_input = np.array(self.model_input)
         self.current_observation = self.model.forward(numpy_model_input, numpy=True)
+        self.denormalized_current_observation = self.normalize(self.current_observation)
 
-        # return unnormalized observation to agent
-        self.denormalized_current_observation = self.denormalize(self.current_observation)
+        if self.debug:
+            log.debug(f">current_observation = {self.current_observation}")
+            log.debug(f">denormalized_current_observation = {self.denormalized_current_observation}")
 
-        return self.denormalized_current_observation, reward, done, {}
+        return self.current_observation, denormalized_reward, done, {}
 
     def get_new_price(self, action, denormalize=False):
         """
@@ -152,24 +154,16 @@ class LSTMEnv(gym.Env):
         """
         price_index = 0
         if denormalize:
-            old_price = self.denormalized_current_observation[price_index]
+            try:
+                old_price = self.denormalized_current_observation[price_index]
+            except:
+                self.denormalized_current_observation = self.normalize(self.current_observation)
+                old_price = self.denormalized_current_observation[price_index]
         else:
             old_price = self.current_observation[price_index]
         # Increase or decrease the old price by a percentage, as defined by actions
         new_price = old_price * (1 + self.actionSpace[action] / 100)
-
-        # unrelated logging function
-        self.log_state_set(old_price, new_price, denormalize)
-
         return new_price
-
-    def log_state_set(self, old_price, new_price, denormalize):
-        ontario_demand_index = 1
-        if denormalize:
-            demand = self.denormalized_current_observation[ontario_demand_index]
-        else:
-            demand = self.current_observation[ontario_demand_index]
-        log.info(f"State set={old_price},{new_price},{demand}")
 
     def get_reward(self, new_price, denormalize=False):
         """
@@ -186,6 +180,8 @@ class LSTMEnv(gym.Env):
         ontario_demand_index = 1
         supply_index = 2
         if denormalize:
+            self.denormalized_current_observation = self.denormalize(self.current_observation)
+
             log.debug(f"self.denormalized_current_observation.shape = {self.denormalized_current_observation.shape}")
             demand = self.denormalized_current_observation[ontario_demand_index]
             supply = self.denormalized_current_observation[supply_index]
@@ -193,7 +189,18 @@ class LSTMEnv(gym.Env):
             log.debug(f"self.current_observation.shape = {self.current_observation.shape}")
             demand = self.current_observation[ontario_demand_index]
             supply = self.current_observation[supply_index]
-        return (demand - supply) * new_price
+
+
+        """
+        Correction is made so that it is punished for values bigger than max
+        But is also punished for values which are very high
+        """
+        correction = self.min_max_values["max"][0] - new_price
+        if correction>0:
+            correction/=((new_price)**(1/3))
+        
+        log.info(f"State set = {new_price}, {correction}, {demand}, {supply}")
+        return (demand - supply) * new_price * correction
 
     def denormalize(self, array):
         """

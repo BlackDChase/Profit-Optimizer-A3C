@@ -67,8 +67,8 @@ def getMostRecent(folder):
 
 def stateExtract(fileN,order=None):
     with open(fileN) as state:
-        old=[]
-        new=[]
+        price=[]
+        corre=[]
         demand=[]
         supply=[]
         temp=order
@@ -87,14 +87,14 @@ def stateExtract(fileN,order=None):
                     y/=order
                     z/=order
                     w/=order
-                old.append(x)
-                new.append(y)
+                price.append(x)
+                corre.append(y)
                 demand.append(z)
                 supply.append(w)
                 x,y,z,w=0,0,0,0
             if order!=None:
                 temp-=1
-    return old,new,demand,supply
+    return price,corre,demand,supply
 
 
 
@@ -107,10 +107,10 @@ if __name__ == '__main__':
     avgReward, episodeLength = rewardAvgLen(rewardAvg(folderName+"rewardLog.tsv"))
     policyLoss = modelLoss(folderName+"policyLossLog.tsv")
     criticLoss = modelLoss(folderName+"criticLossLog.tsv")
-    oldAvg,newAvg,demandAvg,supplyAvg = stateExtract(folderName+"stateLog.tsv",len(episodeLength)/4)
-    old,new,demand,supply = stateExtract(folderName+"stateLog.tsv")
-    demSupAvg = [supplyAvg[i]-demandAvg[i] for i in range(len(demandAvg))]
-    demSup = [supply[i]-demand[i] for i in range(len(demand))]
+    priceAvg,correAvg,demandAvg,supplyAvg = stateExtract(folderName+"stateLog.tsv",len(episodeLength)/4)
+    price,corre,demand,supply = stateExtract(folderName+"stateLog.tsv")
+    demSupAvg = [-supplyAvg[i]+demandAvg[i] for i in range(len(demandAvg))]
+    demSup = [-supply[i]+demand[i] for i in range(len(demand))]
     
     # Ploting Demand, Supply 
     plt.figure(dpi=400)
@@ -118,7 +118,7 @@ if __name__ == '__main__':
     #plt.plot(oldAvg,label="Actual Price")
     plt.plot(demandAvg,label="Demand")
     plt.plot(supplyAvg,label="Supply")
-    plt.plot(demSupAvg,label="Supply-Demand")
+    plt.plot(demSupAvg,label="Demand-Supply")
     plt.legend()
     plt.savefig(folderName+"Supply vs Demand.svg")
     plt.close()
@@ -126,59 +126,21 @@ if __name__ == '__main__':
     # Ploting AVG A3C Price vs Exchange
     plt.figure(dpi=400)
     plt.xlabel(f"Average of Per {len(episodeLength)/4} Episode")
-    plt.plot(newAvg,label="Model Price")
-    plt.plot(demSupAvg,label="Exchange")
+    plt.plot(priceAvg,label="Model Price")
+    plt.plot(demSupAvg,label="Demand-Supply")
     plt.legend()
     plt.savefig(folderName+"AVG Model Price vs Exchange.svg")
     plt.close()
 
-
-    # Ploting AVG LSTM Price vs Actual Price
-    #plt.figure(dpi=400)
-    #plt.xlabel(f"Average of Per {len(episodeLength)/4} Episode")
-    #plt.plot(newAvg,label="Model Price")
-    #plt.plot(oldAvg,label="Actual Price")
-    #plt.legend()
-    #plt.savefig(folderName+"AVG Model Price vs Actual Price.svg")
-    #plt.close()
-
-    # Ploting LSTM Price vs Demand 
-    #plt.figure(dpi=400)
-    #plt.xlabel(f"Episode")
-    #plt.plot(old,label="Actual Price")
-    #plt.plot(demand,label="Demand")
-    #plt.legend()
-    #plt.savefig(folderName+"Actual Price vs Demand.svg")
-    #plt.close()
-
     # Ploting A3C Price vs Exchange
     plt.figure(dpi=400)
     plt.xlabel(f"Episode")
-    plt.plot(new,label="Model Price")
-    plt.plot(demSup,label="Exchange")
+    plt.plot(price,label="Model Price")
+    plt.plot(demSup,label="Demand-Supply")
     plt.legend()
     plt.savefig(folderName+"Price VS Exchange.svg")
     plt.close()
 
-    # Ploting LSTM Price vs Actual Price
-    #plt.figure(dpi=400)
-    #plt.xlabel(f"Episode")
-    #plt.plot(new,label="Model Price")
-    #plt.plot(old,label="Actual Price")
-    #plt.legend()
-    #plt.savefig(folderName+"Model Price vs Actual Price.svg")
-    #plt.close()
-
-
-    # Ploting average reward
-    plt.figure(dpi=400)
-    plt.xlabel("Episode")
-    plt.ylabel("Average reward")
-    plt.plot(avgReward)
-    baseLine = [0.142776477819396]*len(avgReward)
-    plt.plot(baseLine,color='r',label='Average Reward of dataset')
-    plt.savefig(folderName+"avgReward.svg")
-    plt.close()
 
     # Ploting average advantage
     plt.figure(dpi=400)
@@ -202,4 +164,17 @@ if __name__ == '__main__':
     plt.ylabel("criticLoss")
     plt.plot(criticLoss)
     plt.savefig(folderName+"criticLoss.svg")
+    plt.close()
+
+    # Ploting average reward
+    correAvg = []
+    for i in episodeLength:
+        correAvg.append(sum(corre[:i])/i)
+        corre=corre[i:]
+    plt.figure(dpi=400)
+    plt.xlabel("Episode")
+    plt.ylabel("Average reward")
+    plt.plot(avgReward)
+    plt.plot(corre)
+    plt.savefig(folderName+"avgReward.svg")
     plt.close()
