@@ -233,7 +233,6 @@ class GOD:
         @input :: current state
         @output :: the index of action which must be taken from this states, and probability of that action
         #"""
-
         state = state.float()
         actionProb = self._getAction(state)
         """
@@ -251,11 +250,15 @@ class GOD:
         return actionIndex,actionProb
 
     def _getAction(self,state):
+        #self._policySemaphore.acquire()
         actionProbab = self.__policyNet.forward(state)
+        #self._policySemaphore.release()
         return actionProbab
 
     def _getCriticValue(self,state):
+        #self._criticSemaphore.acquire()
         vVlaue = self.__criticNet.forward(state)
+        #self._criticSemaphore.release()
         return vVlaue
 
     def reset(self):
@@ -290,7 +293,7 @@ class GOD:
         for i in range(self.__nAgent):
             process = Process(
                 target=self.__bossAgent[i].train,
-                #args=(self._resetSemaphore,),
+                #args=(self._resetSemaphore,),  # Not using semaphores
             )
             bossThreads.append(process)
 
@@ -300,28 +303,12 @@ class GOD:
         for i in bossThreads:
             i.join()
 
-        """
-        # Remove multiprocessing for @biribiri
-        self.__bossAgent[0].train()
-        if self.debug:
-            log.debug(f"Boss00 training started via GOD")
-        #"""
         return
 
     def forwardP(self,actions):
-        curr = multiprocessing.current_process()
-        if self.debug:
-            log.debug(f"{curr.name},{curr.pid} Wants Policy")
         #self._policySemaphore.acquire()
-        if self.debug:
-            log.debug(f"Policy Semaphore Acquired, {curr.ident}")
-        if self.debug:
-            log.debug(f"{curr.ident} Actions {actions.shape}")
         actionProb = self.__policyNet.forward(actions)
         #self._policySemaphore.release()
-        if self.debug:
-            log.debug(f"Policy Semaphore Released, {curr.ident}")
-
         return actionProb
 
     def saveModel(self,path):
@@ -335,26 +322,12 @@ class GOD:
         If using GPU, this has to be mapped to it while load .. torch.load(path,map_location=device)
         #"""
         curr = multiprocessing.current_process()
-        if self.debug:
-            log.debug(f"{curr.name},{curr.pid} Wants Policy")
         #self._policySemaphore.acquire()
-        if self.debug:
-            log.debug(f"Policy Semaphore Acquired, {curr.ident}")
         self.__policyNet.loadM(path+"/PolicyModel.pt")
         #self._policySemaphore.release()
-        if self.debug:
-            log.debug(f"Policy Semaphore Released, {curr.ident}")
-
-        curr = multiprocessing.current_process()
-        if self.debug:
-            log.debug(f"{curr.name},{curr.pid} Wants Critic")
         #self._criticSemaphore.acquire()
-        if self.debug:
-            log.debug(f"Critic Semaphore Acquired, {curr.ident}")
         self.__criticNet.loadM(path+"/CritcModel.pt")
-        self._criticSemaphore.release()
-        if self.debug:
-            log.debug(f"Critic Semaphore Released, {curr.ident}")
+        #self._criticSemaphore.release()
         return
 
 class BOSS(GOD):
@@ -401,7 +374,7 @@ class BOSS(GOD):
 
     def train(
             self,
-            #resetSemaphore
+            #resetSemaphore, # Not using resetSemaphore anymore
     ):
         self.makeENV()
         log.info(f"{self.name}'s Env made")
@@ -558,14 +531,6 @@ class BOSS(GOD):
             self.vTarget[i] = self.trajectoryR[i].clone() + self.ɤ*self.vTarget[i+1].clone()
             # v_tar_currentState = reward + gamma* v_tar_nextState
         return
-
-    def calculateGAE(self):
-        # calculate the Advantage using the critic network
-        # gae is put on hold at this time
-        # To be declared at latter stage
-        raise NotImplementedError("You disturb BOSS for this?")
-        pass
-
 
     def calculateNSTEPAdvantage(self):
         """
