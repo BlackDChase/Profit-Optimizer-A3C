@@ -6,6 +6,9 @@ import random
 import log
 import multiprocessing
 
+__author__ = 'Biribiri,BlackDChase'
+__version__ = '0.3.7'
+
 class DatasetHelper:
     def __init__(self, dataset_path, max_input_len):
         self.dataset_path = dataset_path

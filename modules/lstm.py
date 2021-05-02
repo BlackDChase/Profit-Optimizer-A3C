@@ -15,6 +15,11 @@ from tqdm import tqdm
 import numpy as np
 import multiprocessing
 
+
+__author__ = 'Biribiri,BlackDChase'
+__version__ = '0.3.7'
+
+
 class LSTM(nn.Module):
     """
     LSTM that takes the custom processed Ontario dataset as input and trains
