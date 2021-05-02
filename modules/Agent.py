@@ -146,7 +146,7 @@ class GOD:
         return
 
     def giveEnvironment(self,env):
-        self.__env=env
+        self._env=env
         return
 
     def setNumberOfAgent(self,nAgent):
@@ -211,7 +211,7 @@ class GOD:
         return profit,profitA3C
 
     def getNormalStates(self,time=100):
-        normalState=self.__env.possibleState(time)
+        normalState=self._env.possibleState(time)
         return normalState
 
 
@@ -243,10 +243,11 @@ class GOD:
 
         if self.debug:
             log.debug(f"Deciding action for {state}")
+            log.debug(f"Probability Distribution {probabDistribution}, actionProbab = {actionProb}")
         actionIndex = probabDistribution.sample()
         ## sample the action according to the probability distribution.
         if self.debug:
-            log.debug(f"Action: {actionIndex}, actionProbab = {actionProb}")
+            log.debug(f"Action: {actionIndex}")
         return actionIndex,actionProb
 
     def _getAction(self,state):
@@ -262,10 +263,10 @@ class GOD:
         return vVlaue
 
     def reset(self):
-        return torch.Tensor(self.__env.reset())
+        return torch.Tensor(self._env.reset())
 
     def step(self,action):
-        return self.__env.step(action)
+        return self._env.step(action)
 
     def __initateBoss(self):
         """
@@ -442,7 +443,7 @@ class BOSS(GOD):
         log.info(f"{self.name}'s Env made")
 
         log.info(f"LSTM instance loaded for {self.name} = {LSTM_instance}")
-        self.__env = ENV(
+        self._env = ENV(
             model=LSTM_instance,
             dataset_path=envDATA,
             actionSpace=self._actionSpace,

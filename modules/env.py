@@ -84,8 +84,8 @@ class LSTMEnv(gym.Env):
 
         # return unnormalized observation to agent
         self.denormalized_current_observation = self.denormalize(self.current_observation)
-        #return self.current_observation
-        return self.denormalized_current_observation
+        return self.current_observation
+        #return self.denormalized_current_observation
 
     # TODO What is this function for
     def possibleState(self,time=100):
@@ -143,8 +143,10 @@ class LSTMEnv(gym.Env):
 
         # return unnormalized observation to agent
         self.denormalized_current_observation = self.denormalize(self.current_observation)
-
-        return self.denormalized_current_observation, reward, done, {}
+        if self.debug:
+            log.debug(f"current_observation = {self.current_observation}")
+        return self.current_observation, reward, done, {}
+        #return self.denormalized_current_observation, reward, done, {}
 
     def get_new_price(self, action, denormalize=False):
         """
