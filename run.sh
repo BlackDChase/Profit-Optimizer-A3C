@@ -3,9 +3,9 @@
 # Version : 0.3.5
 cd modules
 n=6
-e=500
-t=50
-a=5
+e=25
+t=5
+a=1
 alr=0.001
 clr=0.001
 s=1000
