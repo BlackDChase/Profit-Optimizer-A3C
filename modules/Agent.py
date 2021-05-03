@@ -12,7 +12,7 @@ BOSS AGENT
 State = Ontario Price, Ontario Demand, Ontario Supply,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, Northwest Nigiria, West
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.3.7'
+__version__ = '0.4.0'
 
 # Imports
 from torch import nn, Tensor
@@ -81,13 +81,13 @@ class GOD:
         self.price = 0
         self.__nAgent=nAgent
         self.__bossAgent=[]
-        if path==None:
-            self.needTraining(maxEpisode,nAgent,trajectoryLength,alr,clr)
-        else:
+        self.makeNetwork(maxEpisode,nAgent,trajectoryLength,alr,clr)
+
+        if path!=None:
             self.loadModel(path)
         pass
 
-    def needTraining(self,maxEpisode,nAgent,trajectoryLength,alr,clr):
+    def makeNetwork(self,maxEpisode,nAgent,trajectoryLength,alr,clr):
         log.info("This GOD will train with the enviornment")
         self.setMaxEpisode(maxEpisode)
         self.setNumberOfAgent(nAgent)
@@ -200,15 +200,18 @@ class GOD:
         """
         if type(normalState)==None:
             normalState=self.getNormalStates(time)
-        profit=[]
-        profitA3C=[]
+        normalProfit=[]
+        a3cProfit=[]
         supply_index = 2
         demand_index = 1
         price_index = 0
         for i in range(len(a3cState)):
-            profit.append(normalState[i][price_index]*(normalState[i][demand_index]-normalState[i][supply_index]))
-            profitA3C.append(a3cState[i][price_index]*(a3cState[i][demand_index]-a3cState[i][supply_index]))
-        return profit,profitA3C
+            normalProfit.append(normalState[i][price_index]*(normalState[i][demand_index]-normalState[i][supply_index]))
+            a3cProfit.append(a3cState[i][price_index]*(a3cState[i][demand_index]-a3cState[i][supply_index]))
+        diff=[]
+        for i in range(len(a3cProfit)):
+            diff.append(abs(a3cProfit[i])-abs(normalProfit[i]))
+        return a3cProfit,normalProfit,diff
 
     def getNormalStates(self,time=100):
         normalState=self._env.possibleState(time)

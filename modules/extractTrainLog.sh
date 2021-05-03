@@ -1,4 +1,7 @@
 #!/bin/bash
+# Author  : BlackDChase
+# Version : 0.4.0
+
 name=$(ls ../logs -Art | grep "O.tsv" | tail -n 1)
 IFS='.'
 read -ra name <<< "$name"
@@ -25,5 +28,5 @@ vim criticLossLog.tsv  -c ':%s/.*loss = //g' -c ':wq'
 vim advantageLog.tsv  -c ':%s/.*tensor//g' -c ':%s/(\[//g'  -c ':%s/\].*//g' -c ':wq'
 vim stateLog.tsv -c ':%s/.*set = //g' -c ':wq'
 echo "'Post Processing Logs was a success'"
-python ../../modules/postProcessing.py
+python ../../modules/postTraining.py
 #echo "'Ploting was success'"

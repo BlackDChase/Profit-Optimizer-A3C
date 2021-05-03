@@ -16,7 +16,7 @@ Parameters:
 #"""
 
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.3.3'
+__version__ = '0.4.0'
 # Input from outside
 import log
 import sys
@@ -95,15 +95,14 @@ if __name__=="__main__":
         )
         print("Master Agent Made")
         log.info("GOD inititated")
-        log.info(f"Action space: {actionSpace}")
-
-        #"""
-        output_size = 13
-        input_dim = output_size
-        hidden_dim = 128
-        layer_dim = 1
-
-        
+        log.info(f"State Size = {int(stateSize)}")
+        log.info(f"Action Space = {keywords['a']}")
+        log.info(f"Debug = {keywords['d']}")
+        log.info(f"Max Episode = {int(keywords['e'])}")
+        log.info(f"Number of Agent = {int(keywords['n'])}")
+        log.info(f"Trajectory Length = {int(keywords['t'])}")
+        log.info(f"Actor Learning Rate = {keywords['alr']}")
+        log.info(f"Critic Learning Rate = {keywords['clr']}")
 
         threadCount=0
         try:
@@ -112,7 +111,6 @@ if __name__=="__main__":
             god.saveModel("../Saved_model")
         except KeyboardInterrupt:
             god.saveModel("../Saved_model")
-            sys.exit()
             raise KeyboardInterrupt
         except Exception as catch:
             #log.debug(f"Terminaion Trace back {catch.with_traceback()}")
@@ -121,24 +119,6 @@ if __name__=="__main__":
             log.info(f"Traceback for the {threadCount} Exception\t{sys.exc_info()}")
             print(f"{threadCount} thread Terminated, check log")
         print("Trained")
-        model = LSTM(output_size, input_dim, hidden_dim, layer_dim,debug=keywords["d"])
-        model.loadM("ENV_MODEL/lstm_model.pt")
-        log.info(f"LSTM Model = {model}")
-        env=ENV(
-            model=model,
-            dataset_path="../datasets/normalized_weird_13_columns_with_supply.csv",
-            actionSpace=actionSpace,
-            debug=keywords["d"],
-        )
-        env.reset()
-        print("Environment inititated")
-        """
-        env = ENV(stateSize,actionSpace)
-        #"""
-        log.info("Environment inititated")
-
-        god.giveEnvironment(env)
-        log.info("Environment parsed, Boss inititated")
     else:
         god = GOD(
             debug=keywords["d"],
@@ -148,11 +128,20 @@ if __name__=="__main__":
         )
         print("Master Agent Made")
         log.info("GOD inititated")
-        actionSpace = god.getActionSpace()
-        log.info(f"Action space: {actionSpace}")
+        log.info(f"State Size = {int(stateSize)}")
+        log.info(f"Action Space = {keywords['a']}")
+        log.info(f"Debug = {keywords['d']}")
+        log.info(f"Path of Model = {keywords['p']}")
+        log.info(f"Steps tested for = {keywords['s']}")
         #"""
-        model=LSTM("ENV_MODEL/lstm_model.pt",debug=keywords["d"])
-         #env=ENV(model,"../Dataset/13_columns.csv")
+
+        output_size = 13
+        input_dim = output_size
+        hidden_dim = 128
+        layer_dim = 1
+        model = LSTM(output_size, input_dim, hidden_dim, layer_dim,debug=keywords["d"])
+        model.loadM("ENV_MODEL/lstm_model.pt")
+
         env=ENV(
             model=model,
             dataset_path="../datasets/normalized_weird_13_columns_with_supply.csv",
@@ -168,18 +157,17 @@ if __name__=="__main__":
         log.info("Environment parsed, Boss inititated")
 
         # Testing
-        
-        time=int(keyword['s'])
+        time=int(keywords['s'])
         a3cStates = god.test(time=time)
         normalStates = god.getNormalStates(time=time)
-        profit,profitA3C = god.compare(a3cState=a3cStates,normalState=normalStates)
-        
+        a3cProfit,normalProfit,diff = god.compare(a3cState=a3cStates,normalState=normalStates)
+
         # Plotting
-        plt.figure(dpi=100)
-        plt.xlabel("Episode")
-        plt.ylabel("Scalled Profit")
-        plt.plot(profit,label='Profits without A3C')
-        plt.plot(profitA3C,label='Profits with A3C')
-        plt.legend()
-        plt.save("Test.svg")
-        
+        for i in range(len(a3cStates)):
+            log.info(f"A3C State = {a3cStates[i]}")
+            log.info(f"Normal State = {normalStates[i]}")
+        for i in range(len(a3cProfit)):
+            log.info(f"A3C Profit = {a3cProfit[i]}")
+            log.info(f"Normal Profit = {normalProfit[i]}")
+            log.info(f"Diff = {diff[i]}")
+        print("Tested")

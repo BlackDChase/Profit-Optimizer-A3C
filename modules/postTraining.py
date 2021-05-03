@@ -1,14 +1,16 @@
 """
 Post processing to produce graphs from logs
 - [X] Reward
-- [ ] Policy Loss
-- [ ] Critic Loss
-- [ ] Advantage
-
+- [X] Policy Loss
+- [X] Critic Loss
+- [X] Advantage
+- [X] Demand
+- [X] Supply
+- [X] Price
 Currently is a RIPOFF of postProcessing made for MIDAS
 #"""
 __author__ = 'BlackDChase'
-__version__ = '0.3.0'
+__version__ = '0.4.0'
 
 # Imports
 
@@ -111,27 +113,52 @@ if __name__ == '__main__':
     price,corre,demand,supply = stateExtract(folderName+"stateLog.tsv")
     demSupAvg = [-supplyAvg[i]+demandAvg[i] for i in range(len(demandAvg))]
     demSup = [-supply[i]+demand[i] for i in range(len(demand))]
-    
+    correAvg2 = []
+    for i in episodeLength:
+        correAvg2.append(sum(corre[:i])/i)
+        corre=corre[i:]
+
+
     # Ploting Demand, Supply 
-    plt.figure(dpi=400)
-    plt.xlabel(f"Average of Per {len(episodeLength)/4} Episode")
-    #plt.plot(oldAvg,label="Actual Price")
-    plt.plot(demandAvg,label="Demand")
-    plt.plot(supplyAvg,label="Supply")
-    plt.plot(demSupAvg,label="Demand-Supply")
-    plt.legend()
+    fig,ax1 = plt.subplots(dpi=400)
+    color='r'
+    ax1.plot(demandAvg,color=color)
+    ax1.tick_params(axis='y',labelcolor=color)
+    ax1.set_ylabel('Demand',color=color)
+    ax1.set_xlabel(f"Average of Per {len(episodeLength)/4} Episode")
+    ax2 = ax1.twinx()
+    color='b'
+    ax2.plot(demSupAvg,color=color)
+    ax2.tick_params(axis='y',labelcolor=color)
+    ax2.set_ylabel('Demand-Supply',color=color)
+    ax3 = ax1.twinx()
+    color='g'
+    ax3.plot(supplyAvg,color=color)
+    ax3.tick_params(axis='y',labelcolor=color)
+    ax3.set_ylabel('Supply',color=color)
+    fig.tight_layout()
     plt.savefig(folderName+"Supply vs Demand.svg")
     plt.close()
 
+
+
     # Ploting AVG A3C Price vs Exchange
-    plt.figure(dpi=400)
-    plt.xlabel(f"Average of Per {len(episodeLength)/4} Episode")
-    plt.plot(priceAvg,label="Model Price")
-    plt.plot(demSupAvg,label="Demand-Supply")
-    plt.legend()
+    fig,ax1 = plt.subplots(dpi=400)
+    color='r'
+    ax1.plot(priceAvg,color=color)
+    ax1.tick_params(axis='y',labelcolor=color)
+    ax1.set_ylabel('Model Price',color=color)
+    ax1.set_xlabel(f"Average of Per {len(episodeLength)/4} Episode")
+    ax2 = ax1.twinx()
+    color='b'
+    ax2.plot(demSupAvg,color=color)
+    ax2.tick_params(axis='y',labelcolor=color)
+    ax2.set_ylabel('Demand-Supply',color=color)
+    fig.tight_layout()
     plt.savefig(folderName+"AVG Model Price vs Exchange.svg")
     plt.close()
 
+    #"""
     # Ploting A3C Price vs Exchange
     plt.figure(dpi=400)
     plt.xlabel(f"Episode")
@@ -140,7 +167,7 @@ if __name__ == '__main__':
     plt.legend()
     plt.savefig(folderName+"Price VS Exchange.svg")
     plt.close()
-
+    #"""
 
     # Ploting average advantage
     plt.figure(dpi=400)
@@ -167,14 +194,18 @@ if __name__ == '__main__':
     plt.close()
 
     # Ploting average reward
-    correAvg = []
-    for i in episodeLength:
-        correAvg.append(sum(corre[:i])/i)
-        corre=corre[i:]
-    plt.figure(dpi=400)
-    plt.xlabel("Episode")
-    plt.ylabel("Average reward")
-    plt.plot(avgReward)
-    plt.plot(corre)
-    plt.savefig(folderName+"avgReward.svg")
+    fig,ax1 = plt.subplots(dpi=400)
+    color='r'
+    ax1.plot(avgReward,color=color)
+    ax1.tick_params(axis='y',labelcolor=color)
+    ax1.set_ylabel('Average Reward',color=color)
+    ax1.set_xlabel(f"Average of Per {len(episodeLength)/4} Episode")
+    ax2 = ax1.twinx()
+    color='b'
+    ax2.plot(correAvg2,color=color)
+    ax2.tick_params(axis='y',labelcolor=color)
+    ax2.set_ylabel('Average Correction',color=color)
+    fig.tight_layout()
+    plt.savefig(folderName+"avgRewardnCorrection.svg")
     plt.close()
+
