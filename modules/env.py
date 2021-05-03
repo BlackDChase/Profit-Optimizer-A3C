@@ -7,7 +7,7 @@ import log
 import multiprocessing
 
 __author__ = 'Biribiri,BlackDChase'
-__version__ = '0.3.7'
+__version__ = '0.3.8'
 
 class DatasetHelper:
     def __init__(self, dataset_path, max_input_len):
@@ -201,12 +201,14 @@ class LSTMEnv(gym.Env):
         abs(Price) ∉ (minAllowed,maxAllowed): Heavily Punished by High Correction Value
         Demand - Supply, Price same sign    : Profit, Rewarded if correction is positive, punished otherwise
         Demand - Supply, Price opposite sign: Loss, punished
+        Decreaseing the overall Reward value: Correction/=(10**6)
         """
         correction = self.min_max_values["max"][price_index] - abs(new_price)
         if correction>0:
             correction/=self.min_max_values["max"][price_index]
         if ((demand-supply) * new_price<0 )&(correction<0):
             correction=-correction
+        correction/=(10**6)
         log.info(f"State set = {new_price}, {correction}, {demand}, {supply}")
         return (demand - supply) * new_price * correction
 
