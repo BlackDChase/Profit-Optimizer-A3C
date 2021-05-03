@@ -81,8 +81,21 @@ class LSTMEnv(gym.Env):
             log.debug(f"Reset call for {curr.name}")
         current_observation = self.model.forward(np_model_input, numpy=True)
 
+
+        """
+        Starting with a preset positive price which is 0.5 (because normalized).
+        Saving oldPrice for future refernce as our currnet Agent commands a percentage change on the oldPrice,
+        rather than dishing out a new price.
+        We can also have this start price as a random value between 0 and 1.
+        oldPrice is going to be a normalized value as it always is calculated in respect to
+        current_observation (which is normalized).
+        """
+        price_index = 0
+        current_observation[price_index]=0.5
         self.current_observation = current_observation
         self.denormalized_current_observation = self.denormalize(self.current_observation)
+        self.oldPrice = self.current_observation[price_index]
+
         if self.debug:
             log.debug(f"Reset complete for {curr.name}")
             log.debug(f">current_observation = {self.current_observation}")
@@ -119,31 +132,29 @@ class LSTMEnv(gym.Env):
             import sys
             sys.exit()
 
+        # get the next observation
+        numpy_model_input = np.array(self.model_input)
+        self.current_observation = self.model.forward(numpy_model_input, numpy=True)
         # Set done as False as there's no reason to end an episode
         done = False
 
         # Implement effects of action
         new_price = self.get_new_price(action)
-        new_price_denormalized = self.get_new_price(action, denormalize=True)
+        self.oldPrice=new_price
+        price_index = 0
+        self.current_observation[price_index] = new_price
+        self.denormalized_current_observation = self.denormalize(self.current_observation)
 
         # get reward
         # Ensure that numpy array shape is (1,), not () otherwise conversion to torch.Tensor will get messed up
         # Use denormalized new price to get denormalized reward
-        denormalized_reward = np.array([self.get_reward(new_price_denormalized, denormalize=True)])
+        denormalized_reward = np.array([self.get_reward(denormalize=True)])
 
         # We update the price in the current observation
         # This ensures that the model takes into account the action we just
         # took when giving us the next timestep
-        price_index = 0
-        self.current_observation[price_index] = new_price
-
         # append the current observation to the model input
         self.model_input.append(self.current_observation)
-
-        # get the next observation
-        numpy_model_input = np.array(self.model_input)
-        self.current_observation = self.model.forward(numpy_model_input, numpy=True)
-        self.denormalized_current_observation = self.denormalize(self.current_observation)
 
         if self.debug:
             log.debug(f">current_observation = {self.current_observation}")
@@ -151,24 +162,16 @@ class LSTMEnv(gym.Env):
 
         return self.current_observation, denormalized_reward, done, {}
 
-    def get_new_price(self, action, denormalize=False):
+    def get_new_price(self, action):
         """
         Modify the price by a percentage according to the action taken.
         """
-        price_index = 0
-        if denormalize:
-            try:
-                old_price = self.denormalized_current_observation[price_index]
-            except:
-                self.denormalized_current_observation = self.denormalize(self.current_observation)
-                old_price = self.denormalized_current_observation[price_index]
-        else:
-            old_price = self.current_observation[price_index]
+        old_price = self.oldPrice
         # Increase or decrease the old price by a percentage, as defined by actions
         new_price = old_price * (1 + self.actionSpace[action] / 100)
         return new_price
 
-    def get_reward(self, new_price, denormalize=False):
+    def get_reward(self, denormalize=False):
         """
         Calculate reward based on the new_price
 
@@ -183,32 +186,40 @@ class LSTMEnv(gym.Env):
         price_index = 0
         ontario_demand_index = 1
         supply_index = 2
+
         if denormalize:
             self.denormalized_current_observation = self.denormalize(self.current_observation)
 
             log.debug(f"self.denormalized_current_observation.shape = {self.denormalized_current_observation.shape}")
             demand = self.denormalized_current_observation[ontario_demand_index]
             supply = self.denormalized_current_observation[supply_index]
+            new_price = self.denormalized_current_observation[price_index]
         else:
             log.debug(f"self.current_observation.shape = {self.current_observation.shape}")
             demand = self.current_observation[ontario_demand_index]
             supply = self.current_observation[supply_index]
-
+            new_price = self.current_observation[price_index]
 
         """
         Acc to dataset minAllowed is 0, maxAllowed is arround 2.3k.
         Considering three cases:
-        abs(Price) ∉ (minAllowed,maxAllowed): Heavily Punished by High Correction Value
-        Demand - Supply, Price same sign    : Profit, Rewarded if correction is positive, punished otherwise
-        Demand - Supply, Price opposite sign: Loss, punished
-        Decreaseing the overall Reward value: Correction/=(10**6)
+        Price ∉ (minAllowed,maxAllowed)                 : Heavily Punished by High Correction Value
+        Demand - Supply or Price Negative               : Loss, thus punished, (Heavily if is out of domain)
+        Demand - Supply, Price Positive and in domain   : Profit, Rewarded
+        Decreaseing the overall Reward value: Correction/=(10**8)
         """
-        correction = self.min_max_values["max"][price_index] - abs(new_price)
+        maxAllowed = self.min_max_values["max"][price_index]
+        correction = maxAllowed - abs(new_price)
         if correction>0:
-            correction/=self.min_max_values["max"][price_index]
-        if ((demand-supply) * new_price<0 )&(correction<0):
-            correction=-correction
-        correction/=(10**6)
+            correction/=maxAllowed
+
+        if (demand-supply <0) or (new_price<0):
+            if (demand-supply)*new_price*correction > 0:
+                correction=-correction
+        #"""
+        if denormalize:
+            correction/=(10**8)
+        #"""
         log.info(f"State set = {new_price}, {correction}, {demand}, {supply}")
         return (demand - supply) * new_price * correction
 

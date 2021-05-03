@@ -158,7 +158,7 @@ if __name__ == '__main__':
     plt.savefig(folderName+"AVG Model Price vs Exchange.svg")
     plt.close()
 
-    """
+    #"""
     # Ploting A3C Price vs Exchange
     plt.figure(dpi=400)
     plt.xlabel(f"Episode")
@@ -167,7 +167,7 @@ if __name__ == '__main__':
     plt.legend()
     plt.savefig(folderName+"Price VS Exchange.svg")
     plt.close()
-    """
+    #"""
 
     # Ploting average advantage
     plt.figure(dpi=400)
