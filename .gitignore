@@ -10,3 +10,4 @@ logs/*
 *.tsv
 temp/
 Saved_model/*
+todo

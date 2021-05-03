@@ -19,6 +19,7 @@ from torch import nn, Tensor
 from torch.distributions import Categorical
 import torch
 import numpy as np
+from torch.nn.modules.activation import SELU
 from tqdm import tqdm
 import log
 import sys
@@ -111,8 +112,9 @@ class GOD:
             len(self._actionSpace),
             lr=self.__actorLR,
             name="Policy Net",
-            L1=(nn.Linear,20,nn.Tanh()),
-            L2=(nn.Linear,50,nn.Softmax(dim=0)),
+            L1=(nn.Linear,40,nn.SELU()),
+            L2=(nn.Linear,40,nn.Sigmoid()),
+            L3=(nn.Linear,50,nn.Softmax(dim=0)),
             debug=self.debug,
             ## we will add softmax at end , which will give the probability distribution.
         )
@@ -125,8 +127,8 @@ class GOD:
             1,
             lr=self.__criticLR,
             name="Critic Net",
-            L1=(nn.Linear,30,nn.ReLU6()),
-            L2=(nn.Linear,40,nn.ReLU6()),
+            L1=(nn.Linear,30,nn.SELU()),
+            L2=(nn.Linear,40,nn.Tanh()),
             debug=self.debug,
         )
         """
@@ -143,6 +145,8 @@ class GOD:
         self.__policyNet.share_memory()
         self.__criticNet.share_memory()
         #"""
+        log.info(f"Policy Network: {self.__policyNet}")
+        log.info(f"Critic Network: {self.__criticNet}")
         return
 
     def giveEnvironment(self,env):

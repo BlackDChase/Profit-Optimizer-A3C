@@ -91,7 +91,7 @@ class LSTMEnv(gym.Env):
         current_observation (which is normalized).
         """
         price_index = 0
-        current_observation[price_index]=0.5
+        current_observation[price_index] = np.random.rand(1)*(0.6)+0.2
         self.current_observation = current_observation
         self.denormalized_current_observation = self.denormalize(self.current_observation)
         self.oldPrice = self.current_observation[price_index]
@@ -211,17 +211,17 @@ class LSTMEnv(gym.Env):
         maxAllowed = self.min_max_values["max"][price_index]
         correction = maxAllowed - abs(new_price)
         if correction>0:
+            correction*=maxAllowed
+        else:
             correction/=maxAllowed
-
         if (demand-supply <0) or (new_price<0):
-            if (demand-supply)*new_price*correction > 0:
-                correction=-correction
-        #"""
+            correction=-abs(correction)
         if denormalize:
-            correction/=(10**8)
-        #"""
+            correction/=(1 + abs(new_price)**(15/16))
+            #correction/=(maxAllowed**2)
+        reward = abs(demand - supply) * abs(new_price) * correction
         log.info(f"State set = {new_price}, {correction}, {demand}, {supply}")
-        return (demand - supply) * new_price * correction
+        return reward
 
     def denormalize(self, array):
         """
