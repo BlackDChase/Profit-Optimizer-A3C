@@ -10,7 +10,7 @@ Post processing to produce graphs from logs
 Currently is a RIPOFF of postProcessing made for MIDAS
 #"""
 __author__ = 'BlackDChase'
-__version__ = '0.3.8'
+__version__ = '0.4.0'
 
 # Imports
 

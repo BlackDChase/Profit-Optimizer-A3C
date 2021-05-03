@@ -1,6 +1,6 @@
 #!/bin/bash
 # Author  : BlackDChase
-# Version : 0.3.8
+# Version : 0.4.0
 cd modules
 
 # : '
@@ -49,7 +49,7 @@ s=1000
 alr=0.001
 clr=0.001
 f=$n"_"$e"_"$t"_"$a"_"$alr"_"$clr"_"
-addr="2021-05-03-18-29 -O"
+addr="2021-05-03-18-44 -O"
 p="../Saved_model/$addr/$f"
 #d=True
 python main.py -a=$a -d=$d -p=$p -s=$s

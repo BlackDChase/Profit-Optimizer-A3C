@@ -7,7 +7,7 @@ import log
 import multiprocessing
 
 __author__ = 'Biribiri,BlackDChase'
-__version__ = '0.3.8'
+__version__ = '0.4.0'
 
 class DatasetHelper:
     def __init__(self, dataset_path, max_input_len):
