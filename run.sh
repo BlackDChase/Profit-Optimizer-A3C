@@ -1,6 +1,6 @@
 #!/bin/bash
 # Author  : BlackDChase
-# Version : 0.4.0
+# Version : 0.4.2
 cd modules
 
 # : '
@@ -39,13 +39,11 @@ echo "\"Models saved with $n agents training $e episodes of $t length with $a ac
 
 # : '
 # This is for loading Latest trained model and testing it
-a=7
-s=1000
+
 #d=True
 folder="../Saved_model/" 
 folder="$folder$(ls $folder -Art | grep 'Olog' | tail -n 1)/"
 p=$(echo "$folder$(ls $folder | grep 'CritcModel.pt')" | rev | cut -b 14- | rev)
-
 python main.py -a=$a -p=$p -s=$s -d=$d 
 # For After testing
 fileName=$(echo $folder | cut -b 16- | rev | cut -b 2- | rev)

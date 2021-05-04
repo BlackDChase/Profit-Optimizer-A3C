@@ -5,7 +5,7 @@ Minimalist and sane interface with the PEP8 breaking (and non idempotent) loggin
 import logging
 import datetime
 
-__version__='0.4.0'
+__version__='0.4.2'
 
 """
 weeks = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]
