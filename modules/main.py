@@ -16,7 +16,7 @@ Parameters:
 #"""
 
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.4.0'
+__version__ = '0.4.2'
 # Input from outside
 import log
 import sys
@@ -29,21 +29,25 @@ keywords={
         "alr":1e-3,
         "clr":1e-3,
         "s":100,
+        "p":None
     }
 stateSize = 13
 log.info(f"stateSize = {stateSize}")
-
-for arg in sys.argv[1:]:
-    key,value = arg.split("=")
-    if key[1:]=="d":
-        keywords[key[1:]] = True if "t" in value.lower() else False
-        # For debug
-    elif key[1:]=="p":
-        keywords[key[1:]] = value
-        # For path (saved model)
-    else:
-        keywords[key[1:]] = float(value)
-    log.info(f"Parameter {key[1:]} is {value}")
+arg,value,key='','',''
+try:
+    for arg in sys.argv[1:]:
+        key,value = arg.split("=")
+        if key[1:]=="d":
+            keywords[key[1:]] = True if "t" in value.lower() else False
+            # For debug
+        elif key[1:]=="p":
+            keywords[key[1:]] = value
+            # For path (saved model)
+        else:
+            keywords[key[1:]] = float(value)
+        log.info(f"Parameter {key[1:]} is {value}")
+except:
+    print(key,arg,value)
 if "h" in keywords:
     print("""
 Main function
@@ -82,7 +86,8 @@ from env import LSTMEnv as ENV
 from Agent import GOD
 
 if __name__=="__main__":
-    if "p" not in keywords.keys() or keywords["p"] is not None:
+    if keywords["p"] is None:
+        print("Model Will be trained")
         god = GOD(
             stateSize=int(stateSize),
             actionSpace=keywords["a"],
@@ -111,7 +116,6 @@ if __name__=="__main__":
             god.saveModel("../Saved_model")
         except KeyboardInterrupt:
             god.saveModel("../Saved_model")
-            raise KeyboardInterrupt
         except Exception as catch:
             #log.debug(f"Terminaion Trace back {catch.with_traceback()}")
             threadCount+=1
@@ -120,6 +124,7 @@ if __name__=="__main__":
             print(f"{threadCount} thread Terminated, check log")
         print("Trained")
     else:
+        print("Model will be tested")
         god = GOD(
             debug=keywords["d"],
             stateSize=int(stateSize),
@@ -155,6 +160,7 @@ if __name__=="__main__":
         log.info("Environment inititated")
         god.giveEnvironment(env)
         log.info("Environment parsed, Boss inititated")
+        log.info(f"ENV LSTM: {model}")
 
         # Testing
         time=int(keywords['s'])

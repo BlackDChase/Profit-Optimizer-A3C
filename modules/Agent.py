@@ -12,13 +12,14 @@ BOSS AGENT
 State = Ontario Price, Ontario Demand, Ontario Supply,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, Northwest Nigiria, West
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.4.0'
+__version__ = '0.4.2'
 
 # Imports
 from torch import nn, Tensor
 from torch.distributions import Categorical
 import torch
 import numpy as np
+from torch.nn.modules.activation import SELU
 from tqdm import tqdm
 import log
 import sys
@@ -111,8 +112,9 @@ class GOD:
             len(self._actionSpace),
             lr=self.__actorLR,
             name="Policy Net",
-            L1=(nn.Linear,20,nn.Tanh()),
-            L2=(nn.Linear,50,nn.Softmax(dim=0)),
+            L1=(nn.Linear,40,nn.SELU()),
+            L2=(nn.Linear,40,nn.Sigmoid()),
+            L3=(nn.Linear,50,nn.Softmax(dim=0)),
             debug=self.debug,
             ## we will add softmax at end , which will give the probability distribution.
         )
@@ -125,8 +127,8 @@ class GOD:
             1,
             lr=self.__criticLR,
             name="Critic Net",
-            L1=(nn.Linear,30,nn.ReLU6()),
-            L2=(nn.Linear,40,nn.ReLU6()),
+            L1=(nn.Linear,30,nn.SELU()),
+            L2=(nn.Linear,40,nn.Tanh()),
             debug=self.debug,
         )
         """
@@ -143,6 +145,8 @@ class GOD:
         self.__policyNet.share_memory()
         self.__criticNet.share_memory()
         #"""
+        log.info(f"Policy Network: {self.__policyNet}")
+        log.info(f"Critic Network: {self.__criticNet}")
         return
 
     def giveEnvironment(self,env):
@@ -177,7 +181,8 @@ class GOD:
         currentState = self.reset()
         a3cState=[]
         for i in range(time):
-            log.info(f"a3cState={currentState}")
+            if self.debug:
+                log.debug(f"a3cState={currentState}")
             a3cState.append(currentState)
             action,_ = self.decideAction(torch.Tensor(currentState))
             nextState,reward,_,info = self.step(action)
@@ -188,7 +193,7 @@ class GOD:
                 log.debug(f"Action for {self.name} {i} = {action}, {type(action)}")
             currentState=torch.Tensor(nextState)
         a3cState.append(currentState)
-        a3cState = np.array(a3cState)
+        a3cState = torch.stack(a3cState)
         return a3cState
 
     def compare(self,a3cState,time=100,normalState=None):
@@ -199,7 +204,7 @@ class GOD:
         time            : Timesteps for which this model in being tested
         """
         if type(normalState)==None:
-            normalState=self.getNormalStates(time)
+            normalState=Tensor(self.getNormalStates(time))
         normalProfit=[]
         a3cProfit=[]
         supply_index = 2
@@ -210,11 +215,11 @@ class GOD:
             a3cProfit.append(a3cState[i][price_index]*(a3cState[i][demand_index]-a3cState[i][supply_index]))
         diff=[]
         for i in range(len(a3cProfit)):
-            diff.append(abs(a3cProfit[i])-abs(normalProfit[i]))
+            diff.append(a3cProfit[i]-normalProfit[i])
         return a3cProfit,normalProfit,diff
 
     def getNormalStates(self,time=100):
-        normalState=self._env.possibleState(time)
+        normalState = Tensor(self._env.possibleState(time))
         return normalState
 
 

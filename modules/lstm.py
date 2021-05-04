@@ -17,7 +17,7 @@ import multiprocessing
 
 
 __author__ = 'Biribiri,BlackDChase'
-__version__ = '0.3.8'
+__version__ = '0.4.2'
 
 
 class LSTM(nn.Module):
@@ -46,6 +46,9 @@ class LSTM(nn.Module):
         self.lstm = nn.LSTM(input_size=input_dim, hidden_size=hidden_dim, num_layers=layer_dim, batch_first=True)
 
         self.fc =  nn.Linear(hidden_dim, output_size)
+
+        #TODO, Find a better way to do this
+        self.norm = nn.Hardtanh(min_val=-0.5,max_val=15)
 
     def forward(self, input_batch, batch=True, numpy=False):
         """
@@ -95,7 +98,11 @@ class LSTM(nn.Module):
         # Index hidden state of last time step
         # out.size() --> 100, 28, 100 aka (batch_dim, seq_dim, feature_dim)
         # out[:, -1, :] --> 100, 100 --> just want last time step hidden states! (batch_dim, feature_dim)
-        out = self.fc(out[:, -1, :])
+        """
+        Norm is Hardtanh, will force thevalues to stay between [-0.5,10], while values should be between
+        [1,1], as data is min normalized
+        """
+        out = self.norm(self.fc(out[:, -1, :]))
         # out.size() --> 100, 10 (batch_dim, output_size)
 
         # if numpy, then return numpy ndarray
@@ -241,7 +248,6 @@ class LSTM(nn.Module):
         # seq_dim = length of sequence of timesteps of input
         batch = non_batch.reshape(-1, non_batch.shape[0], non_batch.shape[1])
 
-        # TODO Verify conversion is correct
         if self.debug:
             log.debug(f"batch.shape = {batch.shape}")
 

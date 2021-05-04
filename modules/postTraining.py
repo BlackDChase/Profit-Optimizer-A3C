@@ -1,19 +1,19 @@
 """
 Post processing to produce graphs from logs
-- [X] Reward
-- [X] Policy Loss
-- [X] Critic Loss
-- [X] Advantage
-- [X] Demand
-- [X] Supply
-- [X] Price
-Currently is a RIPOFF of postProcessing made for MIDAS
+Combinations:
+    - [X] Reward
+    - [X] Policy Loss
+    - [X] Critic Loss
+    - [X] Advantage
+    - [X] Demand
+    - [X] Supply
+    - [X] Price
 #"""
+
 __author__ = 'BlackDChase'
-__version__ = '0.4.0'
+__version__ = '0.4.2'
 
 # Imports
-
 import os
 import matplotlib.pyplot as plt
 import sys
@@ -34,12 +34,11 @@ def rewardAvg(fileN):
     arr = []
     with open(fileN) as reward:
         for line in reward:
-            avgReward = line.strip().split(",")
-            while  len(avgReward)>0 and avgReward[-1]=='':
-                avgReward.pop()
-            if len(avgReward)<=0:
-                continue
-            arr.append(getAvg(avgReward))
+            avgReward = line.strip().replace(' ','').split(",")
+            while '' in avgReward:
+                avgReward.remove('')
+            if len(avgReward)>0:
+                arr.append(getAvg(avgReward))
     return arr
 
 def modelLoss(fileN):
@@ -158,17 +157,6 @@ if __name__ == '__main__':
     plt.savefig(folderName+"AVG Model Price vs Exchange.svg")
     plt.close()
 
-    #"""
-    # Ploting A3C Price vs Exchange
-    plt.figure(dpi=400)
-    plt.xlabel(f"Episode")
-    plt.plot(price,label="Model Price")
-    plt.plot(demSup,label="Demand-Supply")
-    plt.legend()
-    plt.savefig(folderName+"Price VS Exchange.svg")
-    plt.close()
-    #"""
-
     # Ploting average advantage
     plt.figure(dpi=400)
     plt.xlabel("Episode")
@@ -209,3 +197,13 @@ if __name__ == '__main__':
     plt.savefig(folderName+"avgRewardnCorrection.svg")
     plt.close()
 
+    #"""
+    # Ploting A3C Price vs Exchange
+    plt.figure(dpi=400)
+    plt.xlabel(f"Episode")
+    plt.plot(price,label="Model Price")
+    plt.plot(demSup,label="Demand-Supply")
+    plt.legend()
+    plt.savefig(folderName+"Price VS Exchange.svg")
+    plt.close()
+    #"""

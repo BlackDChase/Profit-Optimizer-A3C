@@ -1,8 +1,8 @@
 #!/bin/bash
 # Author  : BlackDChase
-# Version : 0.4.0
+# Version : 0.4.2
 
-name=$(ls ../logs -Art | grep "O.tsv" | tail -n 1)
+name=$(ls ../logs -Art | grep "Olog.tsv" | tail -n 1)
 IFS='.'
 read -ra name <<< "$name"
 name="${name[0]}"

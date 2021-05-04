@@ -4,7 +4,7 @@ Primarily We would be using Network Class as it is more robust to change
 Aktor, Kritc are standins for testing
 #"""
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.3.0'
+__version__ = '0.4.2'
 
 # Imports
 import torch
@@ -39,7 +39,7 @@ class Network(nn.Module):
         self.name = name
         layers = []
         keyWords = list(kwargs.keys())
-        kwargs["stateSize"] = (nn.Linear,stateSize,nn.ReLU())
+        kwargs["stateSize"] = (nn.Linear,stateSize,nn.Hardtanh(min_val=-300,max_val=50000))
 
         """
         Input layer
@@ -93,8 +93,8 @@ class Network(nn.Module):
         """
         Optimizer and loss function
         #"""
-        self.optimizer = torch.optim.SGD(self.params,lr=self.learningRate)
-        #self.optimizer = torch.optim.Adam(self.params,lr=self.learningRate)
+        #self.optimizer = torch.optim.SGD(self.params,lr=self.learningRate)
+        self.optimizer = torch.optim.Adam(self.params,lr=self.learningRate)
         pass
 
     def forward(self,currentState):
@@ -109,7 +109,7 @@ class Network(nn.Module):
         curr = multiprocessing.current_process()
         if self.debug:
             log.debug(f"current state for {self.name} of {curr.ident} : {currentState}")
-        
+
         if len(currentState.shape)>1:
             """
             With multi threading, mulitple states are not parsed through the
@@ -128,7 +128,7 @@ class Network(nn.Module):
         if self.debug:
             log.debug(f"output of model for {self.name} of {curr.ident} = {output}")
         return output
-        
+
     def saveM(self,name):
         torch.save(self.hypoThesis.state_dict(),name)
         log.info(f"{self.name} saved = {self.hypoThesis}")
