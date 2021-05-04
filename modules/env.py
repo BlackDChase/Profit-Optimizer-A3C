@@ -210,6 +210,7 @@ class LSTMEnv(gym.Env):
         """
         # TODO Make Reward Better
         maxAllowed = self.min_max_values["max"][price_index]
+        minAllowed = self.min_max_values["min"][price_index]
         correction = maxAllowed - abs(new_price)
         """
         # This was when normalization was not enough
@@ -220,7 +221,7 @@ class LSTMEnv(gym.Env):
         if denormalize:
             correction/=(1 + abs(new_price)**(15/16))
         """
-        if (demand-supply <0) or (new_price<0):
+        if (demand-supply <0) or (new_price<minAllowed):
             correction=-abs(correction)
         reward = abs(demand - supply) * abs(new_price) * correction
         log.info(f"State set = {new_price}, {correction}, {demand}, {supply}")

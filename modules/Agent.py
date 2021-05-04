@@ -378,8 +378,6 @@ class BOSS(GOD):
         self.advantage = torch.zeros(self.trajectoryLength)
         # If entropy H_t calculated, Init beta
         pass
-        #"""
-
 
     def train(
             self,
