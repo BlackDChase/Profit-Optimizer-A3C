@@ -9,24 +9,25 @@ GOD AGENT
 BOSS AGENT
 - Will Update the network
 
-State = Ontario Price, Market Demand,Ontario Demand,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, Northwest Nigiria, West 
+State = Ontario Price, Ontario Demand, Ontario Supply,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, Northwest Nigiria, West
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.2.0'
+__version__ = '0.4.2'
 
 # Imports
-from torch import nn, device, Tensor
+from torch import nn, Tensor
 from torch.distributions import Categorical
 import torch
 import numpy as np
+from torch.nn.modules.activation import SELU
 from tqdm import tqdm
-import threading
 import log
 import sys
 
 from NeuralNet import Network #, Aktor, Kritc
 import multiprocessing
-from multiprocessing import Process, Lock
+from multiprocessing import Process #, Lock
+multiprocessing.set_start_method('fork')
 """
 from TempEnv import TempEnv as ENV
 """
@@ -36,8 +37,7 @@ output_size = 13
 input_dim = output_size
 hidden_dim = 128
 layer_dim = 1
-modelPath="ENV_MODEL/lstm_model.pt"
-envDATA="../Dataset/normalized_13_columns.csv"
+envDATA="../datasets/normalized_weird_13_columns_with_supply.csv"
 # ENV(LSTM,envDATA,actionSpace)
 #"""
 
@@ -83,13 +83,13 @@ class GOD:
         self.price = 0
         self.__nAgent=nAgent
         self.__bossAgent=[]
-        if path==None:
-            self.needTraining(maxEpisode,nAgent,trajectoryLength,alr,clr)
-        else:
+        self.makeNetwork(maxEpisode,nAgent,trajectoryLength,alr,clr)
+
+        if path!=None:
             self.loadModel(path)
         pass
 
-    def needTraining(self,maxEpisode,nAgent,trajectoryLength,alr,clr):
+    def makeNetwork(self,maxEpisode,nAgent,trajectoryLength,alr,clr):
         log.info("This GOD will train with the enviornment")
         self.setMaxEpisode(maxEpisode)
         self.setNumberOfAgent(nAgent)
@@ -97,10 +97,15 @@ class GOD:
         self.__actorLR = alr
         self.__criticLR = clr
 
-        # semaphores do deal with simultaneous updates of the policy and critic net by multiple bosses.
+        """
+        Semaphores do deal with simultaneous updates of the policy and critic net by multiple bosses.
+        Not required, as model works without it.
+        """
+        """
         self._policySemaphore = Lock()
         self._criticSemaphore = Lock()
         self._resetSemaphore = Lock()
+        #"""
         #"""
         ## defining the actual neural net itself, input is state output is probability for each action.
         self.__policyNet = Network(
@@ -108,8 +113,9 @@ class GOD:
             len(self._actionSpace),
             lr=self.__actorLR,
             name="Policy Net",
-            L1=(nn.Linear,20,nn.Tanh()),
-            L2=(nn.Linear,50,nn.Softmax(dim=0)),
+            L1=(nn.Linear,40,nn.SELU()),
+            L2=(nn.Linear,40,nn.Sigmoid()),
+            L3=(nn.Linear,50,nn.Softmax(dim=0)),
             debug=self.debug,
             ## we will add softmax at end , which will give the probability distribution.
         )
@@ -122,8 +128,8 @@ class GOD:
             1,
             lr=self.__criticLR,
             name="Critic Net",
-            L1=(nn.Linear,30,nn.ReLU6()),
-            L2=(nn.Linear,40,nn.ReLU6()),
+            L1=(nn.Linear,30,nn.SELU()),
+            L2=(nn.Linear,40,nn.Tanh()),
             debug=self.debug,
         )
         """
@@ -140,11 +146,14 @@ class GOD:
         self.__policyNet.share_memory()
         self.__criticNet.share_memory()
         #"""
+        log.info(f"Policy Network: {self.__policyNet}")
+        log.info(f"Critic Network: {self.__criticNet}")
         return
 
     def giveEnvironment(self,env):
-        self.env=env
+        self._env=env
         self.__initateBoss()
+
         return
 
     def setNumberOfAgent(self,nAgent):
@@ -163,54 +172,86 @@ class GOD:
         return
 
     def train(self):
+        self.__initateBoss()
         self.__trainBoss()
         return
 
+    def test(self,time=100):
+        """
+        @input      : Number of time steps for which this odel is going to be tested
+        @output     : Returns the `time` number of states which occured on the basis of Agent's response.
+        """
+        currentState = self.reset()
+        a3cState=[]
+        for i in range(time):
+            if self.debug:
+                log.debug(f"a3cState={currentState}")
+            a3cState.append(currentState)
+            action,_ = self.decideAction(torch.Tensor(currentState))
+            nextState,reward,_,info = self.step(action)
+            ## Oi generous env , please tell me the next state and reward for the action i have taken
+            log.info(f"{self.name}, {i},  {info}")
+            if self.debug:
+                log.debug(f"Reward and Shape = {reward}, {reward.shape}")
+                log.debug(f"Action for {self.name} {i} = {action}, {type(action)}")
+            currentState=torch.Tensor(nextState)
+        a3cState.append(currentState)
+        a3cState = torch.stack(a3cState)
+        return a3cState
+
+    def compare(self,a3cState,time=100,normalState=None):
+        """
+        @input          : a3cState,time,normalState
+        a3cState        : Output of states with a3C's feedback
+        normalState     : Output of states without a3c's feedback
+        time            : Timesteps for which this model in being tested
+        """
+        if type(normalState)==None:
+            normalState=Tensor(self.getNormalStates(time))
+        normalProfit=[]
+        a3cProfit=[]
+        supply_index = 2
+        demand_index = 1
+        price_index = 0
+        for i in range(len(a3cState)):
+            normalProfit.append(normalState[i][price_index]*(normalState[i][demand_index]-normalState[i][supply_index]))
+            a3cProfit.append(a3cState[i][price_index]*(a3cState[i][demand_index]-a3cState[i][supply_index]))
+        diff=[]
+        for i in range(len(a3cProfit)):
+            diff.append(a3cProfit[i]-normalProfit[i])
+        return a3cProfit,normalProfit,diff
+
+    def getNormalStates(self,time=100):
+        normalState = Tensor(self._env.possibleState(time))
+        return normalState
+
+
     def _updatePolicy(self,lossP):
-        curr = multiprocessing.current_process()
-        if self.debug:
-            log.debug(f"{curr.name},{curr.pid} Wants Policy")
-        self._policySemaphore.acquire()
-        if self.debug:
-            log.debug(f"Policy Semaphore Acquired, {curr.ident}")
         self.__policyNet.optimizer.zero_grad()
         lossP.backward(retain_graph=True)
         self.__policyNet.optimizer.step()
-        self._policySemaphore.release()
-        if self.debug:
-            log.debug(f"Policy Semaphore released, {curr.ident}")
         return
 
     def _updateCritc(self,lossC):
-        curr = multiprocessing.current_process()
-        if self.debug:
-            log.debug(f"{curr.name},{curr.pid} Wants Critic")
-        self._criticSemaphore.acquire()
-        if self.debug:
-            log.debug(f"Critic Semaphore Acquired, {curr.ident}")
         self.__criticNet.optimizer.zero_grad()
         lossC.backward(retain_graph=True)
         self.__criticNet.optimizer.step()
-        self._criticSemaphore.release()
-        if self.debug:
-            log.debug(f"Critic Semaphore released, {curr.ident}")
         return
-    '''
-    def takeAction(self,state):
+
+    def decideAction(self,state):
         """
-        Take the final action according to the Policy Network.
-        This method is not called inside GOD.
-        This method is only called by ENV, every time it decides to take price for next time step.
-        Enviorenment will send current state and this take action will return an action via env.step
-        This will be done using pretrained policyNetwork.
+        Responsible for taking the correct action from the given state using the neural net.
+        @input :: current state
+        @output :: the index of action which must be taken from this states, and probability of that action
         #"""
+        state = state.float()
         actionProb = self._getAction(state)
         pd = Categorical(probs=actionProb)
         ## create a catagorical distribution acording to the actionProb
         ## categorical probability distribution
         actionIndex = pd.sample()
         probab = actionProb[actionIndex]
-        nextState,reward,info = self.env.step(actionIndex)
+        nextState,reward,info = self.step(actionIndex)
         nextState = torch.Tensor(nextState)
 
         if self.debug:
@@ -218,49 +259,23 @@ class GOD:
             log.debug(f"Expected next State: {nextState}")
         return actionIndex,probab
 
-    def _peakAction(self,state,action):
-        """
-        Online dilemma
-        will be used at training time , for updating the networks
-        #"""
-        result = self.env.step(state,action)
-        return result
-    '''
-
     def _getAction(self,state):
-        curr = multiprocessing.current_process()
-        if self.debug:
-            log.debug(f"{curr.name},{curr.pid} Wants Policy")
-        self._policySemaphore.acquire()
-        if self.debug:
-            log.debug(f"Policy Semaphore Acquired, {curr.ident}")
+        #self._policySemaphore.acquire()
         actionProbab = self.__policyNet.forward(state)
-        if self.debug:
-            log.debug(f"Policy result = {actionProbab}")
-            # Not sure if forward is the way to go
-        self._policySemaphore.release()
-        if self.debug:
-            log.debug(f"Policy Semaphore Released, {curr.ident}")
+        #self._policySemaphore.release()
         return actionProbab
 
     def _getCriticValue(self,state):
-        curr = multiprocessing.current_process()
-        if self.debug:
-            log.debug(f"{curr.name},{curr.pid} Wants Critic")
-        self._criticSemaphore.acquire()
-        if self.debug:
-            log.debug(f"Critic Semaphore Acquired, {curr.ident}")
+        #self._criticSemaphore.acquire()
         vVlaue = self.__criticNet.forward(state)
-        self._criticSemaphore.release()
-        if self.debug:
-            log.debug(f"Critic Semaphore Released, {curr.ident}")
+        #self._criticSemaphore.release()
         return vVlaue
 
     def reset(self):
-        return torch.Tensor(self.env.reset())
+        return torch.Tensor(self._env.reset())
 
     def step(self,action):
-        return self.env.step(action)
+        return self._env.step(action)
 
     def __initateBoss(self):
         """
@@ -293,96 +308,44 @@ class GOD:
         #"""
         bossThreads=[]
         for i in range(self.__nAgent):
-            """
-            env=self.__makeENV(i)
-            self.__bossAgent[i].env = env
-            self.__bossAgent[i].train()
-            """
-            process = Process(target=self.__bossAgent[i].train,args=(self._resetSemaphore,))
-            env=self.__makeENV(i)
-            self._resetSemaphore.acquire()
-            log.info(f"{self._resetSemaphore} acquired by {self}")
-            env.reset()
-            self._resetSemaphore.release()
-            log.info(f"{self._resetSemaphore} released by {self}")
-
-            self.__bossAgent[i].env = env
-
+            process = Process(
+                target=self.__bossAgent[i].train,
+                #args=(self._resetSemaphore,),  # Not using semaphores
+            )
             bossThreads.append(process)
-            #"""
 
         for i in range(len(bossThreads)):
             bossThreads[i].start()
             log.info(f"Boss{str(i).zfill(2)} training started via GOD")
         for i in bossThreads:
             i.join()
-        #"""
-        # Remove multiprocessing for @biribiri
-        """
-        self.__bossAgent[0].train()
-        if self.debug:
-            log.debug(f"Boss00 training started via GOD")
-        #"""
+
         return
 
     def forwardP(self,actions):
-        curr = multiprocessing.current_process()
-        if self.debug:
-            log.debug(f"{curr.name},{curr.pid} Wants Policy")
-        self._policySemaphore.acquire()
-        if self.debug:
-            log.debug(f"Policy Semaphore Acquired, {curr.ident}")
-        if self.debug:
-            log.debug(f"{curr.ident} Actions {actions.shape}")
+        #self._policySemaphore.acquire()
         actionProb = self.__policyNet.forward(actions)
-        self._policySemaphore.release()
-        if self.debug:
-            log.debug(f"Policy Semaphore Released, {curr.ident}")
-
+        #self._policySemaphore.release()
         return actionProb
 
     def saveModel(self,path):
-        torch.save(self.__policyNet.state_dict(),path+"/PolicyModel.pt")
-        torch.save(self.__criticNet.state_dict(),path+"/CritcModel.pt")
+        condition= path +"/"+str(self.__nAgent)+"_"+str(self.maxEpisode)+"_"+str(self.trajectoryLength)+"_"+str(len(self._actionSpace))+"_"+str(self.__actorLR)+"_"+str(self.__criticLR)+"_"
+        self.__policyNet.saveM(condition+"PolicyModel.pt")
+        self.__criticNet.saveM(condition+"CritcModel.pt")
         return
+
     def loadModel(self,path):
         """
         If using GPU, this has to be mapped to it while load .. torch.load(path,map_location=device)
         #"""
         curr = multiprocessing.current_process()
-        if self.debug:
-            log.debug(f"{curr.name},{curr.pid} Wants Policy")
-        self._policySemaphore.acquire()
-        if self.debug:
-            log.debug(f"Policy Semaphore Acquired, {curr.ident}")
-        self.__policyNet = torch.load_state_dict(path+"/PolicyModel.pt")
-        self._policySemaphore.release()
-        if self.debug:
-            log.debug(f"Policy Semaphore Released, {curr.ident}")
-
-        curr = multiprocessing.current_process()
-        if self.debug:
-            log.debug(f"{curr.name},{curr.pid} Wants Critic")
-        self._criticSemaphore.acquire()
-        if self.debug:
-            log.debug(f"Critic Semaphore Acquired, {curr.ident}")
-        self.__criticNet = torch.load_state_dict(path+"/CritcModel.pt")
-        self._criticSemaphore.release()
-        if self.debug:
-            log.debug(f"Critic Semaphore Released, {curr.ident}")
+        #self._policySemaphore.acquire()
+        self.__policyNet.loadM(path+"PolicyModel.pt")
+        #self._policySemaphore.release()
+        #self._criticSemaphore.acquire()
+        self.__criticNet.loadM(path+"CritcModel.pt")
+        #self._criticSemaphore.release()
         return
-
-    def __makeENV(self,boss):
-        """
-        env = ENV(self.stateSize,self._actionSpace)
-        log.info(f"BOSS {str(i).zfill(2)}'s TempEnv made")
-        """
-        LSTM_instance = LSTM(output_size, input_dim, hidden_dim, layer_dim)
-        LSTM_instance.loadM(modelPath)
-        log.info(f"LSTM Model Declared in Agent = {LSTM_instance}")
-        env = ENV(model=LSTM_instance,dataset_path=envDATA,actionSpace=self._actionSpace)
-        log.info(f"BOSS{str(boss).zfill(2)}'s Env made")
-        return env
 
 class BOSS(GOD):
     """
@@ -410,7 +373,8 @@ class BOSS(GOD):
                  ):
         super(BOSS,self).__init__(maxEpisode=maxEpisode,debug=debug,trajectoryLength=trajectoryLength,stateSize=stateSize,name=name)
         self.god = god
-        self.actionSpace = self.god._actionSpace
+        self._actionSpace = self.god._actionSpace
+        log.info(f"{self.name}\tAction Space\t{self._actionSpace}")
         self.trajectoryS = torch.zeros([self.trajectoryLength,self.stateSize])
         self.trajectoryR = torch.zeros(self.trajectoryLength)
         self.trajectoryA = torch.zeros(self.trajectoryLength)
@@ -424,8 +388,14 @@ class BOSS(GOD):
         pass
         #"""
 
-    #def train(self,factory,nAgent):
-    def train(self,resetSemaphore):
+
+    def train(
+            self,
+            #resetSemaphore, # Not using resetSemaphore anymore
+    ):
+        self.makeENV()
+        log.info(f"{self.name}'s Env made")
+
         """
         The Actual function to train the network , the actor-critic actual logic.
         Eviorienment.step :: env.step has to give different outputs for different state trajectories by
@@ -434,8 +404,7 @@ class BOSS(GOD):
         #"""
         curr = multiprocessing.current_process()
         if self.debug:
-            log.debug(f"{self.name},currentP name,id,pid {curr.name},{curr._identity},{curr.pid}")
-            log.debug(f"{curr.ident} training started inside BOSS")
+            log.debug(f"{self.name},currentP name,id,pid {curr.name},{curr.ident},{curr.pid}")
         """
         Here the main logic of training of A2C will be present
         `with factory.create(int(self.name[-2:]),nAgent) as progress:`
@@ -444,14 +413,7 @@ class BOSS(GOD):
         for e in tqdm(range(self.maxEpisode),ascii=True,desc=self.name):
             if self.debug:
                 log.debug(f"{self.name} e = {e}")
-            resetSemaphore.acquire()
-            if self.debug:
-                log.debug(f"{self._resetSemaphore} acquired by {curr.ident}")
-            resetState = self.env.reset()
-            resetSemaphore.release()
-            if self.debug:
-                log.debug(f"{self._resetSemaphore} released by {curr.ident}")
-
+            resetState = self.reset()
             self.startState = torch.Tensor(resetState)
             if self.debug:
                 log.debug(f"{self.name} Start state = {self.startState}")
@@ -482,20 +444,38 @@ class BOSS(GOD):
         print(f"{self.name} has completed training")
         pass
 
+    def makeENV(self):
+        """
+        Making enviornment here
+        Because of #35472 on pytorch : https://github.com/pytorch/pytorch/issues/35472#issue-588591481
+        Proposed solution is: https://github.com/pytorch/pytorch/issues/35472#issuecomment-604775738
+        #"""
+        LSTM_instance = LSTM(output_size, input_dim, hidden_dim, layer_dim,debug=self.debug)
+        if self.debug:
+            log.info(f"LSTM instance created for {self.name} = {LSTM_instance}")
+
+
+        LSTM_instance.loadM("ENV_MODEL/lstm_model.pt")
+        log.info(f"{self.name}'s Env made")
+
+        log.info(f"LSTM instance loaded for {self.name} = {LSTM_instance}")
+        self._env = ENV(
+            model=LSTM_instance,
+            dataset_path=envDATA,
+            actionSpace=self._actionSpace,
+            debug=self.debug,
+        )
+        self.reset()
+        return
 
     def gatherAndStore(self):
         # gather a trajectory by acting in the enviornment using current policy
-        """ @BOSS
-        Do we need any changes in here?
-        @Black:i dont think so , trajectory is being gathered here step by step. no problems.
-        Maybe tensorize the code??
-        #"""
         currentState = self.startState
         log.info(f"Starting state={currentState}, for {self.name}")
         for i in range(self.trajectoryLength):
             action = self.getAction(currentState)
             #nextState,reward,info = self.god.step(action)
-            nextState,reward,_,info = self.env.step(action)
+            nextState,reward,_,info = self.step(action)
             ## Oi generous env , please tell me the next state and reward for the action i have taken
             log.info(f"{self.name}, {i},  {info}")
             if self.debug:
@@ -505,6 +485,7 @@ class BOSS(GOD):
             self.trajectoryR[i] = torch.Tensor(reward)
             if self.debug:
                 log.debug(f"Action for {self.name} {i} = {action}, {type(action)}")
+                log.debug(f"Detached Next state {nextState}")
             currentState=torch.Tensor(nextState)
         if self.debug:
             log.debug(f"Action = {self.trajectoryA}")
@@ -513,18 +494,7 @@ class BOSS(GOD):
         pass
 
     def getAction(self,state):
-        """
-        Responsible for taking the correct action from the given state using the neural net.
-        @input :: current state
-        @output :: the index of action which must be taken from this states, and probability of that action
-        #"""
-        state = state.float()
-        actionProb = self.god._getAction(state)
-        ## This creates state-action probability vector from the policy net. 
-        pd = Categorical(probs=actionProb) ## create a catagorical distribution acording to the actionProb
-        ## categorical probability distribution
-        actionIndex = pd.sample() ## sample the action according to the probability distribution.
-
+        actionIndex,probab = self.god.decideAction(state)
         return actionIndex
 
     def calculateV_p(self):
@@ -588,8 +558,7 @@ class BOSS(GOD):
         self.advantage[-1]=vPredLast
         for i in reversed(range(self.trajectoryLength-1)):
             self.advantage[i] = self.trajectoryR[i].clone() + self.ɤ*self.advantage[i+1].clone() - self.vPredicted[i].clone()
-        if self.debug:
-            log.info(f"Advantage {self.name} = {self.advantage}")
+        log.info(f"Advantage {self.name} = {self.advantage}")
         return
 
     def calculateAndUpdateL_P(self):

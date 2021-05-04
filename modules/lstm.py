@@ -15,6 +15,11 @@ from tqdm import tqdm
 import numpy as np
 import multiprocessing
 
+
+__author__ = 'Biribiri,BlackDChase'
+__version__ = '0.4.2'
+
+
 class LSTM(nn.Module):
     """
     LSTM that takes the custom processed Ontario dataset as input and trains
@@ -42,6 +47,9 @@ class LSTM(nn.Module):
 
         self.fc =  nn.Linear(hidden_dim, output_size)
 
+        #TODO, Find a better way to do this
+        self.norm = nn.Hardtanh(min_val=-0.5,max_val=15)
+
     def forward(self, input_batch, batch=True, numpy=False):
         """
         TODO Fix this if necessary, add sane comments
@@ -61,7 +69,7 @@ class LSTM(nn.Module):
         # TODO Is this sensible?
         hidden_state = torch.zeros(self.layer_dim, input_batch.size(0), self.hidden_dim).requires_grad_()
         cell_state = torch.zeros(self.layer_dim, input_batch.size(0), self.hidden_dim).requires_grad_()
-        
+
         curr = multiprocessing.current_process()
         if self.debug:
             log.debug(f"Hidden, cell state made {curr.name}")
@@ -71,23 +79,30 @@ class LSTM(nn.Module):
         # If we don't, we'll backprop all the way to the start even after going through another batch
         hidden_state.detach()
         cell_state.detach()
-        
+
         if self.debug:
             log.debug(f"Input batch: {input_batch.shape}, {curr.name}")
             log.debug(f"Hidden shape: {hidden_state.shape}, {curr.name}")
             log.debug(f"Cell shape: {cell_state.shape}, {curr.name}")
-        #out, (hn, cn) = self.lstm(input_batch, (hidden_state.detach(), cell_state.detach()))
-        out = torch.rand([input_batch.shape[0],13])
+
+
+        # With multi threading, mulitple states are not parsed through the
+        # model, they get stuck.
+        # We therefore parse them one state at a time, then make the stack
+        # and return it.
+        out, (hn, cn) = self.lstm(input_batch, (hidden_state.detach(), cell_state.detach()))
         if self.debug:
-            log.debug(f"LSTM detached {curr.name}")
+            log.debug(f"LSTM forwarded {curr.name}")
+            log.debug(f"hn = {hn}")
+            log.debug(f"cn = {cn}")
         # Index hidden state of last time step
         # out.size() --> 100, 28, 100 aka (batch_dim, seq_dim, feature_dim)
         # out[:, -1, :] --> 100, 100 --> just want last time step hidden states! (batch_dim, feature_dim)
-        
-        # To be uncomemented later
-        #out = self.fc(out[:, -1, :])
-        
-        
+        """
+        Norm is Hardtanh, will force thevalues to stay between [-0.5,10], while values should be between
+        [1,1], as data is min normalized
+        """
+        out = self.norm(self.fc(out[:, -1, :]))
         # out.size() --> 100, 10 (batch_dim, output_size)
 
         # if numpy, then return numpy ndarray
@@ -103,8 +118,7 @@ class LSTM(nn.Module):
         """
         Do the actual work of:
         1. verifying the csv dataset
-        2. Doing any additional processing necessary
-        3. splitting the dataset into training and testing
+        2. splitting the dataset into training and testing
         """
         df = pd.read_csv(csv_path)
         if self.debug:
@@ -234,14 +248,15 @@ class LSTM(nn.Module):
         # seq_dim = length of sequence of timesteps of input
         batch = non_batch.reshape(-1, non_batch.shape[0], non_batch.shape[1])
 
-        # TODO Verify conversion is correct
         if self.debug:
             log.debug(f"batch.shape = {batch.shape}")
 
         return batch
 
     def saveM(self,name):
-        torch.save(self.state_dict(),name+".pt")
+        torch.save(self.lstm.state_dict(),name+".pt")
+        log.info(f"LSTM saved = {self.lstm}")
 
     def loadM(self,path):
-        self.load_state_dict(torch.load(path))
+        self.lstm.load_state_dict(torch.load(path))
+        log.info(f"LSTM loaded = {self.lstm}")

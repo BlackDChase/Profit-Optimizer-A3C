@@ -1,7 +1,6 @@
-numpy==1.18.5
-matplotlib==3.2.2
+gym==0.18.0
 tqdm==4.47.0
 torch==1.7.1
 pandas==1.0.5
-tqdm_multi_thread==0.7
-gym==0.18.0
+numpy==1.18.5
+matplotlib==3.2.2

@@ -4,12 +4,12 @@ Primarily We would be using Network Class as it is more robust to change
 Aktor, Kritc are standins for testing
 #"""
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.2.0'
+__version__ = '0.4.2'
 
 # Imports
 import torch
 import log
-from torch import nn, device
+from torch import nn
 import multiprocessing
 # GLOBAL
 device = device("cuda" if torch.cuda.is_available() else "cpu")
@@ -39,7 +39,7 @@ class Network(nn.Module):
         self.name = name
         layers = []
         keyWords = list(kwargs.keys())
-        kwargs["stateSize"] = (nn.Linear,stateSize,nn.ReLU())
+        kwargs["stateSize"] = (nn.Linear,stateSize,nn.Hardtanh(min_val=-300,max_val=50000))
 
         """
         Input layer
@@ -96,9 +96,8 @@ class Network(nn.Module):
         """
         Optimizer and loss function
         #"""
-        self.optimizer = torch.optim.SGD(self.params,lr=self.learningRate)
-        #self.optimizer = torch.optim.Adam(self.params,lr=self.learningRate)
-
+        #self.optimizer = torch.optim.SGD(self.params,lr=self.learningRate)
+        self.optimizer = torch.optim.Adam(self.params,lr=self.learningRate)
         pass
 
     def forward(self,currentState):
@@ -113,12 +112,14 @@ class Network(nn.Module):
         curr = multiprocessing.current_process()
         if self.debug:
             log.debug(f"current state for {self.name} of {curr.ident} : {currentState}")
-        
+
         if len(currentState.shape)>1:
             """
-            This i done because, with multi threading mulitple states were not parsing through the model,
-            they got stuck. We parsed them one state at a time, then made the stack and returned it.
-            #"""
+            With multi threading, mulitple states are not parsed through the
+            model, they get stuck.
+            We therefore parse them one state at a time, then make the stack
+            and return it.
+            """
             if self.debug:
                 log.debug(f"Shape of current state {self.name} of {curr.ident} = {currentState.shape}")
             for i in currentState:
@@ -130,6 +131,15 @@ class Network(nn.Module):
         if self.debug:
             log.debug(f"output of model for {self.name} of {curr.ident} = {output}")
         return output
+
+    def saveM(self,name):
+        torch.save(self.hypoThesis.state_dict(),name)
+        log.info(f"{self.name} saved = {self.hypoThesis}")
+
+    def loadM(self,path):
+        print("Trying to load")
+        self.hypoThesis.load_state_dict(torch.load(path))
+        log.info(f"{self.name} loaded = {self.hypoThesis}")
     pass
 
 class Aktor(nn.Module):
@@ -144,9 +154,20 @@ class Aktor(nn.Module):
         self.to(device)
         self.params = self.model.parameters()
         self.optimizer = torch.optim.SGD(self.params,lr=self.learningRate)
+
     def forward(self,currentState):
         output = self.model(currentState)
         return output
+
+    def saveM(self,name):
+        torch.save(self.model.state_dict(),name+".pt")
+        log.info(f"Kritc saved = {self.model}")
+
+    def loadM(self,path):
+        print("Trying to load")
+        self.model.load_state_dict(torch.load(path))
+        log.info(f"Kritc loaded = {self.model}")
+    pass
 
 class Kritc(nn.Module):
     def __init__(self):
@@ -161,6 +182,17 @@ class Kritc(nn.Module):
         self.to(device)
         self.params = self.model.parameters()
         self.optimizer = torch.optim.SGD(self.params,lr=self.learningRate)
+
     def forward(self,currentState):
         output = self.model(currentState)
         return output
+
+    def saveM(self,name):
+        torch.save(self.model.state_dict(),name+".pt")
+        log.info(f"Kritc saved = {self.model}")
+
+    def loadM(self,path):
+        print("Trying to load")
+        self.model.load_state_dict(torch.load(path))
+        log.info(f"Kritc loaded = {self.model}")
+    pass
