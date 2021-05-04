@@ -100,9 +100,9 @@ class LSTMEnv(gym.Env):
             log.debug(f"Reset complete for {curr.name}")
             log.debug(f">current_observation = {self.current_observation}")
             log.debug(f">denormalized_current_observation = {self.denormalized_current_observation}")
+
         return self.current_observation
 
-    # TODO What is this function for
     def possibleState(self,time=100):
         """
         Output  : Return the output of the enviornment for `time` number of steps without the feedback of A3C agent.
@@ -155,11 +155,9 @@ class LSTMEnv(gym.Env):
         # took when giving us the next timestep
         # append the current observation to the model input
         self.model_input.append(self.current_observation)
-
         if self.debug:
             log.debug(f">current_observation = {self.current_observation}")
             log.debug(f">denormalized_current_observation = {self.denormalized_current_observation}")
-
         return self.current_observation, denormalized_reward, done, {}
 
     def get_new_price(self, action):
@@ -208,6 +206,7 @@ class LSTMEnv(gym.Env):
         Demand - Supply, Price Positive and in domain   : Profit, Rewarded
         Decreaseing the overall Reward value: Correction/=(10**8)
         """
+        # TODO Make Reward Better
         maxAllowed = self.min_max_values["max"][price_index]
         correction = maxAllowed - abs(new_price)
         if correction>0:

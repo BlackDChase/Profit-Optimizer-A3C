@@ -32,18 +32,21 @@ keywords={
     }
 stateSize = 13
 log.info(f"stateSize = {stateSize}")
-
-for arg in sys.argv[1:]:
-    key,value = arg.split("=")
-    if key[1:]=="d":
-        keywords[key[1:]] = True if "t" in value.lower() else False
-        # For debug
-    elif key[1:]=="p":
-        keywords[key[1:]] = value
-        # For path (saved model)
-    else:
-        keywords[key[1:]] = float(value)
-    log.info(f"Parameter {key[1:]} is {value}")
+arg,value,key='','',''
+try:
+    for arg in sys.argv[1:]:
+        key,value = arg.split("=")
+        if key[1:]=="d":
+            keywords[key[1:]] = True if "t" in value.lower() else False
+            # For debug
+        elif key[1:]=="p":
+            keywords[key[1:]] = value
+            # For path (saved model)
+        else:
+            keywords[key[1:]] = float(value)
+        log.info(f"Parameter {key[1:]} is {value}")
+except:
+    print(key,arg,value)
 if "h" in keywords:
     print("""
 Main function
@@ -111,7 +114,6 @@ if __name__=="__main__":
             god.saveModel("../Saved_model")
         except KeyboardInterrupt:
             god.saveModel("../Saved_model")
-            raise KeyboardInterrupt
         except Exception as catch:
             #log.debug(f"Terminaion Trace back {catch.with_traceback()}")
             threadCount+=1
@@ -155,6 +157,7 @@ if __name__=="__main__":
         log.info("Environment inititated")
         god.giveEnvironment(env)
         log.info("Environment parsed, Boss inititated")
+        log.info(f"ENV LSTM: {model}")
 
         # Testing
         time=int(keywords['s'])

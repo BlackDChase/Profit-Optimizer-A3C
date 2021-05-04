@@ -2,7 +2,7 @@
 # Author  : BlackDChase
 # Version : 0.4.0
 
-name=$(ls ../logs -Art | grep "O.tsv" | tail -n 1)
+name=$(ls ../logs -Art | grep "Olog.tsv" | tail -n 1)
 IFS='.'
 read -ra name <<< "$name"
 name="${name[0]}"

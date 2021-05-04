@@ -10,4 +10,5 @@ logs/*
 *.tsv
 temp/
 Saved_model/*
+Saved_test/*
 todo
