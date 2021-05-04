@@ -77,9 +77,10 @@ class LSTMEnv(gym.Env):
         [self.startState.append(element) for element in dataset_helper_input]
 
         curr = multiprocessing.current_process()
+        current_observation = self.model.forward(np_model_input, numpy=True)
         if self.debug:
             log.debug(f"Reset call for {curr.name}")
-        current_observation = self.model.forward(np_model_input, numpy=True)
+            log.debug(f">current_observation = {current_observation}")
 
 
         """
@@ -91,7 +92,7 @@ class LSTMEnv(gym.Env):
         current_observation (which is normalized).
         """
         price_index = 0
-        current_observation[price_index] = np.random.rand(1)*(0.6)+0.2
+        current_observation[price_index] = float(np.random.rand(1)*(0.6)+0.2)
         self.current_observation = current_observation
         self.denormalized_current_observation = self.denormalize(self.current_observation)
         self.oldPrice = self.current_observation[price_index]
@@ -100,6 +101,7 @@ class LSTMEnv(gym.Env):
             log.debug(f"Reset complete for {curr.name}")
             log.debug(f">current_observation = {self.current_observation}")
             log.debug(f">denormalized_current_observation = {self.denormalized_current_observation}")
+            log.debug(f">oldPrice = {self.oldPrice}")
 
         return self.current_observation
 
@@ -166,7 +168,7 @@ class LSTMEnv(gym.Env):
         """
         old_price = self.oldPrice
         # Increase or decrease the old price by a percentage, as defined by actions
-        new_price = old_price * (1 + self.actionSpace[action] / 100)
+        new_price = old_price * (1 + (self.actionSpace[action]/100))
         return new_price
 
     def get_reward(self, denormalize=False):
@@ -222,26 +224,28 @@ class LSTMEnv(gym.Env):
         log.info(f"State set = {new_price}, {correction}, {demand}, {supply}")
         return reward
 
-    def denormalize(self, array):
+    def denormalize(self, arr):
         """
         Take any numpy array of 13 elements and de-normalize it, that is, undo
         the normalization done to the data, and then return it.
         """
-        for feature in range(array.shape[0]):
+        array=np.random.rand(*arr.shape)
+        for feature in range(arr.shape[0]):
             minv = self.min_max_values["min"][feature]
             maxv = self.min_max_values["max"][feature]
-            value = array[feature]
+            value = arr[feature]
             array[feature] = (value * (maxv - minv)) + minv - 1
         return array
 
-    def normalize(self, array):
+    def normalize(self, arr):
         """
         Take any numpy array of 13 elements and normalize it according to
         pre-defined values.
         """
-        for feature in range(array.shape[0]):
+        array=np.random.rand(*arr.shape)
+        for feature in range(arr.shape[0]):
             minv = self.min_max_values["min"][feature]
             maxv = self.min_max_values["max"][feature]
-            value = array[feature]
+            value = arr[feature]
             array[feature] = (value - minv + 1)/(maxv - minv)
         return array
