@@ -29,6 +29,7 @@ keywords={
         "alr":1e-3,
         "clr":1e-3,
         "s":100,
+        "p":None
     }
 stateSize = 13
 log.info(f"stateSize = {stateSize}")
@@ -85,7 +86,8 @@ from env import LSTMEnv as ENV
 from Agent import GOD
 
 if __name__=="__main__":
-    if "p" not in keywords.keys() or keywords["p"] is not None:
+    if keywords["p"] is None:
+        print("Model Will be trained")
         god = GOD(
             stateSize=int(stateSize),
             actionSpace=keywords["a"],
@@ -122,6 +124,7 @@ if __name__=="__main__":
             print(f"{threadCount} thread Terminated, check log")
         print("Trained")
     else:
+        print("Model will be tested")
         god = GOD(
             debug=keywords["d"],
             stateSize=int(stateSize),

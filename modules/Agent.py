@@ -181,7 +181,8 @@ class GOD:
         currentState = self.reset()
         a3cState=[]
         for i in range(time):
-            log.info(f"a3cState={currentState}")
+            if self.debug:
+                log.debug(f"a3cState={currentState}")
             a3cState.append(currentState)
             action,_ = self.decideAction(torch.Tensor(currentState))
             nextState,reward,_,info = self.step(action)
@@ -192,7 +193,7 @@ class GOD:
                 log.debug(f"Action for {self.name} {i} = {action}, {type(action)}")
             currentState=torch.Tensor(nextState)
         a3cState.append(currentState)
-        a3cState = np.array(a3cState)
+        a3cState = torch.stack(a3cState)
         return a3cState
 
     def compare(self,a3cState,time=100,normalState=None):
@@ -203,7 +204,7 @@ class GOD:
         time            : Timesteps for which this model in being tested
         """
         if type(normalState)==None:
-            normalState=self.getNormalStates(time)
+            normalState=Tensor(self.getNormalStates(time))
         normalProfit=[]
         a3cProfit=[]
         supply_index = 2
@@ -214,11 +215,11 @@ class GOD:
             a3cProfit.append(a3cState[i][price_index]*(a3cState[i][demand_index]-a3cState[i][supply_index]))
         diff=[]
         for i in range(len(a3cProfit)):
-            diff.append(abs(a3cProfit[i])-abs(normalProfit[i]))
+            diff.append(a3cProfit[i]-normalProfit[i])
         return a3cProfit,normalProfit,diff
 
     def getNormalStates(self,time=100):
-        normalState=self._env.possibleState(time)
+        normalState = Tensor(self._env.possibleState(time))
         return normalState
 
 

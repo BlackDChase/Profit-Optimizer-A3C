@@ -3,22 +3,22 @@
 # Version : 0.4.0
 cd modules
 
- : '
+# : '
 # This is for Actuall training
 n=6
-e=10000
+e=5000
 t=25
-a=7
-s=1000
 alr=0.003
 clr=0.003
+a=7
+s=1000
 #d=True
 # '
 
-# : ' This is for test Training
+ : ' This is for test Training
 n=4
-e=100
-t=25
+e=10
+t=2
 a=5
 s=100
 alr=0.06
@@ -37,26 +37,20 @@ echo "\"Model Trained, extracting usefull info\""
 echo "\"Models saved with $n agents training $e episodes of $t length with $a actions as Hyperparameter\""
 # '
 
- : '
-# This is for loading trained model and testing it
-# $f has to be same as the prefice of trained model
-# $addr has to be same the saved_model folder of trained mode "2021-mm-dd-HH-MM -O" format
-n=6
-e=10000
-t=25
+# : '
+# This is for loading Latest trained model and testing it
 a=7
 s=1000
-alr=0.003
-clr=0.003
 #d=True
-f=$n"_"$e"_"$t"_"$a"_"$alr"_"$clr"_"
-addr="2021-05-04-01-48-Olog"
-p="../Saved_model/$addr/$f"
+folder="../Saved_model/" 
+folder="$folder$(ls $folder -Art | grep 'Olog' | tail -n 1)/"
+p=$(echo "$folder$(ls $folder | grep 'CritcModel.pt')" | rev | cut -b 14- | rev)
 
 python main.py -a=$a -p=$p -s=$s -d=$d 
 # For After testing
+fileName=$(echo $folder | cut -b 16- | rev | cut -b 2- | rev)
 ./extractTestLog.sh
-echo "\"Model Tested for $addr/$f for $s time steps\""
+echo "\"Model Tested for $fileName for $s time steps\""
 # '
 # For shutting doen system
 #shutdown

@@ -120,7 +120,7 @@ class LSTMEnv(gym.Env):
             current_observation = self.denormalize(current_observation)
             log.info(f"Possible set {i} = {current_observation}")
             states.append(current_observation)
-        return np.array(states)
+        return states
 
     def step(self, action):
         """
@@ -211,15 +211,17 @@ class LSTMEnv(gym.Env):
         # TODO Make Reward Better
         maxAllowed = self.min_max_values["max"][price_index]
         correction = maxAllowed - abs(new_price)
+        """
+        # This was when normalization was not enough
         if correction>0:
             correction*=maxAllowed
         else:
             correction/=maxAllowed
-        if (demand-supply <0) or (new_price<0):
-            correction=-abs(correction)
         if denormalize:
             correction/=(1 + abs(new_price)**(15/16))
-            #correction/=(maxAllowed**2)
+        """
+        if (demand-supply <0) or (new_price<0):
+            correction=-abs(correction)
         reward = abs(demand - supply) * abs(new_price) * correction
         log.info(f"State set = {new_price}, {correction}, {demand}, {supply}")
         return reward

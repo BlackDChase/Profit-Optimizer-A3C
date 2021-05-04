@@ -34,12 +34,11 @@ def rewardAvg(fileN):
     arr = []
     with open(fileN) as reward:
         for line in reward:
-            avgReward = line.strip().split(",")
-            while  len(avgReward)>0 and avgReward[-1]=='':
-                avgReward.pop()
-            if len(avgReward)<=0:
-                continue
-            arr.append(getAvg(avgReward))
+            avgReward = line.strip().replace(' ','').split(",")
+            while '' in avgReward:
+                avgReward.remove('')
+            if len(avgReward)>0:
+                arr.append(getAvg(avgReward))
     return arr
 
 def modelLoss(fileN):
