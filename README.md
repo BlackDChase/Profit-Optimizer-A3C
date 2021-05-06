@@ -12,7 +12,11 @@
 - `Profit parameter` Should be of a time frame that is to be maximized
     - Can be `Demand*Price`
     - If it has to optimise profit for a longer term than t should be predicting for a longer term.
-- __Environment is going to produce a reward__, The only thing matters for the agent is the reward , so it doesn't matters to agent how that reward is distributed, it will only chase the state which gives high reward. Now a preliminary reward can be (price * demand) , this needs to be refined later
+- __Environment is going to produce a reward__, The only thing matters for the agent is the reward , so it doesn't matters to agent how that reward is distributed, it will only chase the state which gives high reward. Now a preliminary reward can be (price * demand) , this needs to be refined later.
+
+## PROFIT
+- Bare Profit Given by Enviorenment without any A3C --> 696756.5274361509 
+- Bare Profit Given by Enviorenment with A3C --> 1277335.7448592219
 
 ## Bird Eye View
 - God Agent:
