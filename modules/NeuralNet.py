@@ -134,7 +134,6 @@ class Network(nn.Module):
         log.info(f"{self.name} saved = {self.hypoThesis}")
 
     def loadM(self,path):
-        print("Trying to load")
         self.hypoThesis.load_state_dict(torch.load(path))
         log.info(f"{self.name} loaded = {self.hypoThesis}")
     pass

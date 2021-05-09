@@ -7,7 +7,7 @@ import log
 import multiprocessing
 
 __author__ = 'Biribiri,BlackDChase'
-__version__ = '0.4.2'
+__version__ = '1.0.0'
 
 class DatasetHelper:
     def __init__(self, dataset_path, max_input_len):
@@ -77,11 +77,9 @@ class LSTMEnv(gym.Env):
         [self.startState.append(element) for element in dataset_helper_input]
 
         curr = multiprocessing.current_process()
-        current_observation = self.model.forward(np_model_input, numpy=True)
         if self.debug:
             log.debug(f"Reset call for {curr.name}")
-            log.debug(f">current_observation = {current_observation}")
-
+        current_observation = self.model.forward(np_model_input, numpy=True)
 
         """
         Starting with a preset positive price which is 0.5 (because normalized).
@@ -102,7 +100,6 @@ class LSTMEnv(gym.Env):
             log.debug(f">current_observation = {self.current_observation}")
             log.debug(f">denormalized_current_observation = {self.denormalized_current_observation}")
             log.debug(f">oldPrice = {self.oldPrice}")
-
         return self.current_observation
 
     def possibleState(self,time=100):
@@ -168,10 +165,11 @@ class LSTMEnv(gym.Env):
         """
         old_price = self.oldPrice
         # Increase or decrease the old price by a percentage, as defined by actions
-        new_price = old_price * (1 + (self.actionSpace[action]/100))
+        new_price = old_price * (1 + (self.actionSpace[action])/ 100)
         return new_price
 
     def get_reward(self, denormalize=False):
+
         """
         Calculate reward based on the new_price
 
@@ -211,19 +209,14 @@ class LSTMEnv(gym.Env):
         # TODO Make Reward Better
         maxAllowed = self.min_max_values["max"][price_index]
         minAllowed = self.min_max_values["min"][price_index]
-        correction = maxAllowed - abs(new_price)
-        """
-        # This was when normalization was not enough
-        if correction>0:
-            correction*=maxAllowed
-        else:
-            correction/=maxAllowed
+
+        correction = 1
+        if ((demand-supply) <0) or (new_price<minAllowed) or (new_price>maxAllowed):
+            correction=0-abs(correction)
+
         if denormalize:
-            correction/=(1 + abs(new_price)**(15/16))
-        """
-        if (demand-supply <0) or (new_price<minAllowed):
-            correction=-abs(correction)
-        reward = abs(demand - supply) * abs(new_price) * correction
+            correction/=(10**15)
+        reward = (abs(demand - supply)**3) * (abs(new_price)**2) * correction
         log.info(f"State set = {new_price}, {correction}, {demand}, {supply}")
         return reward
 

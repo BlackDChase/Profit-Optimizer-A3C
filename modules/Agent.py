@@ -12,7 +12,7 @@ BOSS AGENT
 State = Ontario Price, Ontario Demand, Ontario Supply,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, Northwest Nigiria, West
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.4.2'
+__version__ = '1.0.0'
 
 # Imports
 from torch import nn, Tensor
@@ -32,10 +32,11 @@ from TempEnv import TempEnv as ENV
 """
 from env import LSTMEnv as ENV
 from lstm import LSTM
+
 output_size = 13
 input_dim = output_size
-hidden_dim = 128
-layer_dim = 1
+hidden_dim = 40
+layer_dim = 2
 envDATA="../datasets/normalized_weird_13_columns_with_supply.csv"
 # ENV(LSTM,envDATA,actionSpace)
 #"""
@@ -84,12 +85,16 @@ class GOD:
         self.__bossAgent=[]
         self.makeNetwork(maxEpisode,nAgent,trajectoryLength,alr,clr)
 
-        if path!=None:
-            self.loadModel(path)
+        if self.__class__==GOD:
+            try:
+                if not (path=="None" or path==None):
+                    self.__loadModel(path)
+                print("Model loaded from : ",path)
+            except:
+                print("Model Not Found")
         pass
 
     def makeNetwork(self,maxEpisode,nAgent,trajectoryLength,alr,clr):
-        log.info("This GOD will train with the enviornment")
         self.setMaxEpisode(maxEpisode)
         self.setNumberOfAgent(nAgent)
         self.setTrajectoryLength(trajectoryLength)
@@ -169,6 +174,7 @@ class GOD:
         return
 
     def train(self):
+        log.info("This GOD will train with the enviornment")
         self.__initateBoss()
         self.__trainBoss()
         return
@@ -177,7 +183,7 @@ class GOD:
         """
         @input      : Number of time steps for which this odel is going to be tested
         @output     : Returns the `time` number of states which occured on the basis of Agent's response.
-        """
+        #"""
         currentState = self.reset()
         a3cState=[]
         for i in range(time):
@@ -202,7 +208,7 @@ class GOD:
         a3cState        : Output of states with a3C's feedback
         normalState     : Output of states without a3c's feedback
         time            : Timesteps for which this model in being tested
-        """
+        #"""
         if type(normalState)==None:
             normalState=Tensor(self.getNormalStates(time))
         normalProfit=[]
@@ -326,7 +332,7 @@ class GOD:
         self.__criticNet.saveM(condition+"CritcModel.pt")
         return
 
-    def loadModel(self,path):
+    def __loadModel(self,path):
         """
         If using GPU, this has to be mapped to it while load .. torch.load(path,map_location=device)
         #"""
@@ -445,7 +451,7 @@ class BOSS(GOD):
             log.info(f"LSTM instance created for {self.name} = {LSTM_instance}")
 
 
-        LSTM_instance.loadM("ENV_MODEL/lstm_model.pt")
+        LSTM_instance.loadM("ENV_MODEL/lstm_modelV3.pt")
         log.info(f"{self.name}'s Env made")
 
         log.info(f"LSTM instance loaded for {self.name} = {LSTM_instance}")

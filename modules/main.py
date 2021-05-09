@@ -122,7 +122,7 @@ if __name__=="__main__":
             log.info(f"Terminated on a {threadCount}\t{catch}")
             log.info(f"Traceback for the {threadCount} Exception\t{sys.exc_info()}")
             print(f"{threadCount} thread Terminated, check log")
-        print("Trained")
+        print("Training Complete")
     else:
         print("Model will be tested")
         god = GOD(
@@ -142,10 +142,10 @@ if __name__=="__main__":
 
         output_size = 13
         input_dim = output_size
-        hidden_dim = 128
-        layer_dim = 1
+        hidden_dim = 40
+        layer_dim = 2
         model = LSTM(output_size, input_dim, hidden_dim, layer_dim,debug=keywords["d"])
-        model.loadM("ENV_MODEL/lstm_model.pt")
+        model.loadM("ENV_MODEL/lstm_modelV3.pt")
 
         env=ENV(
             model=model,
@@ -176,4 +176,4 @@ if __name__=="__main__":
             log.info(f"A3C Profit = {a3cProfit[i]}")
             log.info(f"Normal Profit = {normalProfit[i]}")
             log.info(f"Diff = {diff[i]}")
-        print("Tested")
+        print("Testing Complete")

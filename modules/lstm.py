@@ -17,7 +17,7 @@ import multiprocessing
 
 
 __author__ = 'Biribiri,BlackDChase'
-__version__ = '0.4.2'
+__version__ = '1.0.0'
 
 
 class LSTM(nn.Module):
@@ -48,7 +48,7 @@ class LSTM(nn.Module):
         self.fc =  nn.Linear(hidden_dim, output_size)
 
         #TODO, Find a better way to do this
-        self.norm = nn.Hardtanh(min_val=-0.5,max_val=15)
+        self.norm = nn.Hardtanh(min_val=-0.01,max_val=2)
 
     def forward(self, input_batch, batch=True, numpy=False):
         """
@@ -135,10 +135,11 @@ class LSTM(nn.Module):
             log.debug(f"size = {size}")
         # split the dataset 9:1 into train and test
         # TODO Do I need to enable grad on them to make them "differentiable"?
-        train = torch.Tensor(df.iloc[:int(0.9 * size), :].values)
+        train = torch.Tensor(df.values)
         if self.debug:
             log.debug(f"train.shape = {train.shape}")
-        test = torch.Tensor(df.iloc[int(0.9 * size):, :].values)
+        x=int(np.random.rand() * size)
+        test = torch.Tensor(df.iloc[x:x+size//10, :].values)
         if self.debug:
             log.debug(f"test.shape = {test.shape}")
 
@@ -158,7 +159,7 @@ class LSTM(nn.Module):
         We do not do any scaling because scaling is a "nice to have", not a necessity.
         We /do/ separate the data into training and testing sets, mostly as a formality and a way to gauge the quality of the training.
         """
-        optimizer=torch.optim.SGD(model_parameters, lr=learning_rate)
+        optimizer=torch.optim.Adam(model_parameters, lr=learning_rate)
         train_batch_size = len(train_batch)
         for epoch in tqdm(range(num_epochs)):
 
@@ -254,7 +255,7 @@ class LSTM(nn.Module):
         return batch
 
     def saveM(self,name):
-        torch.save(self.lstm.state_dict(),name+".pt")
+        torch.save(self.lstm.state_dict(),name)
         log.info(f"LSTM saved = {self.lstm}")
 
     def loadM(self,path):
