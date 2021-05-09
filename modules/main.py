@@ -91,7 +91,6 @@ from env import LSTMEnv as ENV
 from Agent import GOD
 
 if __name__=="__main__":
-    print(keywords["f"])
     if keywords["p"] is None or keywords["f"]:
         print("Model Will be trained")
         god = GOD(

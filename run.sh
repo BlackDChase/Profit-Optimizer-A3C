@@ -14,17 +14,17 @@ done
 # : '
 # This is for Actuall training
 n=20
-e=500
-t=75
+e=700
+t=70
 a=8
 s=250
-alr=0.0016
-clr=0.0075
+alr=0.002
+clr=0.009
 f=True
 #d=True
 # '
 
-# : ' This is for test Training
+ : ' This is for test Training
 n=3
 e=10
 t=10
