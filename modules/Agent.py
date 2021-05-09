@@ -117,9 +117,9 @@ class GOD:
             len(self._actionSpace),
             lr=self.__actorLR,
             name="Policy Net",
-            L1=(nn.Linear,40,nn.SELU()),
-            L2=(nn.Linear,40,nn.Sigmoid()),
-            L3=(nn.Linear,50,nn.Softmax(dim=0)),
+            L1=(nn.Linear,18,nn.SELU()),
+            #L2=(nn.Linear,18,nn.Softmax(dim=0),nn.Dropout(p=0.3)),
+            L2=(nn.Linear,18,nn.Softmax(dim=0)),
             debug=self.debug,
             ## we will add softmax at end , which will give the probability distribution.
         )
@@ -132,8 +132,8 @@ class GOD:
             1,
             lr=self.__criticLR,
             name="Critic Net",
-            L1=(nn.Linear,30,nn.SELU()),
-            L2=(nn.Linear,40,nn.Tanh()),
+            L1=(nn.Linear,10,nn.SELU()),
+            L2=(nn.Linear,10,nn.Tanh()),
             debug=self.debug,
         )
         """
@@ -258,7 +258,11 @@ class GOD:
         if self.debug:
             log.debug(f"Deciding action for {state}")
             log.debug(f"Probability Distribution {probabDistribution}, actionProbab = {actionProb}")
-        actionIndex = probabDistribution.sample()
+        try:
+            actionIndex = probabDistribution.sample()
+        except RuntimeError:
+            # For invalid multinomial distribution (encountering probability entry < 0)
+            actionIndex = np.random.randint(0,len(self._actionSpace))
         ## sample the action according to the probability distribution.
         if self.debug:
             log.debug(f"Action: {actionIndex}")
@@ -364,7 +368,7 @@ class BOSS(GOD):
                  trajectoryLength,
                  stateSize,
                  name,
-                 gamma=0.99,
+                 gamma=0.9,   # Decreaing, so that later rewards matter less
                  # lamda=0.1, # Lambda was earlier used for GAE
                  # depth=200, # Not used anymore
                  debug=False,

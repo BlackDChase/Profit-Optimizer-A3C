@@ -108,7 +108,7 @@ if __name__ == '__main__':
     avgReward, episodeLength = rewardAvgLen(rewardAvg(folderName+"rewardLog.tsv"))
     policyLoss = modelLoss(folderName+"policyLossLog.tsv")
     criticLoss = modelLoss(folderName+"criticLossLog.tsv")
-    priceAvg,correAvg,demandAvg,supplyAvg = stateExtract(folderName+"stateLog.tsv",len(episodeLength)/4)
+    priceAvg,correAvg,demandAvg,supplyAvg = stateExtract(folderName+"stateLog.tsv",len(episodeLength)//4)
     price,corre,demand,supply = stateExtract(folderName+"stateLog.tsv")
     demSupAvg = [-supplyAvg[i]+demandAvg[i] for i in range(len(demandAvg))]
     demSup = [-supply[i]+demand[i] for i in range(len(demand))]
@@ -201,8 +201,8 @@ if __name__ == '__main__':
     # Ploting A3C Price vs Exchange
     plt.figure(dpi=400)
     plt.xlabel(f"Episode")
-    plt.plot(price,label="Model Price")
     plt.plot(demSup,label="Demand-Supply")
+    plt.plot(price,label="Model Price")
     plt.legend()
     plt.savefig(folderName+"Price VS Exchange.svg")
     plt.close()

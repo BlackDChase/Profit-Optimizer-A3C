@@ -39,7 +39,7 @@ class Network(nn.Module):
         self.name = name
         layers = []
         keyWords = list(kwargs.keys())
-        kwargs["stateSize"] = (nn.Linear,stateSize,nn.Hardtanh(min_val=-300,max_val=50000))
+        kwargs["stateSize"] = (nn.Linear,stateSize,nn.Hardtanh(min_val=-3,max_val=6))
 
         """
         Input layer
@@ -70,11 +70,13 @@ class Network(nn.Module):
         """
         Output Layer
         #"""
-        if len(kwargs[l1])==3:
+        activation=2
+        while len(kwargs[l1])>activation:
             """
-            For layers with activation function
+            For layers with one or more activation function
             #"""
-            layers.append(kwargs[l1][2])
+            layers.append(kwargs[l1][activation])
+            activation+=1
         self.myLayers=layers
         self.hypoThesis = nn.Sequential(*layers)
         self.params = self.hypoThesis.parameters()
@@ -155,7 +157,7 @@ class Aktor(nn.Module):
         return output
 
     def saveM(self,name):
-        torch.save(self.model.state_dict(),name+".pt")
+        torch.save(self.model.state_dict(),name)
         log.info(f"Kritc saved = {self.model}")
 
     def loadM(self,path):
@@ -182,7 +184,7 @@ class Kritc(nn.Module):
         return output
 
     def saveM(self,name):
-        torch.save(self.model.state_dict(),name+".pt")
+        torch.save(self.model.state_dict(),name)
         log.info(f"Kritc saved = {self.model}")
 
     def loadM(self,path):
