@@ -1,40 +1,53 @@
 #!/bin/bash
 # Author  : BlackDChase
-# Version : 0.4.2
+# Version : 1.0.0
 cd modules
 
+while true;do
+    read -p "Shutdown when done (Y/n): " shut
+    case $shut in
+        [Yy]* ) shut=true;break;;
+        [Nn]* ) shut=false;break;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
 # : '
 # This is for Actuall training
-n=6
-e=5000
-t=25
-alr=0.003
-clr=0.003
-a=7
-s=1000
+n=20
+e=500
+t=75
+a=8
+s=250
+alr=0.0016
+clr=0.0075
+f=True
 #d=True
 # '
 
- : ' This is for test Training
-n=4
+# : ' This is for test Training
+n=3
 e=10
-t=2
-a=5
+t=10
+a=8
 s=100
-alr=0.06
-clr=0.06
-#d=True
+alr=0.01
+clr=0.07
+f=True
+d=True
 # '
 
 # : ' Training
 echo "\"Model will start training with $n agents, training $e episodes of $t length, with $a actions, and Debugging set to $d, while actor learning rate and critic learining rate being at $alr and $clr respectivly, as Hyperparameters\""
-
-python main.py -n=$n -e=$e -t=$t -a=$a -alr=$alr -clr=$clr -d=$d 
+folder="../Saved_model/" 
+folder="$folder$(ls $folder -Art | grep 'Olog' | tail -n 1)/"
+#p=$(echo "$folder$(ls $folder | grep 'CritcModel.pt')" | rev | cut -b 14- | rev)
+echo "Path is : $p"
+python main.py -n=$n -e=$e -t=$t -a=$a -alr=$alr -clr=$clr -d=$d -p=$p -f=$f || echo "\"Stopped In Between\""
 
 #For after training
-echo "\"Model Trained, extracting usefull info\""
+echo "\"Model Trained and saved, extracting usefull info\""
 ./extractTrainLog.sh
-echo "\"Models saved with $n agents training $e episodes of $t length with $a actions as Hyperparameter\""
+echo "\"Extraction successfull, with $n agents training $e episodes of $t length with $a actions as Hyperparameter\""
 # '
 
 # : '
@@ -45,10 +58,14 @@ folder="../Saved_model/"
 folder="$folder$(ls $folder -Art | grep 'Olog' | tail -n 1)/"
 p=$(echo "$folder$(ls $folder | grep 'CritcModel.pt')" | rev | cut -b 14- | rev)
 python main.py -a=$a -p=$p -s=$s -d=$d 
+echo "\"Model Tested for $fileName for $s time steps\""
+
 # For After testing
 fileName=$(echo $folder | cut -b 16- | rev | cut -b 2- | rev)
 ./extractTestLog.sh
-echo "\"Model Tested for $fileName for $s time steps\""
+echo "\"Extraction successfull, for $s timesteps\""
 # '
-# For shutting doen system
-#shutdown
+# For shutting down system
+if $shut;then
+    shutdown
+fi
