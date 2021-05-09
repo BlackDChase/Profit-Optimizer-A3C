@@ -12,11 +12,13 @@ Parameters:
     - clr = Critic Learning rate
     - p = Path of folder which contains PolicModel.py, CriticModel.pt
     - s = Times steps to test for
+    - f = Finetune trained Model
     - h = Help
 #"""
 
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.4.2'
+__version__ = '1.0.0'
+
 # Input from outside
 import log
 import sys
@@ -25,11 +27,12 @@ keywords={
         "e":10,
         "t":5,
         "a":5,
-        "d":True,
+        "d":"",
         "alr":1e-3,
         "clr":1e-3,
         "s":100,
-        "p":None
+        "p":None,
+        "f":"",
     }
 stateSize = 13
 log.info(f"stateSize = {stateSize}")
@@ -37,7 +40,7 @@ arg,value,key='','',''
 try:
     for arg in sys.argv[1:]:
         key,value = arg.split("=")
-        if key[1:]=="d":
+        if key[1:]=="d" or key[1:]=="f":
             keywords[key[1:]] = True if "t" in value.lower() else False
             # For debug
         elif key[1:]=="p":
@@ -51,7 +54,7 @@ except:
 if "h" in keywords:
     print("""
 Main function
-python main.py -n=3 -e=100 -t=50 -a=7 -d=t -alr=0.001 -clr=0.001 -p="../Saved_model/Sun-04-04-21/"
+python main.py -n=3 -e=100 -t=50 -a=7 -d=t -alr=0.001 -clr=0.001 -f=True -p='../Saved_model/yyyy-mm-dd-HH-mm-Olog/'
 Parameters:
     - n     Number of agents
     - e     Number of episodes
@@ -63,17 +66,19 @@ Parameters:
     - clr   Critic Learning rate
     - p     Path of folder which contains PolicModel.py, CriticModel.pt
     - s     Times steps to test for
+    - f     Finetune trained Model
     - h     Help""")
+    sys.exit()
 
 """
 Making the action space
 """
 n=int(keywords['a']//2)
 if keywords['a']%2==0:
-    actionSpace = [i for i in range(-n*2,n*2+1,2)]
+    actionSpace = [i for i in range(-n*5,n*5+1,5)]
     actionSpace.pop(len(actionSpace)//2)
 else:
-    actionSpace = [i/10 for i in range(-n*25,n*25+1,25)]
+    actionSpace = [i/10 for i in range(-n*55,n*55+1,55)]
 keywords['a']=actionSpace
 
 # Imports
@@ -86,12 +91,14 @@ from env import LSTMEnv as ENV
 from Agent import GOD
 
 if __name__=="__main__":
-    if keywords["p"] is None:
+    print(keywords["f"])
+    if keywords["p"] is None or keywords["f"]:
         print("Model Will be trained")
         god = GOD(
             stateSize=int(stateSize),
             actionSpace=keywords["a"],
             debug=keywords["d"],
+            path=keywords["p"],
             maxEpisode=int(keywords["e"]),
             nAgent=int(keywords["n"]),
             trajectoryLength=int(keywords["t"]),
@@ -122,7 +129,7 @@ if __name__=="__main__":
             log.info(f"Terminated on a {threadCount}\t{catch}")
             log.info(f"Traceback for the {threadCount} Exception\t{sys.exc_info()}")
             print(f"{threadCount} thread Terminated, check log")
-        print("Trained")
+        print("Training Complete")
     else:
         print("Model will be tested")
         god = GOD(
@@ -142,10 +149,10 @@ if __name__=="__main__":
 
         output_size = 13
         input_dim = output_size
-        hidden_dim = 128
-        layer_dim = 1
+        hidden_dim = 40
+        layer_dim = 2
         model = LSTM(output_size, input_dim, hidden_dim, layer_dim,debug=keywords["d"])
-        model.loadM("ENV_MODEL/lstm_model.pt")
+        model.loadM("ENV_MODEL/lstm_modelV3.pt")
 
         env=ENV(
             model=model,
@@ -176,4 +183,4 @@ if __name__=="__main__":
             log.info(f"A3C Profit = {a3cProfit[i]}")
             log.info(f"Normal Profit = {normalProfit[i]}")
             log.info(f"Diff = {diff[i]}")
-        print("Tested")
+        print("Testing Complete")
