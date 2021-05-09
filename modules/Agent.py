@@ -349,6 +349,45 @@ class GOD:
         #self._criticSemaphore.release()
         return
 
+    def Online():
+        self.gamma=0.9 ## gamma wasn't defined in GOD
+
+        currentState=self.reset()
+        ## get start state from the env.
+        while(True): ## add condition for breaking.
+            actionIndex = self.decideAction(currentState) 
+            # appropriate action for current state.
+            nextState,reward,_,info = self.step(actionIndex)
+            vPredicted=self._getCriticValue(currentState)
+            vTarget=reward + self.gamma * self._getCriticValue(nextState)
+            advantage= reward + self.gamma * self._getCriticValue(nextState) - self._getCriticValue(currentState)
+
+            Online_Policy_Loss(currentState,advantage)
+            Online_Critic_Loss(vPredicted,vTarget)   
+        return
+
+    def Online_Policy_Loss(currentState,advantage):
+        pd = self.god.forwardP(currentState)
+        dist = Categorical(pd)
+        logProb = dist.log_prob(advantage)
+        advantage = self.advantage.detach()
+        #if self.debug:
+        #    log.debug(f" advantage detached for {self.name}")
+        loss = -1*torch.mean(advantage*logProb)
+        #log.info(f"Policy loss = {loss}")
+        self._updatePolicy(loss)
+        #log.info(f"Updated policyLoss for {self.name}")
+        return
+
+    def Online_Critic_Loss(vPredicted,vTarget):
+        pred = vPredicted
+        targ = vTarget.detach()
+        loss = torch.mean(torch.pow(pred-targ,2))
+        #log.info(f"Critic loss = {loss}")
+        self._updateCritc(loss)
+        #log.info(f"Updated criticLoss for {self.name}")
+        return
+
 class BOSS(GOD):
     """
    The actual class which does the exploration of the state space.
