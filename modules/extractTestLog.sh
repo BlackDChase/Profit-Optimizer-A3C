@@ -1,6 +1,6 @@
 #!/bin/bash
 # Author  : BlackDChase
-# Version : 0.4.2
+# Version : 1.0.0
 
 name=$(ls ../logs -Art | grep "Olog.tsv" | tail -n 1)
 IFS='.'

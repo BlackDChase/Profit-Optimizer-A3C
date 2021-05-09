@@ -12,11 +12,13 @@ Parameters:
     - clr = Critic Learning rate
     - p = Path of folder which contains PolicModel.py, CriticModel.pt
     - s = Times steps to test for
+    - f = Finetune trained Model
     - h = Help
 #"""
 
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.4.2'
+__version__ = '1.0.0'
+
 # Input from outside
 import log
 import sys
