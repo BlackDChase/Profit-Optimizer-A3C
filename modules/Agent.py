@@ -179,7 +179,13 @@ class GOD:
         self.__trainBoss()
         return
 
-    def test(self,time=100):
+    def test(self,online=True,time=100):
+        if not online:
+            a3cState = self.offline(time)
+        else:
+            self.online()
+
+    def offline(self,time):
         """
         @input      : Number of time steps for which this odel is going to be tested
         @output     : Returns the `time` number of states which occured on the basis of Agent's response.
@@ -266,7 +272,7 @@ class GOD:
         ## sample the action according to the probability distribution.
         if self.debug:
             log.debug(f"Action: {actionIndex}")
-        return actionIndex,actionProb
+        return actionIndex,probabDistribution
 
     def _getAction(self,state):
         #self._policySemaphore.acquire()
@@ -331,7 +337,7 @@ class GOD:
         return actionProb
 
     def saveModel(self,path):
-        condition= path +"/"+str(self.__nAgent)+"_"+str(self.maxEpisode)+"_"+str(self.trajectoryLength)+"_"+str(len(self._actionSpace))+"_"+str(self.__actorLR)+"_"+str(self.__criticLR)+"_"
+        condition = path +"/"+str(self.__nAgent)+"_"+str(self.maxEpisode)+"_"+str(self.trajectoryLength)+"_"+str(len(self._actionSpace))+"_"+str(self.__actorLR)+"_"+str(self.__criticLR)+"_"
         self.__policyNet.saveM(condition+"PolicyModel.pt")
         self.__criticNet.saveM(condition+"CritcModel.pt")
         return
@@ -349,37 +355,36 @@ class GOD:
         #self._criticSemaphore.release()
         return
 
-    def Online():
+    def online(self):
         self.gamma=0.9 ## gamma wasn't defined in GOD
 
         currentState=self.reset()
         ## get start state from the env.
-        while(True): ## add condition for breaking.
-            actionIndex = self.decideAction(currentState) 
+        while(True):
+            # TODO add condition for breaking.
+            actionIndex,probabDistribution = self.decideAction(currentState)
             # appropriate action for current state.
             nextState,reward,_,info = self.step(actionIndex)
             vPredicted=self._getCriticValue(currentState)
             vTarget=reward + self.gamma * self._getCriticValue(nextState)
-            advantage= reward + self.gamma * self._getCriticValue(nextState) - self._getCriticValue(currentState)
-
-            Online_Policy_Loss(currentState,advantage)
-            Online_Critic_Loss(vPredicted,vTarget)   
+            discountedReward = self.gamma * self._getCriticValue(nextState)
+            advantage = reward + discountedReward - self._getCriticValue(currentState)
+            online_Policy_Loss(currentState,advantage,probabDistribution)
+            online_Critic_Loss(vPredicted,vTarget)
         return
 
-    def Online_Policy_Loss(currentState,advantage):
-        pd = self.god.forwardP(currentState)
-        dist = Categorical(pd)
+    def online_Policy_Loss(self,currentState,advantage,dist):
         logProb = dist.log_prob(advantage)
         advantage = self.advantage.detach()
-        #if self.debug:
-        #    log.debug(f" advantage detached for {self.name}")
+        if self.debug:
+            log.debug(f" advantage detached for {self.name}")
         loss = -1*torch.mean(advantage*logProb)
         #log.info(f"Policy loss = {loss}")
         self._updatePolicy(loss)
         #log.info(f"Updated policyLoss for {self.name}")
         return
 
-    def Online_Critic_Loss(vPredicted,vTarget):
+    def online_Critic_Loss(self,vPredicted,vTarget):
         pred = vPredicted
         targ = vTarget.detach()
         loss = torch.mean(torch.pow(pred-targ,2))
@@ -619,6 +624,7 @@ class BOSS(GOD):
         critic model might face issues during it's own backpropagation
         #"""
 
+        # TODO check if this works, also if its needed in forwardP
         pd = self.god.forwardP(self.trajectoryS)
         dist = Categorical(pd)
         logProb = dist.log_prob(self.trajectoryA)
