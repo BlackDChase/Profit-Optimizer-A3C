@@ -1,7 +1,7 @@
 # Adjusting Price to maximize profit using A3C
 
 ## Ref
-- [Research Paper](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/unstable/Paper.pdf)
+- [Research Paper](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/Reinforcement%20Learning%20for%20Optimizing%20the%20Demand%20Response.pdf)
 - Incomplete
     - Missing Train and test Results
 
