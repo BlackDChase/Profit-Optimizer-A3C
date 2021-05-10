@@ -458,7 +458,7 @@ class GOD:
         return
 
     def online_Policy_Loss(self):
-        pd = self.god.forwardP(self.trajectoryS)
+        pd = self.forwardP(self.trajectoryS)
         dist = Categorical(pd)
         logProb = dist.log_prob(self.advantage)
         advantage = self.advantage.detach()
