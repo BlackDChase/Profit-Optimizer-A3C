@@ -215,7 +215,7 @@ class LSTMEnv(gym.Env):
             correction=0-abs(correction)
 
         if denormalize:
-            correction/=(10**15)
+            correction/=(10**17)
         reward = (abs(demand - supply)**3) * (abs(new_price)**2) * correction
         log.info(f"State set = {new_price}, {correction}, {demand}, {supply}")
         return reward

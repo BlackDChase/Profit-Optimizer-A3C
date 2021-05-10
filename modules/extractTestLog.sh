@@ -9,6 +9,8 @@ name="${name[0]}"
 mkdir ../Saved_test/$name
 cd "../Saved_test/$name"
 mv "../../logs/$name.tsv" "./"
+
+# TODO, Update this
 awk "/\tA3C State/ {print}" $name.tsv > "A3CState.tsv"
 awk "/\tNormal State/ {print}" $name.tsv > "NormalState.tsv"
 awk "/\tA3C Profit/ {print}" $name.tsv > "A3CProfit.tsv"
@@ -16,6 +18,7 @@ awk "/\tNormal Profit/ {print}" $name.tsv > "NormalProfit.tsv"
 awk "/\tDiff/ {print}" $name.tsv >"ProfitDiff.tsv"
 echo "'Sub logs made'"
 
+# TODO, Update this
 vim A3CProfit.tsv  -c ':%s/.*Profit = //g' -c ':wq'
 vim A3CState.tsv  -c ':%s/.*\[//g'  -c ':%s/\].*//g' -c ':wq'
 vim NormalProfit.tsv  -c ':%s/.*Profit = //g' -c ':wq'

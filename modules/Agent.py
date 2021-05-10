@@ -179,12 +179,14 @@ class GOD:
         self.__trainBoss()
         return
 
+    # TODO, Update this
     def test(self,online=True,time=100):
         if not online:
             a3cState = self.offline(time)
         else:
             self.online()
 
+    # TODO, Update this
     def offline(self,time):
         """
         @input      : Number of time steps for which this odel is going to be tested
@@ -208,6 +210,7 @@ class GOD:
         a3cState = torch.stack(a3cState)
         return a3cState
 
+    # TODO, Update this
     def compare(self,a3cState,time=100,normalState=None):
         """
         @input          : a3cState,time,normalState
@@ -230,6 +233,7 @@ class GOD:
             diff.append(a3cProfit[i]-normalProfit[i])
         return a3cProfit,normalProfit,diff
 
+    # TODO, Update this
     def getNormalStates(self,time=100):
         normalState = Tensor(self._env.possibleState(time))
         return normalState
@@ -247,6 +251,7 @@ class GOD:
         self.__criticNet.optimizer.step()
         return
 
+    # TODO, Update this
     def decideAction(self,state):
         """
         Responsible for taking the correct action from the given state using the neural net.
@@ -286,6 +291,7 @@ class GOD:
         #self._criticSemaphore.release()
         return vVlaue
 
+    # TODO, Update this
     def reset(self):
         return torch.Tensor(self._env.reset())
 
@@ -330,6 +336,7 @@ class GOD:
 
         return
 
+    # TODO, Update this
     def forwardP(self,actions):
         #self._policySemaphore.acquire()
         actionProb = self.__policyNet.forward(actions)
@@ -355,6 +362,7 @@ class GOD:
         #self._criticSemaphore.release()
         return
 
+    # TODO, Update this
     def online(self):
         self.gamma=0.9 ## gamma wasn't defined in GOD
 
@@ -373,6 +381,7 @@ class GOD:
             online_Critic_Loss(vPredicted,vTarget)
         return
 
+    # TODO, Update this
     def online_Policy_Loss(self,currentState,advantage,dist):
         logProb = dist.log_prob(advantage)
         advantage = self.advantage.detach()
@@ -384,6 +393,7 @@ class GOD:
         #log.info(f"Updated policyLoss for {self.name}")
         return
 
+    # TODO, Update this
     def online_Critic_Loss(self,vPredicted,vTarget):
         pred = vPredicted
         targ = vTarget.detach()
@@ -512,6 +522,7 @@ class BOSS(GOD):
         self.reset()
         return
 
+    # TODO, Update this
     def gatherAndStore(self):
         # gather a trajectory by acting in the enviornment using current policy
         currentState = self.startState
@@ -624,6 +635,7 @@ class BOSS(GOD):
         critic model might face issues during it's own backpropagation
         #"""
 
+        # TODO, Update this
         # TODO check if this works, also if its needed in forwardP
         pd = self.god.forwardP(self.trajectoryS)
         dist = Categorical(pd)

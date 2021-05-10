@@ -13,8 +13,8 @@ while true;do
 done
 # : '
 # This is for Actuall training
-n=20
-e=700
+n=25
+e=1200
 t=70
 a=8
 s=250
@@ -40,7 +40,7 @@ d=True
 echo "\"Model will start training with $n agents, training $e episodes of $t length, with $a actions, and Debugging set to $d, while actor learning rate and critic learining rate being at $alr and $clr respectivly, as Hyperparameters\""
 folder="../Saved_model/" 
 folder="$folder$(ls $folder -Art | grep 'Olog' | tail -n 1)/"
-#p=$(echo "$folder$(ls $folder | grep 'CritcModel.pt')" | rev | cut -b 14- | rev)
+p=$(echo "$folder$(ls $folder | grep 'CritcModel.pt')" | rev | cut -b 14- | rev)
 echo "Path is : $p"
 python main.py -n=$n -e=$e -t=$t -a=$a -alr=$alr -clr=$clr -d=$d -p=$p -f=$f || echo "\"Stopped In Between\""
 
@@ -50,13 +50,13 @@ echo "\"Model Trained and saved, extracting usefull info\""
 echo "\"Extraction successfull, with $n agents training $e episodes of $t length with $a actions as Hyperparameter\""
 # '
 
-# : '
+ : '
 # This is for loading Latest trained model and testing it
 
 #d=True
 folder="../Saved_model/" 
-folder="$folder$(ls $folder -Art | grep 'Olog' | tail -n 1)/"
-p=$(echo "$folder$(ls $folder | grep 'CritcModel.pt')" | rev | cut -b 14- | rev)
+folder="$folder$(ls $folder -Art | grep \"Olog\" | tail -n 1)/"
+p=$(echo "$folder$(ls $folder | grep \"CritcModel.pt\")" | rev | cut -b 14- | rev)
 python main.py -a=$a -p=$p -s=$s -d=$d 
 echo "\"Model Tested for $fileName for $s time steps\""
 

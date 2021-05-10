@@ -168,12 +168,14 @@ if __name__=="__main__":
         log.info("Environment parsed, Boss inititated")
         log.info(f"ENV LSTM: {model}")
 
+        # TODO, update this
         # Testing
         time=int(keywords['s'])
         a3cStates = god.test(time=time)
         normalStates = god.getNormalStates(time=time)
         a3cProfit,normalProfit,diff = god.compare(a3cState=a3cStates,normalState=normalStates)
 
+        # TODO verify this
         # Plotting
         for i in range(len(a3cStates)):
             log.info(f"A3C State = {a3cStates[i]}")

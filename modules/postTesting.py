@@ -54,6 +54,8 @@ if __name__ == '__main__':
     #print(os.path.dirname(os.path.realpath("")))
     #folderName = getMostRecent(sys.argv[1])
     folderName = ""
+
+    # TODO, Update this
     #a3cState = readState(folderName+"A3CState.tsv")
     a3cProfit = readProfit(folderName+"A3CProfit.tsv")
     #normalState = readState(folderName+"NormalState.tsv")
