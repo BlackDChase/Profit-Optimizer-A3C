@@ -1,0 +1,46 @@
+"Model will start training with 20 agents, training 700 episodes of 70 length, with 8 actions, and Debugging set to , while actor learning rate and critic learining rate being at 0.002 and 0.009 respectivly, as Hyperparameters"
+Path is : 
+Model Will be trained
+Model Not Found
+Master Agent Made
+Model starting it's training
+BOSS 16 has completed training
+BOSS 03 has completed training
+BOSS 04 has completed training
+BOSS 13 has completed training
+BOSS 17 has completed training
+BOSS 05 has completed training
+BOSS 11 has completed training
+BOSS 08 has completed training
+BOSS 02 has completed training
+BOSS 12 has completed training
+BOSS 19 has completed training
+BOSS 07 has completed training
+BOSS 09 has completed training
+BOSS 00 has completed training
+BOSS 14 has completed training
+BOSS 01 has completed training
+BOSS 10 has completed training
+BOSS 18 has completed training
+BOSS 06 has completed training
+BOSS 15 has completed training
+Training Complete
+"Model Trained and saved, extracting usefull info"
+'Sub logs made'
+[?1049h[22;0;0t[22;0;0t[?1h=[H[2J]11;?[?2004h[?25h[?25l(B[m[H[2J[?1002h[?1006h]112[1 q]112[1 q[?1004h]112[2 q[?25h[?25l[22B14000 substitutions on 14000 lines[K
+[J"policyLossLog.tsv"[?25h[?25l[C14000L, 254530C written[24;1H[?25h[?25l]112[2 q[?1002l[?1006l(B[m[?25h[?1l>[?1049l[23;0;0t[23;0;0t[?2004l[?1004l[?25h[?1049h[22;0;0t[22;0;0t[?1h=[H[2J]11;?[?2004h[?25h[?25l(B[m[H[2J[?1002h[?1006h]112[1 q]112[1 q]112[2 q[?25h[?25l[?1004h[22B14000 substitutions on 14000 lines[K
+[J14000 substitutions on 14000 lines[20;24r[20;1H[3M[r[19;1H                                                                                
+
+
+Error detected while processing command line:[K
+E486: Pattern not found: \].*[K
+"rewardLog.tsv"[K[?25h[?25l[C14000L, 984047C written[24;1H[?25h[?25l]112[2 q[?1002l[?1006l(B[m[?25h[?1l>[?1049l[23;0;0t[23;0;0t[?2004l[?1004l[?25h[?1049h[22;0;0t[22;0;0t[?1h=[H[2J]11;?[?2004h[?25h[?25l(B[m[H[2J[?1002h[?1006h]112[1 q]112[1 q[?1004h]112[2 q[?25h[?25l[22B14000 substitutions on 14000 lines[K
+[J"criticLossLog.tsv"[?25h[?25l[C14000L, 213692C written[24;1H[?25h[?25l]112[2 q[?1002l[?1006l(B[m[?25h[?1l>[?1049l[23;0;0t[23;0;0t[?2004l[?1004l[?25h[?1049h[22;0;0t[22;0;0t[?1h=[H[2J]11;?[?2004h[?25h[?25l(B[m[H[2J[?1002h[?1006h]112[1 q]112[1 q]112[2 q[?25h[?25l[?1004h[22B14000 substitutions on 14000 lines[K
+[J14000 substitutions on 14000 lines[20;24r[20;1H[3M[r[19;1H                                                                                
+
+
+Error detected while processing command line:[K
+E486: Pattern not found: \].*[K
+"advantageLog.tsv"[K[?25h[?25l[C14000L, 973754C written[24;1H[?25h[?25l]112[2 q[?1002l[?1006l(B[m[?25h[?1l>[?1049l[23;0;0t[23;0;0t[?2004l[?1004l[?25h[?1049h[22;0;0t[22;0;0t[?1h=[H[2J]11;?[?2004h[?25h[?25l(B[m[H[2J[?1002h[?1006h]112[1 q]112[1 q[?1004h]112[2 q[?25h[?25l[22B980000 substitutions on 980000 lines[K
+[J"stateLog.tsv"[?25h[?25l[C980000L, 63040276C written[24;1H[?25h[?25l]112[2 q[?1002l[?1006l(B[m[?25h[?1l>[?1049l[23;0;0t[23;0;0t[?2004l[?1004l[?25h'Post Processing Logs was a success'
+"Extraction successfull, with 20 agents training 700 episodes of 70 length with 8 actions as Hyperparameter"
