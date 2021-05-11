@@ -24,7 +24,7 @@ from torch.nn.modules.activation import SELU
 from tqdm import tqdm
 import log
 import sys
-from NeuralNet import Network #, Actor, Critic
+from NeuralNet import Network #, Aktor, Kritc
 import multiprocessing
 from multiprocessing import Process #, Lock
 multiprocessing.set_start_method('fork')
