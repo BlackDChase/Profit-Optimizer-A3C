@@ -1,3 +1,4 @@
+# Imports
 import gym
 import pandas as pd
 import numpy as np
@@ -9,12 +10,14 @@ import multiprocessing
 __author__ = 'Biribiri,BlackDChase'
 __version__ = '1.0.0'
 
+# Helper class for working with the dataset 
 class DatasetHelper:
     def __init__(self, dataset_path, max_input_len):
         self.dataset_path = dataset_path
         self.df = pd.read_csv(self.dataset_path)
         self.max_input_len = max_input_len
-
+    
+    # Returns a random starting initial state
     def reset(self):
         """
         Choose a random starting timestep for gym resets from dataframe
@@ -24,6 +27,7 @@ class DatasetHelper:
         self.first_input = self.df.iloc[random_index:random_index + self.max_input_len, :].values
         return self.first_input
 
+# Class for LSTM env used in A3C
 class LSTMEnv(gym.Env):
     def __init__(self,
                  model,
@@ -41,7 +45,10 @@ class LSTMEnv(gym.Env):
         sending it. This includes second-order data sent to the agent such as
         reward.
         """
+        
+        # LSTM model 
         self.model = model
+        # Dataset helper class instance 
         self.dataset_helper = DatasetHelper(dataset_path,max_input_len)
 
         # Initialize self.observation_space
@@ -51,6 +58,7 @@ class LSTMEnv(gym.Env):
         # create model input deque
         self.model_input = deque([], maxlen=max_input_len)
         self.max_input_len = max_input_len
+        # ActionSpace 
         self.actionSpace=actionSpace
 
         # list of min / max values for each of the 13 columns used for wrapping inputs and unwrapping outputs
@@ -89,36 +97,52 @@ class LSTMEnv(gym.Env):
         oldPrice is going to be a normalized value as it always is calculated in respect to
         current_observation (which is normalized).
         """
+        
+        # Price index based on dataset attribute column index
         price_index = 0
         current_observation[price_index] = float(np.random.rand(1)*(0.6)+0.2)
         self.current_observation = current_observation
+        # Denormalizing current state observation
         self.denormalized_current_observation = self.denormalize(self.current_observation)
         self.oldPrice = self.current_observation[price_index]
-
+        
+        # Logging if debug is enabled
         if self.debug:
             log.debug(f"Reset complete for {curr.name}")
             log.debug(f">current_observation = {self.current_observation}")
             log.debug(f">denormalized_current_observation = {self.denormalized_current_observation}")
             log.debug(f">oldPrice = {self.oldPrice}")
+            
         return self.current_observation
 
+    # Returns a list of states (tuples) in the trajectory without A3C feedback 
     def possibleState(self,time=100):
         """
         Output  : Return the output of the enviornment for `time` number of steps without the feedback of A3C agent.
         """
+        
+        # Empty states list for holding states acc to the trajectory followed
         states = []
         model_input = deque([], maxlen=self.max_input_len)
         [model_input.append(element) for element in self.startState]
 
         for i in range(time+1):
+            # Convert model_input to numpy array
             np_model_input = np.array(model_input)
+            # Make a forward pass using the model
             current_observation = self.model.forward(np_model_input, numpy=True)
+            # Append current observation to the model input 
             model_input.append(current_observation)
+            # Denormalize the current observation 
             current_observation = self.denormalize(current_observation)
+            # Log the details about current observation 
             log.info(f"Possible set {i} = {current_observation}")
+            # Append the current observation in the states list 
             states.append(current_observation)
+            
         return states
 
+    # Step function takes action based on the current model input and returns next observation and denormalized reward 
     def step(self, action):
         """
         Calculate new current observation
@@ -139,26 +163,33 @@ class LSTMEnv(gym.Env):
 
         # Implement effects of action
         new_price = self.get_new_price(action)
+        # Update last old price with the new price after taking action 
         self.oldPrice=new_price
+        # Price index based on the dataset
         price_index = 0
+        # Update price -> new Price in the current observation 
         self.current_observation[price_index] = new_price
+        # Denormalized current observation 
         self.denormalized_current_observation = self.denormalize(self.current_observation)
 
         # get reward
         # Ensure that numpy array shape is (1,), not () otherwise conversion to torch.Tensor will get messed up
         # Use denormalized new price to get denormalized reward
         denormalized_reward = np.array([self.get_reward(denormalize=True)])
-
+        
         # We update the price in the current observation
         # This ensures that the model takes into account the action we just
         # took when giving us the next timestep
         # append the current observation to the model input
         self.model_input.append(self.current_observation)
+        
+        # Logging if debug is enabled
         if self.debug:
             log.debug(f">current_observation = {self.current_observation}")
             log.debug(f">denormalized_current_observation = {self.denormalized_current_observation}")
         return self.current_observation, denormalized_reward, done, {}
 
+    # To compute new price based on the action (percentage deviation)
     def get_new_price(self, action):
         """
         Modify the price by a percentage according to the action taken.
@@ -168,6 +199,7 @@ class LSTMEnv(gym.Env):
         new_price = old_price * (1 + (self.actionSpace[action])/ 100)
         return new_price
 
+    # To compute reward 
     def get_reward(self, denormalize=False):
 
         """
@@ -181,18 +213,23 @@ class LSTMEnv(gym.Env):
         electricity would either be sent at a loss, or would be bought from
         these smaller producers.
         """
+        
+        # Attribute indices based on the datatset used
         price_index = 0
         ontario_demand_index = 1
         supply_index = 2
 
+        # If denormalize is enabled 
         if denormalize:
+            # Denormalize the current observation 
             self.denormalized_current_observation = self.denormalize(self.current_observation)
-
+            # Log the details about the denormalized current observation 
             log.debug(f"self.denormalized_current_observation.shape = {self.denormalized_current_observation.shape}")
+            # Compute denormalized demand, denormalized supply and denormalized newPrice using denormalized current observation 
             demand = self.denormalized_current_observation[ontario_demand_index]
             supply = self.denormalized_current_observation[supply_index]
             new_price = self.denormalized_current_observation[price_index]
-        else:
+        else: # If denormalize is disabled
             log.debug(f"self.current_observation.shape = {self.current_observation.shape}")
             demand = self.current_observation[ontario_demand_index]
             supply = self.current_observation[supply_index]
@@ -207,19 +244,24 @@ class LSTMEnv(gym.Env):
         Decreaseing the overall Reward value: Correction/=(10**8)
         """
         # TODO Make Reward Better
+        # Max-Min vals based on min-max data loaded
         maxAllowed = self.min_max_values["max"][price_index]
         minAllowed = self.min_max_values["min"][price_index]
 
+        # Correction factor used in computing reward
         correction = 1
         if ((demand-supply) <0) or (new_price<minAllowed) or (new_price>maxAllowed):
             correction=0-abs(correction)
-
+            
         if denormalize:
             correction/=(10**15)
+        # Reward calculation 
         reward = (abs(demand - supply)**3) * (abs(new_price)**2) * correction
+        # Logging some info
         log.info(f"State set = {new_price}, {correction}, {demand}, {supply}")
         return reward
 
+    # Min-max denormalization of numpy array
     def denormalize(self, arr):
         """
         Take any numpy array of 13 elements and de-normalize it, that is, undo
@@ -233,6 +275,7 @@ class LSTMEnv(gym.Env):
             array[feature] = (value * (maxv - minv)) + minv - 1
         return array
 
+    # Min-max normalization of numpy array
     def normalize(self, arr):
         """
         Take any numpy array of 13 elements and normalize it according to
