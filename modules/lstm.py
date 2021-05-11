@@ -45,6 +45,7 @@ class LSTM(nn.Module):
         # (batch_dim, seq_dim, feature_dim)
         self.lstm = nn.LSTM(input_size=input_dim, hidden_size=hidden_dim, num_layers=layer_dim, batch_first=True)
 
+        # fully connected hidden layer
         self.fc =  nn.Linear(hidden_dim, output_size)
 
         #TODO, Find a better way to do this
@@ -80,11 +81,11 @@ class LSTM(nn.Module):
         hidden_state.detach()
         cell_state.detach()
 
+        # Log the details of the network if debugging is enabled
         if self.debug:
             log.debug(f"Input batch: {input_batch.shape}, {curr.name}")
             log.debug(f"Hidden shape: {hidden_state.shape}, {curr.name}")
             log.debug(f"Cell shape: {cell_state.shape}, {curr.name}")
-
 
         # With multi threading, mulitple states are not parsed through the
         # model, they get stuck.
@@ -143,6 +144,7 @@ class LSTM(nn.Module):
         if self.debug:
             log.debug(f"test.shape = {test.shape}")
 
+        # return the train and test part
         return train, test
 
     def train(self,
@@ -201,11 +203,13 @@ class LSTM(nn.Module):
             optimizer.zero_grad()
 
             # forward pass
-
             output = self.forward(input_batch)
+
+            # Logging if debugging is enabled
             if self.debug:
                 log.debug(f"Output shape = {output.shape}")
                 log.debug(f"Label Batch shape = {label_batch.shape}")
+
             # get loss output
             loss = loss_fn(output, label_batch)
             if self.debug:
@@ -217,10 +221,13 @@ class LSTM(nn.Module):
             # Update parameters
             optimizer.step()
 
+
+    # For testing the model
     def test(self,
             test_batch,
             loss_fn=torch.nn.MSELoss(),
             num_epochs=10):
+            
         test_batch_size = len(test_batch)
         total_loss = 0
         for epoch in range(num_epochs):
@@ -249,15 +256,18 @@ class LSTM(nn.Module):
         # seq_dim = length of sequence of timesteps of input
         batch = non_batch.reshape(-1, non_batch.shape[0], non_batch.shape[1])
 
+        # Logging if debugging is enabled
         if self.debug:
             log.debug(f"batch.shape = {batch.shape}")
 
         return batch
 
+    # To save the model for later use
     def saveM(self,name):
         torch.save(self.lstm.state_dict(),name)
         log.info(f"LSTM saved = {self.lstm}")
 
+    # To load an existing trained model for testing 
     def loadM(self,path):
         self.lstm.load_state_dict(torch.load(path))
         log.info(f"LSTM loaded = {self.lstm}")
