@@ -1,5 +1,5 @@
 """
-Conatins Various Neural Nets that an Agent can use
+Contains Various Neural Nets that an Agent can use
 Primarily We would be using Network Class as it is more robust to change
 Aktor, Kritc are standins for testing
 #"""
@@ -12,7 +12,7 @@ import log
 from torch import nn
 import multiprocessing
 # GLOBAL
-#device = device("cuda" if torch.cuda.is_available() else "cpu")
+# device = device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Network(nn.Module):
     #global device
@@ -56,8 +56,8 @@ class Network(nn.Module):
             """
             kwargs[l1][0] : name of the layer
             kwargs[l1][1] : inputSize of the layer
-            kwargs[l2][1] : outputSize pf the layer == inputSize of next layer
             kwargs[l1][2] : activation function of the layer
+            kwargs[l2][1] : outputSize pf the layer == inputSize of next layer
             #"""
             layers.append(kwargs[l1][0](in_features=kwargs[l1][1],out_features=kwargs[l2][1]))
             if len(kwargs[l1])>=3:
@@ -86,7 +86,7 @@ class Network(nn.Module):
             log.debug(f"{self.name} Model: {self.hypoThesis}")
 
         """
-        Initiallising model
+        Initializing model
         Rest parameters to uniform
         0 is lower bound, 1 is upper bound
         But thats not working
@@ -131,10 +131,12 @@ class Network(nn.Module):
             log.debug(f"output of model for {self.name} of {curr.ident} = {output}")
         return output
 
+    # To save the model for later use
     def saveM(self,name):
         torch.save(self.hypoThesis.state_dict(),name)
         log.info(f"{self.name} saved = {self.hypoThesis}")
 
+    # To load an existing trained model for testing 
     def loadM(self,path):
         self.hypoThesis.load_state_dict(torch.load(path))
         log.info(f"{self.name} loaded = {self.hypoThesis}")
@@ -143,7 +145,10 @@ class Network(nn.Module):
 class Aktor(nn.Module):
     def __init__(self):
         super(Aktor,self).__init__()
+
+        # Default learning rate
         self.learningRate = 1e-3
+        # Actor Network internal sequential layers 
         self.model = nn.Sequential(
             nn.Linear(in_features=13,out_features=20),
             nn.Linear(in_features=20,out_features=11),
@@ -152,24 +157,31 @@ class Aktor(nn.Module):
         self.params = self.model.parameters()
         self.optimizer = torch.optim.SGD(self.params,lr=self.learningRate)
 
+    # To make a forward pass in the network
     def forward(self,currentState):
         output = self.model(currentState)
         return output
 
+    # To save the model for later use
     def saveM(self,name):
         torch.save(self.model.state_dict(),name)
         log.info(f"Kritc saved = {self.model}")
 
+    # To load an existing trained model for testing 
     def loadM(self,path):
         print("Trying to load")
         self.model.load_state_dict(torch.load(path))
         log.info(f"Kritc loaded = {self.model}")
     pass
 
+# Class for critic network used in A3C
 class Kritc(nn.Module):
     def __init__(self):
         super(Kritc,self).__init__()
+
+        # Default learning rate
         self.learningRate = 1e-3
+        # Critic Network internal sequential layers 
         self.model = nn.Sequential(
             nn.Linear(in_features=13,out_features=20),
             nn.ELU(),
@@ -179,14 +191,17 @@ class Kritc(nn.Module):
         self.params = self.model.parameters()
         self.optimizer = torch.optim.SGD(self.params,lr=self.learningRate)
 
+    # To make a forward pass in the network
     def forward(self,currentState):
         output = self.model(currentState)
         return output
 
+    # To save the model for later use
     def saveM(self,name):
         torch.save(self.model.state_dict(),name)
         log.info(f"Kritc saved = {self.model}")
 
+    # To load an existing trained model for testing 
     def loadM(self,path):
         print("Trying to load")
         self.model.load_state_dict(torch.load(path))
