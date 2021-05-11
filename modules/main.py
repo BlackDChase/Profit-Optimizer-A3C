@@ -34,23 +34,30 @@ keywords={
         "p":None,
         "f":"",
     }
+
 stateSize = 13
 log.info(f"stateSize = {stateSize}")
 arg,value,key='','',''
+
+# Parsing arguments
 try:
     for arg in sys.argv[1:]:
         key,value = arg.split("=")
+
+        # For debug and fine tuning 
         if key[1:]=="d" or key[1:]=="f":
             keywords[key[1:]] = True if "t" in value.lower() else False
-            # For debug
+        # For assigning the path of the policy and critic models
         elif key[1:]=="p":
             keywords[key[1:]] = value
-            # For path (saved model)
+        # Rest arguments
         else:
             keywords[key[1:]] = float(value)
         log.info(f"Parameter {key[1:]} is {value}")
 except:
     print(key,arg,value)
+
+# To show more info about the list of parameters that can be passed during runtime when -h is enabled
 if "h" in keywords:
     print("""
 Main function
@@ -71,7 +78,7 @@ Parameters:
     sys.exit()
 
 """
-Making the action space
+Making the action space based on '-a = Number of deviations in action'
 """
 n=int(keywords['a']//2)
 if keywords['a']%2==0:
@@ -92,8 +99,12 @@ from Agent import GOD
 
 if __name__=="__main__":
     print(keywords["f"])
+
+    # If path for trained model is not given or fine-tuning is enabled then training process is initiated 
     if keywords["p"] is None or keywords["f"]:
         print("Model Will be trained")
+
+        # Initializing GOD (master) agent 
         god = GOD(
             stateSize=int(stateSize),
             actionSpace=keywords["a"],
@@ -105,6 +116,8 @@ if __name__=="__main__":
             alr=keywords["alr"],
             clr=keywords["clr"]
         )
+
+        # Logging all details about the God agent created during training phase
         print("Master Agent Made")
         log.info("GOD inititated")
         log.info(f"State Size = {int(stateSize)}")
@@ -118,26 +131,36 @@ if __name__=="__main__":
 
         threadCount=0
         try:
+            # Train and save the trained model if no exceptions are encountered
             print("Model starting it's training")
+            # Train the model
             god.train()
+            # Save model
             god.saveModel("../Saved_model")
         except KeyboardInterrupt:
+            # Save model if interrupted by user interrupt
             god.saveModel("../Saved_model")
         except Exception as catch:
             #log.debug(f"Terminaion Trace back {catch.with_traceback()}")
             threadCount+=1
+            # Log the exception details
             log.info(f"Terminated on a {threadCount}\t{catch}")
             log.info(f"Traceback for the {threadCount} Exception\t{sys.exc_info()}")
             print(f"{threadCount} thread Terminated, check log")
         print("Training Complete")
     else:
+        # Testing the model
         print("Model will be tested")
+
+        # GOD (master) agent is initialized
         god = GOD(
             debug=keywords["d"],
             stateSize=int(stateSize),
             actionSpace=keywords["a"],
             path=keywords["p"],
         )
+
+        # Logging all details about the God agent created during testing phase
         print("Master Agent Made")
         log.info("GOD inititated")
         log.info(f"State Size = {int(stateSize)}")
@@ -147,13 +170,19 @@ if __name__=="__main__":
         log.info(f"Steps tested for = {keywords['s']}")
         #"""
 
+        # Some params used wrt to LSTM network
         output_size = 13
         input_dim = output_size
         hidden_dim = 40
         layer_dim = 2
+
+        # LSTM model
         model = LSTM(output_size, input_dim, hidden_dim, layer_dim,debug=keywords["d"])
+
+        # Loading saved model from the given path
         model.loadM("ENV_MODEL/lstm_modelV3.pt")
 
+        # Generating environment using the loaded LSTM model
         env=ENV(
             model=model,
             dataset_path="../datasets/normalized_weird_13_columns_with_supply.csv",
@@ -164,18 +193,23 @@ if __name__=="__main__":
         """
         env = ENV(stateSize,actionSpace)
         #"""
+
+        # Logging environment details during testing phase
         log.info("Environment inititated")
         god.giveEnvironment(env)
         log.info("Environment parsed, Boss inititated")
         log.info(f"ENV LSTM: {model}")
 
-        # Testing
-        time=int(keywords['s'])
-        a3cStates = god.test(time=time)
-        normalStates = god.getNormalStates(time=time)
+        # Testing phase 
+
+        time=int(keywords['s']) # time steps to test 
+        a3cStates = god.test(time=time) # states generated with a3c feedback
+        normalStates = god.getNormalStates(time=time) # states generated without a3c feedback
+
+        # Comparing results with and without a3c feedback by taking the difference in profits generated from both the cases
         a3cProfit,normalProfit,diff = god.compare(a3cState=a3cStates,normalState=normalStates)
 
-        # Plotting
+        # Plotting the results
         for i in range(len(a3cStates)):
             log.info(f"A3C State = {a3cStates[i]}")
             log.info(f"Normal State = {normalStates[i]}")
