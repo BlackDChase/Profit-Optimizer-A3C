@@ -1,11 +1,12 @@
 """
 GOD AGENT
 - Will take final action
-- A supervising psuedo agent that takes action
+- A supervising pseudo agent that takes action
 - Definations required:
     - state
     - action
     - policy/critic Net
+
 BOSS AGENT
 - Will Update the network
 
@@ -23,10 +24,11 @@ from torch.nn.modules.activation import SELU
 from tqdm import tqdm
 import log
 import sys
-from NeuralNet import Network #, Aktor, Kritc
+from NeuralNet import Network #, Actor, Critic
 import multiprocessing
 from multiprocessing import Process #, Lock
 multiprocessing.set_start_method('fork')
+
 """
 from TempEnv import TempEnv as ENV
 """
@@ -59,32 +61,39 @@ Better error logging for inplace operations that throw errors in automatic diffe
 
 class GOD:
     """
-    This class is responsible for taking the final action which will be conveyed to the enviorenment
-    and the management of BOSS agents which will explore the enviorenment.
+    This class is responsible for taking the final action which will be conveyed to the environment
+    and the management of BOSS agents which will explore the environment.
 
     Also containing the initialiation of the policy Net and Critic Net.
 
-    @Input (From Enviorenment) :: The Current State.
-    @Output (To enviorenment)  :: The Final Action Taken.
+    @Input (From Environment) :: The Current State.
+    @Output (To environment)  :: The Final Action Taken.
     """
     def __init__(self,maxEpisode=100,nAgent=1,debug=False,trajectoryLength=25,stateSize=9,actionSpace=[-15,-10,0,+10,+15],name="GOD",path=None,alr=1e-3,clr=1e-3):
         """
         Initialization of various GOD parameters, self evident from the code.
         #"""
         self.name=name
+
+        # Dimensions of the state (9 in our case) 
         self.stateSize = stateSize
-
-        # state is the 9 dimentional tensor , defined at the top
+        # state is the 9 dimensional tensor , defined at the top
         self._state = Tensor([0]*stateSize)
-
         # action space is the percent change of the current price.
         self._actionSpace = Tensor(actionSpace)
+        # Enable debugging if true 
         self.debug = debug
+        # Price 
         self.price = 0
+        # Number of agents
         self.__nAgent=nAgent
+        # List of worker (BOSS) agents 
         self.__bossAgent=[]
+
+        # Initializing actor and critic network
         self.makeNetwork(maxEpisode,nAgent,trajectoryLength,alr,clr)
 
+        # Load model if path is specific or else raise exception error if the path is invalid or if model doesnt exist in that path
         if self.__class__==GOD:
             try:
                 if not (path=="None" or path==None):
@@ -95,6 +104,9 @@ class GOD:
         pass
 
     def makeNetwork(self,maxEpisode,nAgent,trajectoryLength,alr,clr):
+        """
+        Initializes the actor and critic network based on the specified params
+        """
         self.setMaxEpisode(maxEpisode)
         self.setNumberOfAgent(nAgent)
         self.setTrajectoryLength(trajectoryLength)
@@ -154,54 +166,79 @@ class GOD:
         log.info(f"Critic Network: {self.__criticNet}")
         return
 
+    # Environment setter function (public) for this class
     def giveEnvironment(self,env):
         self._env=env
         return
 
+    # Set the value of no of Agents  
     def setNumberOfAgent(self,nAgent):
         self.__nAgent = nAgent
         return
 
+    # Getter function for retrieving actionSpace
     def getActionSpace(self):
         return self._actionSpace
 
+    # Setter for max episodes allowed
     def setMaxEpisode(self,maxEpisode):
         self.maxEpisode = maxEpisode
         return
 
+    # Setter for trajectory length for exploration 
     def setTrajectoryLength(self,trajectoryLength):
         self.trajectoryLength = trajectoryLength
         return
 
+    # The master agent will train with the environment using the worker (BOSS) agents
     def train(self):
         log.info("This GOD will train with the enviornment")
+
+        # Initialize (BOSS) worker agents 
         self.__initateBoss()
+        # Train using the worker agents 
         self.__trainBoss()
         return
 
+    # For testing the model
     def test(self,time=100):
         """
-        @input      : Number of time steps for which this odel is going to be tested
+        @input      : Number of time steps for which this model is going to be tested
         @output     : Returns the `time` number of states which occured on the basis of Agent's response.
         #"""
+
+        # Get the initial state from the environment
         currentState = self.reset()
         a3cState=[]
         for i in range(time):
+            # For debugging if enabled
             if self.debug:
                 log.debug(f"a3cState={currentState}")
+            
+            # Append currentState to a3cState list 
             a3cState.append(currentState)
+            # Decide what action to take from currentState
             action,_ = self.decideAction(torch.Tensor(currentState))
+            # Observe nextState, reward, info from the environment after taking the action 
             nextState,reward,_,info = self.step(action)
+
             ## Oi generous env , please tell me the next state and reward for the action i have taken
             log.info(f"{self.name}, {i},  {info}")
+
+            # For debugging if enabled 
             if self.debug:
                 log.debug(f"Reward and Shape = {reward}, {reward.shape}")
                 log.debug(f"Action for {self.name} {i} = {action}, {type(action)}")
+            
+            # Change the currentState to nextState after action has been taken
             currentState=torch.Tensor(nextState)
+        
         a3cState.append(currentState)
         a3cState = torch.stack(a3cState)
+        # Return the list of tuples of states along the trajectory in which actions have been taken
         return a3cState
 
+    # Calculates profits in price with and without A3C feedback and their difference for comparison purposes
     def compare(self,a3cState,time=100,normalState=None):
         """
         @input          : a3cState,time,normalState
@@ -211,30 +248,45 @@ class GOD:
         #"""
         if type(normalState)==None:
             normalState=Tensor(self.getNormalStates(time))
+        
+        # Empty lists for normal and A3C profits 
         normalProfit=[]
         a3cProfit=[]
+        
+        # Indices of attributes based on the dataset we have considered
         supply_index = 2
         demand_index = 1
         price_index = 0
+
+        # Computing profits from the list of states 
         for i in range(len(a3cState)):
             normalProfit.append(normalState[i][price_index]*(normalState[i][demand_index]-normalState[i][supply_index]))
             a3cProfit.append(a3cState[i][price_index]*(a3cState[i][demand_index]-a3cState[i][supply_index]))
+        
+        # Empty list for computing diff in both profits per state transistion
         diff=[]
+
+        # Computing diff in normal and A3C profits and appending them to diff list
         for i in range(len(a3cProfit)):
             diff.append(a3cProfit[i]-normalProfit[i])
+        
+        # Returning a3Cprofit, normalProfit and diff
         return a3cProfit,normalProfit,diff
+
 
     def getNormalStates(self,time=100):
         normalState = Tensor(self._env.possibleState(time))
         return normalState
 
 
+    # For updating the policy Network
     def _updatePolicy(self,lossP):
         self.__policyNet.optimizer.zero_grad()
         lossP.backward(retain_graph=True)
         self.__policyNet.optimizer.step()
         return
 
+    # For updating the critic Network
     def _updateCritc(self,lossC):
         self.__criticNet.optimizer.zero_grad()
         lossC.backward(retain_graph=True)
@@ -251,21 +303,28 @@ class GOD:
         actionProb = self._getAction(state)
         """
         actionProb  ::  State-action probability vector from the policy net.
-        Categorical ::  Create a catagorical distribution acording to the actionProb
+        Categorical ::  Create a categorical distribution according to the actionProbability
         #"""
         probabDistribution = Categorical(probs=actionProb)
 
+        # Logging if debugging is enabled
         if self.debug:
             log.debug(f"Deciding action for {state}")
             log.debug(f"Probability Distribution {probabDistribution}, actionProbab = {actionProb}")
+        
+        # Sampling from the probDistribution
         try:
             actionIndex = probabDistribution.sample()
         except RuntimeError:
             # For invalid multinomial distribution (encountering probability entry < 0)
             actionIndex = np.random.randint(0,len(self._actionSpace))
         ## sample the action according to the probability distribution.
+
+        # Logging for actionIndex if debug is enabled
         if self.debug:
             log.debug(f"Action: {actionIndex}")
+        
+        # Returning both actionIndex based on actionSpace and the actionProb from the policy network  
         return actionIndex,actionProb
 
     def _getAction(self,state):
@@ -280,18 +339,27 @@ class GOD:
         #self._criticSemaphore.release()
         return vVlaue
 
+    # Returns an initial state from the env (Randomized)
     def reset(self):
         return torch.Tensor(self._env.reset())
 
+    # Take the specific action on the env and returns nextState, reward and other relevant params
     def step(self,action):
         return self._env.step(action)
 
+    # For initializing worker (BOSS) agents for training 
     def __initateBoss(self):
         """
         Initialize all the boss agents for training
         #"""
+
+        # Empty list of keeping track of multiple boss agents
         self.__bossAgent=[]
+
+        # Looping to create multiple boss agents
         for i in range(self.__nAgent):
+            
+            # Creating an instance of boss agent with specified params
             boss = BOSS(
                 god=self,
                 name="BOSS "+str(i).zfill(2),
@@ -300,42 +368,63 @@ class GOD:
                 trajectoryLength=self.trajectoryLength,
                 stateSize=self.stateSize,
             )
+            # Appending this boss agents in a list
             self.__bossAgent.insert(i,boss)
+
+            # Logging if debugging is enabled
             if self.debug:
                 log.debug(f"Boss{str(i).zfill(2)} created")
+        
+        # Returning the list of boss agents
         return self.__bossAgent
 
     def __trainBoss(self):
         # To be defined Later :: the actual function to train multiple bosses.
         #"""
+
+        # Empty list for keeping track of each boss process
         bossThreads=[]
+
+        # Looping to create all boss processes and appending them in a list 
         for i in range(self.__nAgent):
+
+            # Creating an instance of boss proces
             process = Process(
                 target=self.__bossAgent[i].train,
                 #args=(self._resetSemaphore,),  # Not using semaphores
             )
+            # Appending it to the list 
             bossThreads.append(process)
 
+        # Running all boss threads created above
         for i in range(len(bossThreads)):
+
+            # Running boss thread based on the index of the list 
             bossThreads[i].start()
+            # Logging for debug purposes
             log.info(f"Boss{str(i).zfill(2)} training started via GOD")
+
+        # Waiting for all threads to be terminated
         for i in bossThreads:
             i.join()
 
         return
 
+    # To make forward pass in the policy network
     def forwardP(self,actions):
         #self._policySemaphore.acquire()
         actionProb = self.__policyNet.forward(actions)
         #self._policySemaphore.release()
         return actionProb
 
+    # Saving both actor and critic models for later use/testing
     def saveModel(self,path):
         condition= path +"/"+str(self.__nAgent)+"_"+str(self.maxEpisode)+"_"+str(self.trajectoryLength)+"_"+str(len(self._actionSpace))+"_"+str(self.__actorLR)+"_"+str(self.__criticLR)+"_"
         self.__policyNet.saveM(condition+"PolicyModel.pt")
         self.__criticNet.saveM(condition+"CritcModel.pt")
         return
 
+    # For loading existing trained actor and critic models for testing
     def __loadModel(self,path):
         """
         If using GPU, this has to be mapped to it while load .. torch.load(path,map_location=device)
@@ -354,9 +443,9 @@ class BOSS(GOD):
    The actual class which does the exploration of the state space.
    Contains the code for the actor critic algorithm (Trajectory generation+ Policy gradient and value net updation )
 
-   @Input :: (From Enviorenment) The current state + next state according to the current price to create trajectory.
+   @Input :: (From Environment) The current state + next state according to the current price to create trajectory.
 
-   @Output:: (To Enviorenment)   The action taken for creating trajectory.
+   @Output:: (To Environment)   The action taken for creating trajectory.
 
    @Actual Job :: To update the policy network and critic net by creating the trajectory and calculating losses.
 
@@ -374,13 +463,20 @@ class BOSS(GOD):
                  debug=False,
                  ):
         super(BOSS,self).__init__(maxEpisode=maxEpisode,debug=debug,trajectoryLength=trajectoryLength,stateSize=stateSize,name=name)
+        # Master agent (GOD)
         self.god = god
+        # ActionSpace 
         self._actionSpace = self.god._actionSpace
         log.info(f"{self.name}\tAction Space\t{self._actionSpace}")
+
+        # Trajectory States 
         self.trajectoryS = torch.zeros([self.trajectoryLength,self.stateSize])
+        # Trajectory rewards accumulated
         self.trajectoryR = torch.zeros(self.trajectoryLength)
+        # Trajectory actions taken
         self.trajectoryA = torch.zeros(self.trajectoryLength)
 
+        # Gamma 
         self.ɤ = gamma
         # self.d = depth # Not using anymore
         self.vPredicted = torch.zeros(self.trajectoryLength)
@@ -398,8 +494,8 @@ class BOSS(GOD):
 
         """
         The Actual function to train the network , the actor-critic actual logic.
-        Eviorienment.step :: env.step has to give different outputs for different state trajectories by
-        different boss. it has to take in account the diff trajectories becouse diff bosses will go to
+        Environment.step :: env.step has to give different outputs for different state trajectories by
+        different boss agents. It has to take in account the diff trajectories because diff bosses will go to
         different states.
         #"""
         curr = multiprocessing.current_process()
@@ -444,21 +540,25 @@ class BOSS(GOD):
         print(f"{self.name} has completed training")
         pass
 
+    # For creating an instance of env for each worker (BOSS) agent to assist in training 
     def makeENV(self):
         """
         Making enviornment here
         Because of #35472 on pytorch : https://github.com/pytorch/pytorch/issues/35472#issue-588591481
         Proposed solution is: https://github.com/pytorch/pytorch/issues/35472#issuecomment-604775738
         #"""
+
+        # LSTM created
         LSTM_instance = LSTM(output_size, input_dim, hidden_dim, layer_dim,debug=self.debug)
         if self.debug:
             log.info(f"LSTM instance created for {self.name} = {LSTM_instance}")
 
-
+        # Load model 
         LSTM_instance.loadM("ENV_MODEL/lstm_modelV3.pt")
         log.info(f"{self.name}'s Env made")
 
         log.info(f"LSTM instance loaded for {self.name} = {LSTM_instance}")
+        # Env created for this specific worker agent
         self._env = ENV(
             model=LSTM_instance,
             dataset_path=envDATA,
@@ -469,43 +569,66 @@ class BOSS(GOD):
         return
 
     def gatherAndStore(self):
-        # gather a trajectory by acting in the enviornment using current policy
+        # Gather a trajectory by acting in the environment using current policy
+
+        # Initial starting state 
         currentState = self.startState
         log.info(f"Starting state={currentState}, for {self.name}")
+
         for i in range(self.trajectoryLength):
+
+            # Decide action to take from currentState
             action = self.getAction(currentState)
             #nextState,reward,info = self.god.step(action)
+
+            # Take action in the env and observe nextState,reward and other relevant params
             nextState,reward,_,info = self.step(action)
+
             ## Oi generous env , please tell me the next state and reward for the action i have taken
             log.info(f"{self.name}, {i},  {info}")
+
+            # Logging if debug is enabled
             if self.debug:
                 log.debug(f"Reward and Shape = {reward}, {reward.shape}")
+            
+            # Update states, action, rewards in the trajectory 
             self.trajectoryS[i] = currentState
             self.trajectoryA[i] = action
             self.trajectoryR[i] = torch.Tensor(reward)
+
+            # Logging if debug is enabled
             if self.debug:
                 log.debug(f"Action for {self.name} {i} = {action}, {type(action)}")
                 log.debug(f"Detached Next state {nextState}")
+            
+            # Change currentState to nextState after action has been taken
             currentState=torch.Tensor(nextState)
+
+        # Logging if debug is enabled
         if self.debug:
             log.debug(f"Action = {self.trajectoryA}")
             log.debug(f"vPred = {self.vPredicted}")
             log.debug(f"vTar = {self.vTarget}")
         pass
 
+    # To get action based on the state given, returns actionIndex based on actionSpace
     def getAction(self,state):
         actionIndex,probab = self.god.decideAction(state)
         return actionIndex
 
+    # To compute V_predicted using the critic network, doesnt return anything but updates the V_pred based on value returned by critic network
     def calculateV_p(self):
-        # calculate the predicted v value by using critic network :: Predicted value is just the value returned by the critic network.
+        # Calculate the predicted v value by using critic network :: Predicted value is just the value returned by the critic network.
         self.vPredicted = Tensor(len(self.vPredicted))
         # This resets the tensor to zero
+
+        # Iterate over the trajectory of states and compute their values using the critic network
         for i in range(self.trajectoryLength):
             state=self.trajectoryS[i]
             self.vPredicted[i]=self.god._getCriticValue(state)
         return
 
+    # To compute the V_target using the critic network
     def calculateV_tar(self):
         # calculate the target value v_tar using critic network
         """
@@ -516,7 +639,7 @@ class BOSS(GOD):
         #####################################################################################################
         Another Huge Doubt regarding v_target and GAE is::
 
-        DO WE NEED TO CONSTRUCT NEW EXPERIENCE(ENVIORENMENT EXPLORATION) FOR CALCULATING V_tar OR WE CAN USE THE
+        DO WE NEED TO CONSTRUCT NEW EXPERIENCE(ENVIroNMENT EXPLORATION) FOR CALCULATING V_tar OR WE CAN USE THE
         CURRENT TRAJECTORY FOR THIS PURPOSE(more probable)
 
         CHOICE 1 :: Use TD error , for each state in trajectory , use TD error to calculate V_tar since
@@ -549,6 +672,7 @@ class BOSS(GOD):
             # v_tar_currentState = reward + gamma* v_tar_nextState
         return
 
+    # Computes Advantage value using Nstep TD error
     def calculateNSTEPAdvantage(self):
         """
         Calculate Advantage using TD error/N-STEP , logic similar to vTarget calculation
@@ -561,6 +685,7 @@ class BOSS(GOD):
         log.info(f"Advantage {self.name} = {self.advantage}")
         return
 
+    # Computes policy loss and updates the network
     def calculateAndUpdateL_P(self):
         ### Semaphore stuff for safe update of network by multiple bosses.
         """
@@ -592,6 +717,7 @@ class BOSS(GOD):
         log.info(f"Updated policyLoss for {self.name}")
         return
 
+    # Computes critic loss and updates the network
     def calculateAndUpdateL_C(self):
         """
         vTarget detached because it is assumed to be correct and thus should not be the variable that is
