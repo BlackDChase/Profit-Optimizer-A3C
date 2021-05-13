@@ -180,7 +180,7 @@ class GOD:
         return
 
     # TODO, Update this
-    def test(self,online=True,time=100,onlineUpdateLength=50):
+    def test(self,time=100):
         '''
         onlineUpdateLength is the amount of episodes the online agent must wait to gather
         trajectory from the real env, after which it finally updates the network.
@@ -188,14 +188,22 @@ class GOD:
         According to the discussions at 10th Mat 8 PM , onlineUpdateLength is just the
         trajectory length for online agent. It won't wait to update the net , maybe except
         initially.
-        '''
-        if not online:
-            a3cState = self.offline(time)
+        #'''
+        if time>0:
+            self.__offline(time)
         else:
-            self.online(onlineUpdateLength)
+            self.__online()
+        return
+
 
     # TODO, Update this
-    def offline(self,time):
+    def __offline(self,time):
+        a3cState = self.__getA3Cstate(time)
+        normalStates = self.__getNormalStates(time=time)
+        a3cProfit,normalProfit,diff = self.__compare(a3cState=a3cState,normalState=normalStates)
+        return diff
+
+    def __getA3Cstate(self,time):
         """
         @input      : Number of time steps for which this model is going to be tested
         @output     : Returns the `time` number of states which occured on the basis of Agent's response.
@@ -219,15 +227,13 @@ class GOD:
         return a3cState
 
     # TODO, Update this
-    def compare(self,a3cState,time=100,normalState=None):
+    def __compare(self,a3cState,normalState):
         """
         @input          : a3cState,time,normalState
         a3cState        : Output of states with a3C's feedback
         normalState     : Output of states without a3c's feedback
         time            : Timesteps for which this model in being tested
         #"""
-        if type(normalState)==None:
-            normalState=Tensor(self.getNormalStates(time))
         normalProfit=[]
         a3cProfit=[]
         supply_index = 2
@@ -242,7 +248,7 @@ class GOD:
         return a3cProfit,normalProfit,diff
 
     # TODO, Update this
-    def getNormalStates(self,time=100):
+    def __getNormalStates(self,time=100):
         normalState = Tensor(self._env.possibleState(time))
         return normalState
 
@@ -371,13 +377,13 @@ class GOD:
         return
 
     # TODO, Update this
-    def online(self,onlineUpdateLength):
+    def __online(self):
         self.gamma=0.9 ## gamma wasn't defined in GOD
         episodes=0
         # These self variables necessary for doing gather and store.
         # The same way they are used in the BOSS agent.
         # initialized in resetTrajectory method.
-        self.resetTrajectory(onlineUpdateLength)
+        self.resetTrajectory()
         currentState=self.reset()
         ## get start state from the env.
         warmupFlag=True
@@ -396,7 +402,7 @@ class GOD:
                     # online_Policy_Loss(currentState,advantage,probabDistribution)
                     # online_Critic_Loss(vPredicted,vTarget)
                     episodes+=1
-                    if episodes==onlineUpdateLength:
+                    if episodes==self.trajectoryLength:
                         warmupFlag=False
                 else:
                     ## remove the first entry
@@ -409,10 +415,10 @@ class GOD:
                     self.trajectoryR.append(0)
                     self.trajectoryA.append(0)
 
-                    self.onlineGatherAndStore(currentState,onlineUpdateLength-1)
-                    self.onlineVtarget(onlineUpdateLength)
-                    self.onlineVpredicted(onlineUpdateLength)
-                    self.onlineNstepAdvantage(onlineUpdateLength)
+                    self.onlineGatherAndStore(currentState,self.trajectoryLength-1)
+                    self.onlineVtarget()
+                    self.onlineVpredicted()
+                    self.onlineNstepAdvantage()
 
                     self.online_Policy_Loss()
                     self.online_Critic_Loss()
@@ -424,13 +430,13 @@ class GOD:
             # TODO, dont you wanna save or something?
         return
 
-    def resetTrajectory(self,onlineUpdateLength):
-        self.trajectoryS = [[0 for i in range(self.stateSize)] for j in range(onlineUpdateLength) ] # torch.zeros([onlineUpdateLength,self.stateSize])
-        self.trajectoryR = [0 for i in range(onlineUpdateLength)] # torch.zeros(onlineUpdateLength)
-        self.trajectoryA = [0 for i in range(onlineUpdateLength)]
-        self.vPredicted  = torch.zeros(onlineUpdateLength)#[0 for i in range(onlineUpdateLength)]
-        self.vTarget     = torch.zeros(onlineUpdateLength)#[0 for i in range(onlineUpdateLength)]
-        self.advantage   = torch.zeros(onlineUpdateLength)#[0 for i in range(onlineUpdateLength)]
+    def resetTrajectory(self):
+        self.trajectoryS = [[0 for i in range(self.stateSize)] for j in range(self.trajectoryLength) ] # torch.zeros([self.trajectoryLength,self.stateSize])
+        self.trajectoryR = [0 for i in range(self.trajectoryLength)] # torch.zeros(self.trajectoryLength)
+        self.trajectoryA = [0 for i in range(self.trajectoryLength)]
+        self.vPredicted  = torch.zeros(self.trajectoryLength)#[0 for i in range(self.trajectoryLength)]
+        self.vTarget     = torch.zeros(self.trajectoryLength)#[0 for i in range(self.trajectoryLength)]
+        self.advantage   = torch.zeros(self.trajectoryLength)#[0 for i in range(self.trajectoryLength)]
         return
 
     # TODO, Update this
@@ -454,31 +460,31 @@ class GOD:
             log.debug(f"Online: vPred = {self.vPredicted}")
             log.debug(f"Online: vTar = {self.vTarget}")
 
-    def onlineVpredicted(self,onlineUpdateLength):
+    def onlineVpredicted(self):
         # calculate the predicted v value by using critic network
         self.vPredicted = Tensor(len(self.vPredicted))
-        for i in range(onlineUpdateLength):
+        for i in range(self.trajectoryLength):
             state=torch.Tensor(self.trajectoryS[i])
             self.vPredicted[i]=self._getCriticValue(state)
         return
 
-    def onlineVtarget(self,onlineUpdateLength):
+    def onlineVtarget(self):
         self.vTarget = Tensor(len(self.vTarget))
-        self.vTarget[onlineUpdateLength-1] = torch.Tensor(self.trajectoryR[onlineUpdateLength-1])
-        for i in reversed(range(onlineUpdateLength-1)):
+        self.vTarget[self.trajectoryLength-1] = torch.Tensor(self.trajectoryR[self.trajectoryLength-1])
+        for i in reversed(range(self.trajectoryLength-1)):
             # iterate in reverse order.
             self.vTarget[i] = torch.Tensor(self.trajectoryR[i]) + self.gamma*self.vTarget[i+1]
             # v_tar_currentState = reward + gamma* v_tar_nextState
         return
 
-    def onlineNstepAdvantage(self,onlineUpdateLength):
+    def onlineNstepAdvantage(self):
         """
-        Calculate Advantage using TD error/N-STEP for online scenario. 
+        Calculate Advantage using TD error/N-STEP for online scenario.
         """
-        vPredLast = self.vPredicted[onlineUpdateLength-1]
+        vPredLast = self.vPredicted[self.trajectoryLength-1]
         self.advantage =  Tensor(len(self.advantage))
         self.advantage[-1]=vPredLast
-        for i in reversed(range(onlineUpdateLength-1)):
+        for i in reversed(range(self.trajectoryLength-1)):
             self.advantage[i] = torch.Tensor(self.trajectoryR[i]) + self.gamma*self.advantage[i+1] - self.vPredicted[i]
         log.info(f"Online : Advantage {self.name} = {self.advantage}")
         return
@@ -486,11 +492,11 @@ class GOD:
     def online_Policy_Loss(self):
         pd = self.forwardP(torch.Tensor(self.trajectoryS))
         #print(self.advantage)
-        
+
         #try:
         dist = Categorical(pd)
         logProb = dist.log_prob(self.advantage)
-    
+
 
         # print(self.advantage.shape)
         # print(torch.Tensor(self.trajectoryS).shape)
@@ -505,7 +511,6 @@ class GOD:
         # except:
         #     print("SOME PROBLEM OCCOURED")
         #     print(self.ep)
-            
         return
 
     # TODO, Update this

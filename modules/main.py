@@ -136,6 +136,7 @@ if __name__=="__main__":
             stateSize=int(stateSize),
             actionSpace=keywords["a"],
             path=keywords["p"],
+            trajectoryLength=int(keywords["t"]),
         )
         print("Master Agent Made")
         log.info("GOD inititated")
@@ -170,10 +171,9 @@ if __name__=="__main__":
 
         # TODO, update this
         # Testing
+        # if <0 online, else offline
         time=int(keywords['s'])
-        a3cStates = god.test(time=time)
-        normalStates = god.getNormalStates(time=time)
-        a3cProfit,normalProfit,diff = god.compare(a3cState=a3cStates,normalState=normalStates)
+        god.test(time=time)
 
         # TODO verify this
         # Plotting
