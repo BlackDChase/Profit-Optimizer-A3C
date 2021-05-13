@@ -117,9 +117,9 @@ class GOD:
             len(self._actionSpace),
             lr=self.__actorLR,
             name="Policy Net",
-            L1=(nn.Linear,18,nn.SELU()),
+            L1=(nn.Linear,20,nn.SELU()),
             #L2=(nn.Linear,18,nn.Softmax(dim=0),nn.Dropout(p=0.3)),
-            L2=(nn.Linear,18,nn.Softmax(dim=0)),
+            L2=(nn.Linear,30,nn.Softmax(dim=0)),
             debug=self.debug,
             ## we will add softmax at end , which will give the probability distribution.
         )
@@ -132,7 +132,7 @@ class GOD:
             1,
             lr=self.__criticLR,
             name="Critic Net",
-            L1=(nn.Linear,10,nn.SELU()),
+            L1=(nn.Linear,15,nn.SELU()),
             L2=(nn.Linear,10,nn.Tanh()),
             debug=self.debug,
         )
