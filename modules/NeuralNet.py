@@ -39,7 +39,7 @@ class Network(nn.Module):
         self.name = name
         layers = []
         keyWords = list(kwargs.keys())
-        kwargs["stateSize"] = (nn.Linear,stateSize,nn.Hardtanh(min_val=-3,max_val=6))
+        kwargs["stateSize"] = (nn.Linear,stateSize,nn.Hardtanh(min_val=-5,max_val=9))
 
         """
         Input layer

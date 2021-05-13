@@ -1,23 +1,38 @@
 #!/bin/bash
 # Author  : BlackDChase
 # Version : 1.0.0
+
+getShut(){
+    case $1 in
+        [Yy]* ) echo "Will shut down once done."
+            shut=1;;
+        [Nn]* ) shut=2;;
+        * ) shut=0;
+            echo "Please answer yes or no.";;
+    esac
+    return $shut
+}
+
 cd modules
 
-while true;do
-    read -p "Shutdown when done (Y/n): " shut
-    case $shut in
-        [Yy]* ) shut=true;break;;
-        [Nn]* ) shut=false;break;;
-        * ) echo "Please answer yes or no.";;
-    esac
+
+# Shutdown conditon
+shutCon=$1
+getShut $shutCon
+shut=$?
+while [[ "$shut" = 0 ]]; do
+    read -p "Shutdown when done (Y/n): " shutCon
+    getShut $shutCon
+    shut=$?
 done
+
 # : '
 # This is for Actuall training
-n=25
-e=1200
-t=70
-a=8
-s=250
+n=50
+e=800
+t=65
+a=9
+s=500
 alr=0.002
 clr=0.009
 f=True
@@ -40,7 +55,7 @@ d=True
 echo "\"Model will start training with $n agents, training $e episodes of $t length, with $a actions, and Debugging set to $d, while actor learning rate and critic learining rate being at $alr and $clr respectivly, as Hyperparameters\""
 folder="../Saved_model/" 
 folder="$folder$(ls $folder -Art | grep 'Olog' | tail -n 1)/"
-p=$(echo "$folder$(ls $folder | grep 'CritcModel.pt')" | rev | cut -b 14- | rev)
+#p=$(echo "$folder$(ls $folder | grep 'CritcModel.pt')" | rev | cut -b 14- | rev)
 echo "Path is : $p"
 python main.py -n=$n -e=$e -t=$t -a=$a -alr=$alr -clr=$clr -d=$d -p=$p -f=$f || echo "\"Stopped In Between\""
 
@@ -65,7 +80,9 @@ fileName=$(echo $folder | cut -b 16- | rev | cut -b 2- | rev)
 ./extractTestLog.sh
 echo "\"Extraction successfull, for $s timesteps\""
 # '
+
+
 # For shutting down system
-if $shut;then
+if [[ "$shut" = 1 ]];then
     shutdown
 fi
