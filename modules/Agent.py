@@ -12,7 +12,7 @@ BOSS AGENT
 State = Ontario Price, Ontario Demand, Ontario Supply,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, Northwest Nigiria, West
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '1.0.0'
+__version__ = '0.4.2'
 
 # Imports
 from torch import nn, Tensor
@@ -32,11 +32,10 @@ from TempEnv import TempEnv as ENV
 """
 from env import LSTMEnv as ENV
 from lstm import LSTM
-
 output_size = 13
 input_dim = output_size
-hidden_dim = 40
-layer_dim = 2
+hidden_dim = 128
+layer_dim = 1
 envDATA="../datasets/normalized_weird_13_columns_with_supply.csv"
 # ENV(LSTM,envDATA,actionSpace)
 #"""
@@ -85,16 +84,12 @@ class GOD:
         self.__bossAgent=[]
         self.makeNetwork(maxEpisode,nAgent,trajectoryLength,alr,clr)
 
-        if self.__class__==GOD:
-            try:
-                if not (path=="None" or path==None):
-                    self.__loadModel(path)
-                print("Model loaded from : ",path)
-            except:
-                print("Model Not Found")
+        if path!=None:
+            self.loadModel(path)
         pass
 
     def makeNetwork(self,maxEpisode,nAgent,trajectoryLength,alr,clr):
+        log.info("This GOD will train with the enviornment")
         self.setMaxEpisode(maxEpisode)
         self.setNumberOfAgent(nAgent)
         self.setTrajectoryLength(trajectoryLength)
@@ -117,9 +112,9 @@ class GOD:
             len(self._actionSpace),
             lr=self.__actorLR,
             name="Policy Net",
-            L1=(nn.Linear,18,nn.SELU()),
-            #L2=(nn.Linear,18,nn.Softmax(dim=0),nn.Dropout(p=0.3)),
-            L2=(nn.Linear,18,nn.Softmax(dim=0)),
+            L1=(nn.Linear,40,nn.SELU()),
+            L2=(nn.Linear,40,nn.Sigmoid()),
+            L3=(nn.Linear,50,nn.Softmax(dim=0)),
             debug=self.debug,
             ## we will add softmax at end , which will give the probability distribution.
         )
@@ -132,8 +127,8 @@ class GOD:
             1,
             lr=self.__criticLR,
             name="Critic Net",
-            L1=(nn.Linear,10,nn.SELU()),
-            L2=(nn.Linear,10,nn.Tanh()),
+            L1=(nn.Linear,30,nn.SELU()),
+            L2=(nn.Linear,40,nn.Tanh()),
             debug=self.debug,
         )
         """
@@ -174,32 +169,15 @@ class GOD:
         return
 
     def train(self):
-        log.info("This GOD will train with the enviornment")
         self.__initateBoss()
         self.__trainBoss()
         return
 
-    # TODO, Update this
-    def test(self,online=True,time=100,onlineUpdateLength=50):
-        '''
-        onlineUpdateLength is the amount of episodes the online agent must wait to gather
-        trajectory from the real env, after which it finally updates the network.
-        MODIFIED::
-        According to the discussions at 10th Mat 8 PM , onlineUpdateLength is just the
-        trajectory length for online agent. It won't wait to update the net , maybe except
-        initially.
-        '''
-        if not online:
-            a3cState = self.offline(time)
-        else:
-            self.online(onlineUpdateLength)
-
-    # TODO, Update this
-    def offline(self,time):
+    def test(self,time=100):
         """
-        @input      : Number of time steps for which this model is going to be tested
+        @input      : Number of time steps for which this odel is going to be tested
         @output     : Returns the `time` number of states which occured on the basis of Agent's response.
-        #"""
+        """
         currentState = self.reset()
         a3cState=[]
         for i in range(time):
@@ -218,14 +196,13 @@ class GOD:
         a3cState = torch.stack(a3cState)
         return a3cState
 
-    # TODO, Update this
     def compare(self,a3cState,time=100,normalState=None):
         """
         @input          : a3cState,time,normalState
         a3cState        : Output of states with a3C's feedback
         normalState     : Output of states without a3c's feedback
         time            : Timesteps for which this model in being tested
-        #"""
+        """
         if type(normalState)==None:
             normalState=Tensor(self.getNormalStates(time))
         normalProfit=[]
@@ -241,7 +218,6 @@ class GOD:
             diff.append(a3cProfit[i]-normalProfit[i])
         return a3cProfit,normalProfit,diff
 
-    # TODO, Update this
     def getNormalStates(self,time=100):
         normalState = Tensor(self._env.possibleState(time))
         return normalState
@@ -259,7 +235,6 @@ class GOD:
         self.__criticNet.optimizer.step()
         return
 
-    # TODO, Update this
     def decideAction(self,state):
         """
         Responsible for taking the correct action from the given state using the neural net.
@@ -277,15 +252,11 @@ class GOD:
         if self.debug:
             log.debug(f"Deciding action for {state}")
             log.debug(f"Probability Distribution {probabDistribution}, actionProbab = {actionProb}")
-        try:
-            actionIndex = probabDistribution.sample()
-        except RuntimeError:
-            # For invalid multinomial distribution (encountering probability entry < 0)
-            actionIndex = np.random.randint(0,len(self._actionSpace))
+        actionIndex = probabDistribution.sample()
         ## sample the action according to the probability distribution.
         if self.debug:
             log.debug(f"Action: {actionIndex}")
-        return actionIndex,probabDistribution
+        return actionIndex,actionProb
 
     def _getAction(self,state):
         #self._policySemaphore.acquire()
@@ -299,7 +270,6 @@ class GOD:
         #self._criticSemaphore.release()
         return vVlaue
 
-    # TODO, Update this
     def reset(self):
         return torch.Tensor(self._env.reset())
 
@@ -344,7 +314,6 @@ class GOD:
 
         return
 
-    # TODO, Update this
     def forwardP(self,actions):
         #self._policySemaphore.acquire()
         actionProb = self.__policyNet.forward(actions)
@@ -352,12 +321,12 @@ class GOD:
         return actionProb
 
     def saveModel(self,path):
-        condition = path +"/"+str(self.__nAgent)+"_"+str(self.maxEpisode)+"_"+str(self.trajectoryLength)+"_"+str(len(self._actionSpace))+"_"+str(self.__actorLR)+"_"+str(self.__criticLR)+"_"
+        condition= path +"/"+str(self.__nAgent)+"_"+str(self.maxEpisode)+"_"+str(self.trajectoryLength)+"_"+str(len(self._actionSpace))+"_"+str(self.__actorLR)+"_"+str(self.__criticLR)+"_"
         self.__policyNet.saveM(condition+"PolicyModel.pt")
         self.__criticNet.saveM(condition+"CritcModel.pt")
         return
 
-    def __loadModel(self,path):
+    def loadModel(self,path):
         """
         If using GPU, this has to be mapped to it while load .. torch.load(path,map_location=device)
         #"""
@@ -368,154 +337,6 @@ class GOD:
         #self._criticSemaphore.acquire()
         self.__criticNet.loadM(path+"CritcModel.pt")
         #self._criticSemaphore.release()
-        return
-
-    # TODO, Update this
-    def online(self,onlineUpdateLength):
-        self.gamma=0.9 ## gamma wasn't defined in GOD
-        episodes=0
-        # These self variables necessary for doing gather and store.
-        # The same way they are used in the BOSS agent.
-        # initialized in resetTrajectory method.
-        self.resetTrajectory(onlineUpdateLength)
-        currentState=self.reset()
-        ## get start state from the env.
-        warmupFlag=True
-        self.ep=episodes
-        try:
-            while(True):
-                if warmupFlag==True:
-                    self.onlineGatherAndStore(currentState,episodes)
-                    # actionIndex,probabDistribution = self.decideAction(currentState)
-                    # # appropriate action for current state.
-                    # nextState,reward,_,info = self.step(actionIndex)
-                    # vPredicted=self._getCriticValue(currentState)
-                    # vTarget=reward + self.gamma * self._getCriticValue(nextState)
-                    # discountedReward = self.gamma * self._getCriticValue(nextState)
-                    # advantage = reward + discountedReward - self._getCriticValue(currentState)
-                    # online_Policy_Loss(currentState,advantage,probabDistribution)
-                    # online_Critic_Loss(vPredicted,vTarget)
-                    episodes+=1
-                    if episodes==onlineUpdateLength:
-                        warmupFlag=False
-                else:
-                    ## remove the first entry
-                    #print("Episodes: ",episodes)
-                    self.trajectoryS.pop(0)
-                    self.trajectoryR.pop(0)
-                    self.trajectoryA.pop(0)
-
-                    self.trajectoryS.append(0)
-                    self.trajectoryR.append(0)
-                    self.trajectoryA.append(0)
-
-                    self.onlineGatherAndStore(currentState,onlineUpdateLength-1)
-                    self.onlineVtarget(onlineUpdateLength)
-                    self.onlineVpredicted(onlineUpdateLength)
-                    self.onlineNstepAdvantage(onlineUpdateLength)
-
-                    self.online_Policy_Loss()
-                    self.online_Critic_Loss()
-                    episodes+=1
-                    self.ep=episodes
-        except KeyboardInterrupt:
-            print("Online training terminated >_<")
-            print("Episodes: ",episodes)
-            # TODO, dont you wanna save or something?
-        return
-
-    def resetTrajectory(self,onlineUpdateLength):
-        self.trajectoryS = [[0 for i in range(self.stateSize)] for j in range(onlineUpdateLength) ] # torch.zeros([onlineUpdateLength,self.stateSize])
-        self.trajectoryR = [0 for i in range(onlineUpdateLength)] # torch.zeros(onlineUpdateLength)
-        self.trajectoryA = [0 for i in range(onlineUpdateLength)]
-        self.vPredicted  = torch.zeros(onlineUpdateLength)#[0 for i in range(onlineUpdateLength)]
-        self.vTarget     = torch.zeros(onlineUpdateLength)#[0 for i in range(onlineUpdateLength)]
-        self.advantage   = torch.zeros(onlineUpdateLength)#[0 for i in range(onlineUpdateLength)]
-        return
-
-    # TODO, Update this
-    def onlineGatherAndStore(self,currentState,index):
-         action,probab = self.decideAction(currentState)
-         #nextState,reward,info = self.god.step(action)
-         nextState,reward,_,info = self.step(action)
-         log.info(f"Online: {self.name}, {index},  {info}")
-         if self.debug:
-            log.debug(f"Online: Reward and Shape = {reward}, {reward.shape}")
-         print(len(self.trajectoryS))
-         self.trajectoryS[index] = currentState.tolist()
-         self.trajectoryA[index] = action.tolist()
-         self.trajectoryR[index] = reward #torch.Tensor(reward).tolist()
-         if self.debug:
-            log.debug(f"Online: Action for {self.name} {index} = {action}, {type(action)}")
-            log.debug(f"Online: Detached Next state {nextState}")
-            currentState=torch.Tensor(nextState)
-         if self.debug:
-            log.debug(f"Online: Action = {self.trajectoryA}")
-            log.debug(f"Online: vPred = {self.vPredicted}")
-            log.debug(f"Online: vTar = {self.vTarget}")
-
-    def onlineVpredicted(self,onlineUpdateLength):
-        # calculate the predicted v value by using critic network
-        self.vPredicted = Tensor(len(self.vPredicted))
-        for i in range(onlineUpdateLength):
-            state=torch.Tensor(self.trajectoryS[i])
-            self.vPredicted[i]=self._getCriticValue(state)
-        return
-
-    def onlineVtarget(self,onlineUpdateLength):
-        self.vTarget = Tensor(len(self.vTarget))
-        self.vTarget[onlineUpdateLength-1] = torch.Tensor(self.trajectoryR[onlineUpdateLength-1])
-        for i in reversed(range(onlineUpdateLength-1)):
-            # iterate in reverse order.
-            self.vTarget[i] = torch.Tensor(self.trajectoryR[i]) + self.gamma*self.vTarget[i+1]
-            # v_tar_currentState = reward + gamma* v_tar_nextState
-        return
-
-    def onlineNstepAdvantage(self,onlineUpdateLength):
-        """
-        Calculate Advantage using TD error/N-STEP for online scenario. 
-        """
-        vPredLast = self.vPredicted[onlineUpdateLength-1]
-        self.advantage =  Tensor(len(self.advantage))
-        self.advantage[-1]=vPredLast
-        for i in reversed(range(onlineUpdateLength-1)):
-            self.advantage[i] = torch.Tensor(self.trajectoryR[i]) + self.gamma*self.advantage[i+1] - self.vPredicted[i]
-        log.info(f"Online : Advantage {self.name} = {self.advantage}")
-        return
-
-    def online_Policy_Loss(self):
-        pd = self.forwardP(torch.Tensor(self.trajectoryS))
-        #print(self.advantage)
-        
-        #try:
-        dist = Categorical(pd)
-        logProb = dist.log_prob(self.advantage)
-    
-
-        # print(self.advantage.shape)
-        # print(torch.Tensor(self.trajectoryS).shape)
-
-        advantage = self.advantage.detach()
-        if self.debug:
-            log.debug(f"Online: advantage detached for {self.name}")
-        loss = -1*torch.mean(advantage*logProb)
-        #log.info(f"Policy loss = {loss}")
-        self._updatePolicy(loss)
-            #log.info(f"Updated policyLoss for {self.name}")
-        # except:
-        #     print("SOME PROBLEM OCCOURED")
-        #     print(self.ep)
-            
-        return
-
-    # TODO, Update this
-    def online_Critic_Loss(self):
-        pred = self.vPredicted
-        targ = self.vTarget.detach()
-        loss = torch.mean(torch.pow(pred-targ,2))
-        log.info(f"Online: Critic loss = {loss}")
-        self._updateCritc(loss)
-        log.info(f"Online: Updated criticLoss for {self.name}")
         return
 
 class BOSS(GOD):
@@ -537,7 +358,7 @@ class BOSS(GOD):
                  trajectoryLength,
                  stateSize,
                  name,
-                 gamma=0.9,   # Decreaing, so that later rewards matter less
+                 gamma=0.99,
                  # lamda=0.1, # Lambda was earlier used for GAE
                  # depth=200, # Not used anymore
                  debug=False,
@@ -624,7 +445,7 @@ class BOSS(GOD):
             log.info(f"LSTM instance created for {self.name} = {LSTM_instance}")
 
 
-        LSTM_instance.loadM("ENV_MODEL/lstm_modelV3.pt")
+        LSTM_instance.loadM("ENV_MODEL/lstm_model.pt")
         log.info(f"{self.name}'s Env made")
 
         log.info(f"LSTM instance loaded for {self.name} = {LSTM_instance}")
@@ -637,7 +458,6 @@ class BOSS(GOD):
         self.reset()
         return
 
-    # TODO, Update this
     def gatherAndStore(self):
         # gather a trajectory by acting in the enviornment using current policy
         currentState = self.startState
@@ -668,8 +488,7 @@ class BOSS(GOD):
         return actionIndex
 
     def calculateV_p(self):
-        # calculate the predicted v value by using critic network
-        # Predicted value is just the value returned by the critic network.
+        # calculate the predicted v value by using critic network :: Predicted value is just the value returned by the critic network.
         self.vPredicted = Tensor(len(self.vPredicted))
         # This resets the tensor to zero
         for i in range(self.trajectoryLength):
@@ -751,8 +570,6 @@ class BOSS(GOD):
         critic model might face issues during it's own backpropagation
         #"""
 
-        # TODO, Update this
-        # TODO check if this works, also if its needed in forwardP
         pd = self.god.forwardP(self.trajectoryS)
         dist = Categorical(pd)
         logProb = dist.log_prob(self.trajectoryA)
