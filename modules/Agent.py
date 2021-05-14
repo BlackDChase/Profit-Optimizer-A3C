@@ -17,6 +17,7 @@ __version__ = '1.0.0'
 # Imports
 from torch import nn, Tensor
 from torch.distributions import Categorical
+from collections import deque
 import torch
 import numpy as np
 from torch.nn.modules.activation import SELU
@@ -385,45 +386,25 @@ class GOD:
         # initialized in resetTrajectory method.
         self.resetTrajectory()
         currentState=self.reset()
-        ## get start state from the env.
-        warmupFlag=True
-        self.ep=episodes
+        # get start state from the env.
+        
         try:
+            for _ in range(self.trajectoryLength):
+                currentState=self.onlineGatherAndStore(currentState)
             while(True):
-                if warmupFlag==True:
-                    self.onlineGatherAndStore(currentState,episodes)
-                    # actionIndex,probabDistribution = self.decideAction(currentState)
-                    # # appropriate action for current state.
-                    # nextState,reward,_,info = self.step(actionIndex)
-                    # vPredicted=self._getCriticValue(currentState)
-                    # vTarget=reward + self.gamma * self._getCriticValue(nextState)
-                    # discountedReward = self.gamma * self._getCriticValue(nextState)
-                    # advantage = reward + discountedReward - self._getCriticValue(currentState)
-                    # online_Policy_Loss(currentState,advantage,probabDistribution)
-                    # online_Critic_Loss(vPredicted,vTarget)
-                    episodes+=1
-                    if episodes==self.trajectoryLength:
-                        warmupFlag=False
-                else:
-                    ## remove the first entry
-                    #print("Episodes: ",episodes)
-                    self.trajectoryS.pop(0)
-                    self.trajectoryR.pop(0)
-                    self.trajectoryA.pop(0)
+                ## remove the first entry
+                #print("Episodes: ",episodes)
+                self.trajectoryS.popleft()
+                self.trajectoryR.popleft()
+                self.trajectoryA.popleft()
 
-                    self.trajectoryS.append(0)
-                    self.trajectoryR.append(0)
-                    self.trajectoryA.append(0)
+                currentState=self.onlineGatherAndStore(currentState)
+                self.calculateV_tar()
+                self.calculateV_p()
+                self.onlineNstepAdvantage()
 
-                    self.onlineGatherAndStore(currentState,self.trajectoryLength-1)
-                    self.onlineVtarget()
-                    self.onlineVpredicted()
-                    self.onlineNstepAdvantage()
-
-                    self.online_Policy_Loss()
-                    self.online_Critic_Loss()
-                    episodes+=1
-                    self.ep=episodes
+                self.calculateAndUpdateL_P()
+                self.calculateAndUpdateL_C()
         except KeyboardInterrupt:
             print("Online training terminated >_<")
             print("Episodes: ",episodes)
@@ -431,36 +412,37 @@ class GOD:
         return
 
     def resetTrajectory(self):
-        self.trajectoryS = [[0 for i in range(self.stateSize)] for j in range(self.trajectoryLength) ] # torch.zeros([self.trajectoryLength,self.stateSize])
-        self.trajectoryR = [0 for i in range(self.trajectoryLength)] # torch.zeros(self.trajectoryLength)
-        self.trajectoryA = [0 for i in range(self.trajectoryLength)]
+        self.trajectoryS =  deque([], maxlen=self.trajectoryLength) #[[0 for i in range(self.stateSize)] for j in range(self.trajectoryLength) ] # torch.zeros([self.trajectoryLength,self.stateSize])
+        self.trajectoryR =  deque([], maxlen=self.trajectoryLength) # torch.zeros(self.trajectoryLength)
+        self.trajectoryA =  deque([], maxlen=self.trajectoryLength)
         self.vPredicted  = torch.zeros(self.trajectoryLength)#[0 for i in range(self.trajectoryLength)]
         self.vTarget     = torch.zeros(self.trajectoryLength)#[0 for i in range(self.trajectoryLength)]
         self.advantage   = torch.zeros(self.trajectoryLength)#[0 for i in range(self.trajectoryLength)]
         return
 
     # TODO, Update this
-    def onlineGatherAndStore(self,currentState,index):
+    def onlineGatherAndStore(self,currentState):
          action,probab = self.decideAction(currentState)
          #nextState,reward,info = self.god.step(action)
          nextState,reward,_,info = self.step(action)
-         log.info(f"Online: {self.name}, {index},  {info}")
+         log.info(f"Online: {self.name}, {info}")
          if self.debug:
             log.debug(f"Online: Reward and Shape = {reward}, {reward.shape}")
          print(len(self.trajectoryS))
-         self.trajectoryS[index] = currentState.tolist()
-         self.trajectoryA[index] = action.tolist()
-         self.trajectoryR[index] = reward #torch.Tensor(reward).tolist()
+         self.trajectoryS.append(currentState)
+         self.trajectoryA.append(action)
+         self.trajectoryR.append(reward) #torch.Tensor(reward).tolist()
          if self.debug:
-            log.debug(f"Online: Action for {self.name} {index} = {action}, {type(action)}")
+            log.debug(f"Online: Action for {self.name}, {action}, {type(action)}")
             log.debug(f"Online: Detached Next state {nextState}")
             currentState=torch.Tensor(nextState)
          if self.debug:
             log.debug(f"Online: Action = {self.trajectoryA}")
             log.debug(f"Online: vPred = {self.vPredicted}")
             log.debug(f"Online: vTar = {self.vTarget}")
+         return nextState
 
-    def onlineVpredicted(self):
+    def calculateV_p(self):
         # calculate the predicted v value by using critic network
         self.vPredicted = Tensor(len(self.vPredicted))
         for i in range(self.trajectoryLength):
@@ -468,12 +450,36 @@ class GOD:
             self.vPredicted[i]=self._getCriticValue(state)
         return
 
-    def onlineVtarget(self):
+    def calculateV_tar(self):
+        """
+        This is a huge topic of debate , i.e how to actually calculate the target value, currently we have 2 propositions.
+        1. v_target(s) = summation( reward + v_predicted(ss)) , where ss is some state after the trajectory.
+        2. calculate v_target with the help of advantage function itself.
+
+        #####################################################################################################
+        Another Huge Doubt regarding v_target and GAE is::
+
+        DO WE NEED TO CONSTRUCT NEW EXPERIENCE(ENVIORENMENT EXPLORATION) FOR CALCULATING V_tar OR WE CAN USE THE
+        CURRENT TRAJECTORY FOR THIS PURPOSE(more probable)
+
+        CHOICE 1 :: Use TD error , for each state in trajectory , use TD error to calculate V_tar since
+        you know 𝛄 + next state reward and you can calculate value of the next and current state
+        Pros :: very fast and TD error is a reliable and solid method.
+        Cons :: Maybe if we only see one step ahead , the estimate will be less reliable.
+
+        CHOICE 2 :: For this we will, for each state in the trajectory, calculate the advantage and V_tar
+        using the previous method (by travelling to the end of the trajectory and accumulating rewards as
+        given in jamboard slide 15) , the only difference is we start from the current state itself to the
+        end of trajectory. (Or until a depth)
+
+        We have chosen choice 2 for v_tar , by iterating in reverse direction in the trajectory list.
+        #"""
         self.vTarget = Tensor(len(self.vTarget))
-        self.vTarget[self.trajectoryLength-1] = torch.Tensor(self.trajectoryR[self.trajectoryLength-1])
+        
+        self.vTarget[self.trajectoryLength-1] = (self.trajectoryR[self.trajectoryLength-1])
         for i in reversed(range(self.trajectoryLength-1)):
             # iterate in reverse order.
-            self.vTarget[i] = torch.Tensor(self.trajectoryR[i]) + self.gamma*self.vTarget[i+1]
+            self.vTarget[i] = (self.trajectoryR[i]) + self.gamma*self.vTarget[i+1]
             # v_tar_currentState = reward + gamma* v_tar_nextState
         return
 
@@ -489,32 +495,47 @@ class GOD:
         log.info(f"Online : Advantage {self.name} = {self.advantage}")
         return
 
-    def online_Policy_Loss(self):
-        pd = self.forwardP(torch.Tensor(self.trajectoryS))
-        #print(self.advantage)
+    def calculateAndUpdateL_P(self):
+        """
+        FOR UPDATING THE ACTOR USING POLICY GRADIENT WE MUST CALCULATE THE LOG PROBABILITY OF ACTION GIVEN
+        A PARTICULAR STATE.BUT IN SITUATION OF MULTIPLE AGENTS IT MAY HAPPEN THAT BEFOR AGENT 1 FETCHES THIS
+        PROBABILITY AND UPDATES AND UPDATES THE NETWORK , AGENT-2 MAY HAVE TAMPERED/UPDATED THE NETWORK.
 
-        #try:
+        TO WORK AROUND THIS 2 CHOICES::
+        CHOICE 1 :: KEEP TRACK OF THE STATE ACTION PROBABILITY FOR EACH AGENT'S TRAJECTORY , SO EVEN IF
+        ANOTHER AGEND UPDATES THE NET, WE HAVE THE EXACT ORIGINAL PROBABILITY FROM WHEN THE AGENT HAD SAMPLED
+        THE ACTION.
+
+        CHOICE 2 :: BE IGNORANT , THE CHANCE THAT 2 AGENT HAVE TAMPERED WITH THE SAME STATE BEFOR UPDATING
+        THE NETWORK WITH THEIR OWN LOSS IS EXTREMELEY LOW, SO IT DOESN'T MATTERS.
+
+        # Advantage detached because: Advantage is the result of critc, and if it is backpropagated here,
+        critic model might face issues during it's own backpropagation
+        #"""
+        pd = self.auxillaryForward(torch.Tensor(self.trajectoryS))
+        
         dist = Categorical(pd)
-        logProb = dist.log_prob(self.advantage)
+        logProb = dist.log_prob(torch.Tensor(list(self.trajectoryA)))
 
-
-        # print(self.advantage.shape)
-        # print(torch.Tensor(self.trajectoryS).shape)
-
+        
         advantage = self.advantage.detach()
         if self.debug:
             log.debug(f"Online: advantage detached for {self.name}")
         loss = -1*torch.mean(advantage*logProb)
         #log.info(f"Policy loss = {loss}")
         self._updatePolicy(loss)
-            #log.info(f"Updated policyLoss for {self.name}")
-        # except:
-        #     print("SOME PROBLEM OCCOURED")
-        #     print(self.ep)
+        #log.info(f"Updated policyLoss for {self.name}")
+        
         return
 
     # TODO, Update this
-    def online_Critic_Loss(self):
+    def calculateAndUpdateL_C(self):
+        """
+        vTarget detached because it is assumed to be correct and thus should not be the variable that is
+        effected by loss.
+        On the other hand vPredicted should be alligned in a way to reduces loss, hence model to be modifed
+        by backpropagation keepint vPredicted attached
+        #"""
         pred = self.vPredicted
         targ = self.vTarget.detach()
         loss = torch.mean(torch.pow(pred-targ,2))
@@ -522,6 +543,12 @@ class GOD:
         self._updateCritc(loss)
         log.info(f"Online: Updated criticLoss for {self.name}")
         return
+
+    def auxillaryForward(self,states):
+        if self.name=='GOD':
+            return self.forwardP(states)
+        else: return self.god.forwardP(states)
+
 
 class BOSS(GOD):
     """
@@ -554,8 +581,8 @@ class BOSS(GOD):
         self.trajectoryS = torch.zeros([self.trajectoryLength,self.stateSize])
         self.trajectoryR = torch.zeros(self.trajectoryLength)
         self.trajectoryA = torch.zeros(self.trajectoryLength)
-
         self.ɤ = gamma
+        self.gamma=gamma
         # self.d = depth # Not using anymore
         self.vPredicted = torch.zeros(self.trajectoryLength)
         self.vTarget = torch.zeros(self.trajectoryLength)
@@ -672,58 +699,58 @@ class BOSS(GOD):
         actionIndex,probab = self.god.decideAction(state)
         return actionIndex
 
-    def calculateV_p(self):
-        # calculate the predicted v value by using critic network
-        # Predicted value is just the value returned by the critic network.
-        self.vPredicted = Tensor(len(self.vPredicted))
-        # This resets the tensor to zero
-        for i in range(self.trajectoryLength):
-            state=self.trajectoryS[i]
-            self.vPredicted[i]=self.god._getCriticValue(state)
-        return
+    # def calculateV_p(self):
+    #     # calculate the predicted v value by using critic network
+    #     # Predicted value is just the value returned by the critic network.
+    #     self.vPredicted = Tensor(len(self.vPredicted))
+    #     # This resets the tensor to zero
+    #     for i in range(self.trajectoryLength):
+    #         state=self.trajectoryS[i]
+    #         self.vPredicted[i]=self.god._getCriticValue(state)
+    #     return
 
-    def calculateV_tar(self):
-        # calculate the target value v_tar using critic network
-        """
-        This is a huge topic of debate , i.e how to actually calculate the target value, currently we have 2 propositions.
-        1. v_target(s) = summation( reward + v_predicted(ss)) , where ss is some state after the trajectory.
-        2. calculate v_target with the help of advantage function itself.
+    # def calculateV_tar(self):
+    #     # calculate the target value v_tar using critic network
+    #     """
+    #     This is a huge topic of debate , i.e how to actually calculate the target value, currently we have 2 propositions.
+    #     1. v_target(s) = summation( reward + v_predicted(ss)) , where ss is some state after the trajectory.
+    #     2. calculate v_target with the help of advantage function itself.
 
-        #####################################################################################################
-        Another Huge Doubt regarding v_target and GAE is::
+    #     #####################################################################################################
+    #     Another Huge Doubt regarding v_target and GAE is::
 
-        DO WE NEED TO CONSTRUCT NEW EXPERIENCE(ENVIORENMENT EXPLORATION) FOR CALCULATING V_tar OR WE CAN USE THE
-        CURRENT TRAJECTORY FOR THIS PURPOSE(more probable)
+    #     DO WE NEED TO CONSTRUCT NEW EXPERIENCE(ENVIORENMENT EXPLORATION) FOR CALCULATING V_tar OR WE CAN USE THE
+    #     CURRENT TRAJECTORY FOR THIS PURPOSE(more probable)
 
-        CHOICE 1 :: Use TD error , for each state in trajectory , use TD error to calculate V_tar since
-        you know 𝛄 + next state reward and you can calculate value of the next and current state
-        Pros :: very fast and TD error is a reliable and solid method.
-        Cons :: Maybe if we only see one step ahead , the estimate will be less reliable.
+    #     CHOICE 1 :: Use TD error , for each state in trajectory , use TD error to calculate V_tar since
+    #     you know 𝛄 + next state reward and you can calculate value of the next and current state
+    #     Pros :: very fast and TD error is a reliable and solid method.
+    #     Cons :: Maybe if we only see one step ahead , the estimate will be less reliable.
 
-        CHOICE 2 :: For this we will, for each state in the trajectory, calculate the advantage and V_tar
-        using the previous method (by travelling to the end of the trajectory and accumulating rewards as
-        given in jamboard slide 15) , the only difference is we start from the current state itself to the
-        end of trajectory. (Or until a depth)
+    #     CHOICE 2 :: For this we will, for each state in the trajectory, calculate the advantage and V_tar
+    #     using the previous method (by travelling to the end of the trajectory and accumulating rewards as
+    #     given in jamboard slide 15) , the only difference is we start from the current state itself to the
+    #     end of trajectory. (Or until a depth)
 
-        We have chosen choice 2 for v_tar , by terating in reverse direction in the trajectory list.
-        #"""
-        # we have set γ to be 0.99 // see this sweet γ @BlackD , α , β , θ 
-        ## here 𝛄 can be variable so, the length can be changed.
-        #  ans=0.0
-        #  for i in range(0,200):
-        #      ans+=((self.ɤ)**(i+1))*self.trajectory[i][2]
-        # ans+=(self.ɤ)**200*self.god._getCriticValue((self.trajectory[200][0])) ## multiply by the actual value of the 200th state.
-        #  return ans
+    #     We have chosen choice 2 for v_tar , by terating in reverse direction in the trajectory list.
+    #     #"""
+    #     # we have set γ to be 0.99 // see this sweet γ @BlackD , α , β , θ 
+    #     ## here 𝛄 can be variable so, the length can be changed.
+    #     #  ans=0.0
+    #     #  for i in range(0,200):
+    #     #      ans+=((self.ɤ)**(i+1))*self.trajectory[i][2]
+    #     # ans+=(self.ɤ)**200*self.god._getCriticValue((self.trajectory[200][0])) ## multiply by the actual value of the 200th state.
+    #     #  return ans
 
-        self.vTarget = Tensor(len(self.vTarget))
-        self.vTarget[self.trajectoryLength-1] = self.trajectoryR[self.trajectoryLength-1]
-        ## only the reward recieved in the last state , we can also put it zero i think
-        # guess will have to consult literature on this, diff shouldn't be substantial.
-        for i in reversed(range(self.trajectoryLength-1)):
-            # iterate in reverse order.
-            self.vTarget[i] = self.trajectoryR[i].clone() + self.ɤ*self.vTarget[i+1].clone()
-            # v_tar_currentState = reward + gamma* v_tar_nextState
-        return
+    #     self.vTarget = Tensor(len(self.vTarget))
+    #     self.vTarget[self.trajectoryLength-1] = self.trajectoryR[self.trajectoryLength-1]
+    #     ## only the reward recieved in the last state , we can also put it zero i think
+    #     # guess will have to consult literature on this, diff shouldn't be substantial.
+    #     for i in reversed(range(self.trajectoryLength-1)):
+    #         # iterate in reverse order.
+    #         self.vTarget[i] = self.trajectoryR[i].clone() + self.ɤ*self.vTarget[i+1].clone()
+    #         # v_tar_currentState = reward + gamma* v_tar_nextState
+    #     return
 
     def calculateNSTEPAdvantage(self):
         """
@@ -737,50 +764,50 @@ class BOSS(GOD):
         log.info(f"Advantage {self.name} = {self.advantage}")
         return
 
-    def calculateAndUpdateL_P(self):
-        ### Semaphore stuff for safe update of network by multiple bosses.
-        """
-        FOR UPDATING THE ACTOR USING POLICY GRADIENT WE MUST CALCULATE THE LOG PROBABILITY OF ACTION GIVEN
-        A PARTICULAR STATE.BUT IN SITUATION OF MULTIPLE AGENTS IT MAY HAPPEN THAT BEFOR AGENT 1 FETCHES THIS
-        PROBABILITY AND UPDATES AND UPDATES THE NETWORK , AGENT-2 MAY HAVE TAMPERED/UPDATED THE NETWORK.
+    # def calculateAndUpdateL_P(self):
+    #     ### Semaphore stuff for safe update of network by multiple bosses.
+    #     """
+    #     FOR UPDATING THE ACTOR USING POLICY GRADIENT WE MUST CALCULATE THE LOG PROBABILITY OF ACTION GIVEN
+    #     A PARTICULAR STATE.BUT IN SITUATION OF MULTIPLE AGENTS IT MAY HAPPEN THAT BEFOR AGENT 1 FETCHES THIS
+    #     PROBABILITY AND UPDATES AND UPDATES THE NETWORK , AGENT-2 MAY HAVE TAMPERED/UPDATED THE NETWORK.
 
-        TO WORK AROUND THIS 2 CHOICES::
-        CHOICE 1 :: KEEP TRACK OF THE STATE ACTION PROBABILITY FOR EACH AGENT'S TRAJECTORY , SO EVEN IF
-        ANOTHER AGEND UPDATES THE NET, WE HAVE THE EXACT ORIGINAL PROBABILITY FROM WHEN THE AGENT HAD SAMPLED
-        THE ACTION.
+    #     TO WORK AROUND THIS 2 CHOICES::
+    #     CHOICE 1 :: KEEP TRACK OF THE STATE ACTION PROBABILITY FOR EACH AGENT'S TRAJECTORY , SO EVEN IF
+    #     ANOTHER AGEND UPDATES THE NET, WE HAVE THE EXACT ORIGINAL PROBABILITY FROM WHEN THE AGENT HAD SAMPLED
+    #     THE ACTION.
 
-        CHOICE 2 :: BE IGNORANT , THE CHANCE THAT 2 AGENT HAVE TAMPERED WITH THE SAME STATE BEFOR UPDATING
-        THE NETWORK WITH THEIR OWN LOSS IS EXTREMELEY LOW, SO IT DOESN'T MATTERS.
+    #     CHOICE 2 :: BE IGNORANT , THE CHANCE THAT 2 AGENT HAVE TAMPERED WITH THE SAME STATE BEFOR UPDATING
+    #     THE NETWORK WITH THEIR OWN LOSS IS EXTREMELEY LOW, SO IT DOESN'T MATTERS.
 
-        # Advantage detached because: Advantage is the result of critc, and if it is backpropagated here,
-        critic model might face issues during it's own backpropagation
-        #"""
+    #     # Advantage detached because: Advantage is the result of critc, and if it is backpropagated here,
+    #     critic model might face issues during it's own backpropagation
+    #     #"""
 
-        # TODO, Update this
-        # TODO check if this works, also if its needed in forwardP
-        pd = self.god.forwardP(self.trajectoryS)
-        dist = Categorical(pd)
-        logProb = dist.log_prob(self.trajectoryA)
-        advantage = self.advantage.detach()
-        if self.debug:
-            log.debug(f" advantage detached for {self.name}")
-        loss = -1*torch.mean(advantage*logProb)
-        log.info(f"Policy loss = {loss}")
-        self.god._updatePolicy(loss)
-        log.info(f"Updated policyLoss for {self.name}")
-        return
+    #     # TODO, Update this
+    #     # TODO check if this works, also if its needed in forwardP
+    #     pd = self.god.forwardP(self.trajectoryS)
+    #     dist = Categorical(pd)
+    #     logProb = dist.log_prob(self.trajectoryA)
+    #     advantage = self.advantage.detach()
+    #     if self.debug:
+    #         log.debug(f" advantage detached for {self.name}")
+    #     loss = -1*torch.mean(advantage*logProb)
+    #     log.info(f"Policy loss = {loss}")
+    #     self.god._updatePolicy(loss)
+    #     log.info(f"Updated policyLoss for {self.name}")
+    #     return
 
-    def calculateAndUpdateL_C(self):
-        """
-        vTarget detached because it is assumed to be correct and thus should not be the variable that is
-        effected by loss.
-        On the other hand vPredicted should be alligned in a way to reduces loss, hence model to be modifed
-        by backpropagation keepint vPredicted attached
-        #"""
-        pred = self.vPredicted
-        targ = self.vTarget.detach()
-        loss = torch.mean(torch.pow(pred-targ,2))
-        log.info(f"Critic loss = {loss}")
-        self.god._updateCritc(loss)
-        log.info(f"Updated criticLoss for {self.name}")
-        return
+    # def calculateAndUpdateL_C(self):
+    #     """
+    #     vTarget detached because it is assumed to be correct and thus should not be the variable that is
+    #     effected by loss.
+    #     On the other hand vPredicted should be alligned in a way to reduces loss, hence model to be modifed
+    #     by backpropagation keepint vPredicted attached
+    #     #"""
+    #     pred = self.vPredicted
+    #     targ = self.vTarget.detach()
+    #     loss = torch.mean(torch.pow(pred-targ,2))
+    #     log.info(f"Critic loss = {loss}")
+    #     self.god._updateCritc(loss)
+    #     log.info(f"Updated criticLoss for {self.name}")
+    #     return
