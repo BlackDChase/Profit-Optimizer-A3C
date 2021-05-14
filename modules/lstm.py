@@ -104,7 +104,7 @@ class LSTM(nn.Module):
         [1,1], as data is min normalized
         """
         out = self.norm(self.fc(out[:, -1, :]))
-        # out.size() --> 100, 10 (batch_dim, output_size)
+        #out.size() --> 100, 10 (batch_dim, output_size)
 
         # if numpy, then return numpy ndarray
         if numpy:
@@ -121,11 +121,8 @@ class LSTM(nn.Module):
         1. verifying the csv dataset
         2. splitting the dataset into training and testing
 
-        @input         = csv_path
-        csv_path       = path of the csv dataset
+        @input         = csv_path (path of the csv dataset)
         @output        = train,test 
-        train          = training part 
-        test           = testing part 
         """
         df = pd.read_csv(csv_path)
         if self.debug:
@@ -209,11 +206,12 @@ class LSTM(nn.Module):
             optimizer.zero_grad()
 
             # forward pass
-
             output = self.forward(input_batch)
+
             if self.debug:
                 log.debug(f"Output shape = {output.shape}")
                 log.debug(f"Label Batch shape = {label_batch.shape}")
+                
             # get loss output
             loss = loss_fn(output, label_batch)
             if self.debug:
