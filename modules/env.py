@@ -9,18 +9,18 @@ import multiprocessing
 __author__ = 'Biribiri,BlackDChase'
 __version__ = '1.0.0'
 
-# A class for encapsulating the dataset and its related functions
+# A class for encapsulating the dataset
+# This class maintains the original dataset along with its related parameters and functions
 class DatasetHelper:
     def __init__(self, dataset_path, max_input_len):
         self.dataset_path = dataset_path
         self.df = pd.read_csv(self.dataset_path)
         self.max_input_len = max_input_len
     
-    # This function returns an initial starting state based on the max length allowed 
     def reset(self):
         """
-        Choose a random starting timestep for gym resets from dataframe
-        Return it as a numpy array
+        This function returns a random starting state from a random timestep based on the max length allowed 
+        and returns it as a numpy array
         """
         random_index = random.randint(0, len(self.df) - self.max_input_len + 1)
         self.first_input = self.df.iloc[random_index:random_index + self.max_input_len, :].values
@@ -95,6 +95,8 @@ class LSTMEnv(gym.Env):
         price_index = 0
         current_observation[price_index] = float(np.random.rand(1)*(0.6)+0.2)
         self.current_observation = current_observation
+    
+        # Denormalizing current observation for storing in logs along with normalized observations
         self.denormalized_current_observation = self.denormalize(self.current_observation)
         self.oldPrice = self.current_observation[price_index]
 
@@ -184,6 +186,8 @@ class LSTMEnv(gym.Env):
         electricity would either be sent at a loss, or would be bought from
         these smaller producers.
         """
+
+        # Indices of attributes based on the Ontario dataset we are using 
         price_index = 0
         ontario_demand_index = 1
         supply_index = 2
@@ -223,6 +227,7 @@ class LSTMEnv(gym.Env):
         Demand - Supply, Price Positive and in domain   : Profit, Rewarded
         Decreaseing the overall Reward value: Correction/=(10**8)
         """
+        
         # TODO Make Reward Better
         maxAllowed = self.min_max_values["max"][price_index]
         minAllowed = self.min_max_values["min"][price_index]
