@@ -45,6 +45,7 @@ class LSTM(nn.Module):
         # (batch_dim, seq_dim, feature_dim)
         self.lstm = nn.LSTM(input_size=input_dim, hidden_size=hidden_dim, num_layers=layer_dim, batch_first=True)
 
+        # fully connected hidden layer
         self.fc =  nn.Linear(hidden_dim, output_size)
 
         #TODO, Find a better way to do this
@@ -119,6 +120,12 @@ class LSTM(nn.Module):
         Do the actual work of:
         1. verifying the csv dataset
         2. splitting the dataset into training and testing
+
+        @input         = csv_path
+        csv_path       = path of the csv dataset
+        @output        = train,test 
+        train          = training part 
+        test           = testing part 
         """
         df = pd.read_csv(csv_path)
         if self.debug:
@@ -133,6 +140,7 @@ class LSTM(nn.Module):
         size = len(df)
         if self.debug:
             log.debug(f"size = {size}")
+
         # split the dataset 9:1 into train and test
         # TODO Do I need to enable grad on them to make them "differentiable"?
         train = torch.Tensor(df.values)
@@ -217,6 +225,7 @@ class LSTM(nn.Module):
             # Update parameters
             optimizer.step()
 
+
     def test(self,
             test_batch,
             loss_fn=torch.nn.MSELoss(),
@@ -257,7 +266,7 @@ class LSTM(nn.Module):
     def saveM(self,name):
         torch.save(self.lstm.state_dict(),name)
         log.info(f"LSTM saved = {self.lstm}")
-
+    
     def loadM(self,path):
         self.lstm.load_state_dict(torch.load(path))
         log.info(f"LSTM loaded = {self.lstm}")
