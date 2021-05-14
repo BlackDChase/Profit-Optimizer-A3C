@@ -34,23 +34,29 @@ keywords={
         "p":None,
         "f":"",
     }
+
 stateSize = 13
 log.info(f"stateSize = {stateSize}")
 arg,value,key='','',''
+
+# Parsing arguments
 try:
     for arg in sys.argv[1:]:
         key,value = arg.split("=")
+        # For debug and fine tuning 
         if key[1:]=="d" or key[1:]=="f":
             keywords[key[1:]] = True if "t" in value.lower() else False
-            # For debug
+        # For assigning the path of the policy and critic models
         elif key[1:]=="p":
             keywords[key[1:]] = value
-            # For path (saved model)
+        # Rest arguments
         else:
             keywords[key[1:]] = float(value)
         log.info(f"Parameter {key[1:]} is {value}")
 except:
     print(key,arg,value)
+
+# To show more info about the list of parameters that can be passed during runtime when -h is enabled
 if "h" in keywords:
     print("""
 Main function
@@ -71,7 +77,23 @@ Parameters:
     sys.exit()
 
 """
-Making the action space
+Making the actionSpace based on '-a = Number of possible actions
+
+Case 1: If the number of actions are even
+actionSpace = List of actions based on percentage change to be made on the current price 
+              with fixed difference of 5% between consecutive actions in the list
+
+Ex - For -a = 4 | actionSpace = [-10, -5, 5, 10]
+     For -a = 8 | actionSpace = [-20, -15, -10, -5, 5, 10, 15, 20]
+
+Case 2: If the number of actions are odd
+actionSpace = List of actions based on percentage change to be made on the current price 
+              with fixed difference of 5.5% between consecutive actions in the list
+
+Ex - For -a = 5 | actionSpace = [-11.0, -5.5, 0.0, 5.5, 11.0]
+     For -a = 9 | actionSpace = [-22.0, -16.5, -11.0, -5.5, 0.0, 5.5, 11.0, 16.5, 22.0]
+
+Note - The actions are centered around zero i.e the mean of actionSpace is zero in both cases
 """
 n=int(keywords['a']//2)
 if keywords['a']%2==0:
@@ -91,8 +113,12 @@ from env import LSTMEnv as ENV
 from Agent import GOD
 
 if __name__=="__main__":
+
+    # If path for trained model is not given or fine-tuning is enabled then training process is initiated 
     if keywords["p"] is None or keywords["f"]:
         print("Model Will be trained")
+
+        # Initializing GOD (master) agent 
         god = GOD(
             stateSize=int(stateSize),
             actionSpace=keywords["a"],
@@ -104,6 +130,8 @@ if __name__=="__main__":
             alr=keywords["alr"],
             clr=keywords["clr"]
         )
+
+        # Logging all details about the God agent created during training phase
         print("Master Agent Made")
         log.info("GOD inititated")
         log.info(f"State Size = {int(stateSize)}")
@@ -118,19 +146,26 @@ if __name__=="__main__":
         threadCount=0
         try:
             print("Model starting it's training")
+            # Train and save the trained model if no exceptions are encountered
             god.train()
+            # Save model
             god.saveModel("../Saved_model")
         except KeyboardInterrupt:
+            # Save model if interrupted by user interrupt
             god.saveModel("../Saved_model")
         except Exception as catch:
             #log.debug(f"Terminaion Trace back {catch.with_traceback()}")
             threadCount+=1
+            # Log the exception details for debugging
             log.info(f"Terminated on a {threadCount}\t{catch}")
             log.info(f"Traceback for the {threadCount} Exception\t{sys.exc_info()}")
             print(f"{threadCount} thread Terminated, check log")
         print("Training Complete")
     else:
+        # Testing the model
         print("Model will be tested")
+
+        # GOD (master) agent is initialized in debug mode for testing with trained model
         god = GOD(
             debug=keywords["d"],
             stateSize=int(stateSize),
@@ -138,6 +173,8 @@ if __name__=="__main__":
             path=keywords["p"],
             trajectoryLength=int(keywords["t"]),
         )
+
+        # Logging all details about the God agent created during testing phase
         print("Master Agent Made")
         log.info("GOD inititated")
         log.info(f"State Size = {int(stateSize)}")
@@ -147,13 +184,18 @@ if __name__=="__main__":
         log.info(f"Steps tested for = {keywords['s']}")
         #"""
 
+        # Some params defined for LSTM network
         output_size = 13
         input_dim = output_size
         hidden_dim = 40
         layer_dim = 2
+
+        # LSTM model
         model = LSTM(output_size, input_dim, hidden_dim, layer_dim,debug=keywords["d"])
+        # Loading saved model from the given path
         model.loadM("ENV_MODEL/lstm_modelV3.pt")
 
+        # Generating environment using the loaded LSTM model
         env=ENV(
             model=model,
             dataset_path="../datasets/normalized_weird_13_columns_with_supply.csv",
@@ -171,11 +213,11 @@ if __name__=="__main__":
 
         # TODO, update this
         # Testing
-        # if <0 online, else offline
+        # if s<=0 then online, else offline
         time=int(keywords['s'])
         god.test(time=time)
 
-        # TODO verify this
+        # TODO verify this (will be moved soon)
         # Plotting
         for i in range(len(a3cStates)):
             log.info(f"A3C State = {a3cStates[i]}")
