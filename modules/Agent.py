@@ -39,11 +39,11 @@ input_dim = output_size
 hidden_dim = 40
 layer_dim = 2
 envDATA="../datasets/normalized_weird_13_columns_with_supply.csv"
-# ENV(LSTM,envDATA,actionSpace)
+#ENV(LSTM,envDATA,actionSpace)
 #"""
 
 
-# GLOBAL
+#GLOBAL
 #device = device("cuda" if torch.cuda.is_available() else "cpu")
 """
 if torch.cuda.is_available():
@@ -191,8 +191,7 @@ class GOD:
     
     def getActionSpace(self):
         return self._actionSpace
-
-    # -------------------------------------------------------------
+    
 
     # The master agent will train with the environment using the worker (BOSS) agents
     def train(self):
@@ -227,6 +226,16 @@ class GOD:
         a3cState = self.__getA3Cstate(time)
         normalStates = self.__getNormalStates(time=time)
         a3cProfit,normalProfit,diff = self.__compare(a3cState=a3cState,normalState=normalStates)
+
+        # Save necessary information for future references and for plotting graphs
+        for i in range(len(a3cState)):
+            log.info(f"A3C State = {a3cState[i]}")
+            log.info(f"Normal State = {normalStates[i]}")
+        for i in range(len(a3cProfit)):
+            log.info(f"A3C Profit = {a3cProfit[i]}")
+            log.info(f"Normal Profit = {normalProfit[i]}")
+            log.info(f"Diff = {diff[i]}")
+
         return diff
 
     def __getA3Cstate(self,time):
@@ -397,7 +406,7 @@ class GOD:
         """
         To make forward pass in the policy network using the state trajectory
         @input          = states (list of tuples of states acc to trajectory followed)
-        @output         = list showing probability distribution of possible actions 
+        @output         = actionProb list showing probability distribution of possible actions 
         """
 
         #self._policySemaphore.acquire()
@@ -508,7 +517,7 @@ class GOD:
         for i in reversed(range(self.trajectoryLength-1)):
             # iterate in reverse order.
             self.vTarget[i] = (self.trajectoryR[i]) + self.gamma*self.vTarget[i+1]
-            # v_tar_currentState = reward + gamma* v_tar_nextState
+            #v_tar_currentState = reward + gamma* v_tar_nextState
         return
 
     def onlineNstepAdvantage(self):
@@ -629,7 +638,7 @@ class BOSS(GOD):
         self.trajectoryA = torch.zeros(self.trajectoryLength)
         self.ɤ = gamma
         self.gamma=gamma
-        # self.d = depth # Not using anymore
+        #self.d = depth # Not using anymore
         self.vPredicted = torch.zeros(self.trajectoryLength)
         self.vTarget = torch.zeros(self.trajectoryLength)
         self.advantage = torch.zeros(self.trajectoryLength)
@@ -747,9 +756,13 @@ class BOSS(GOD):
             log.debug(f"vPred = {self.vPredicted}")
             log.debug(f"vTar = {self.vTarget}")
         pass
-    
-    # To get action based on the state given, returns actionIndex based on actionSpace
+
     def getAction(self,state):
+        """
+        To get action based on the state 
+        returns actionIndex based on the list of actionSpace
+        """
+
         actionIndex,probab = self.god.decideAction(state)
         return actionIndex
 
