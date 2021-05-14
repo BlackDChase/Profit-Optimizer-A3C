@@ -45,11 +45,12 @@ envDATA="../datasets/normalized_weird_13_columns_with_supply.csv"
 
 # GLOBAL
 #"""
-device = device("cuda" if torch.cuda.is_available() else "cpu")
+from torch import device
+gpu = device("cuda" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
-    log.info("Using Allmight")
+    log.info("GPU\tUsing Allmight")
 else:
-    log.info("Might missing")
+    log.info("GPU\tMight missing")
 #"""
 
 #torch.autograd.set_detect_anomaly(True)
@@ -145,12 +146,14 @@ class GOD:
         """
         After using this, we might not need to have a semaphore when we use multiprocessesing
         [Refer](https://pytorch.org/docs/stable/notes/multiprocessing.html)
-        To be sent to device before sharing
+        To be sent to gpu before sharing
         #"""
         """
         self.__policyNet.share_memory()
         self.__criticNet.share_memory()
         #"""
+        self.__policyNet.to(gpu)
+        self.__criticNet.to(gpu)
         log.info(f"Policy Network: {self.__policyNet}")
         log.info(f"Critic Network: {self.__criticNet}")
         return
@@ -275,15 +278,19 @@ class GOD:
 
 
     def _getAction(self,state):
+        state.to(gpu)
         #self._policySemaphore.acquire()
         actionProbab = self.__policyNet.forward(state)
         #self._policySemaphore.release()
+        actionProbab.to("cpu")
         return actionProbab
 
     def _getCriticValue(self,state):
+        state.to(gpu)
         #self._criticSemaphore.acquire()
         vVlaue = self.__criticNet.forward(state)
         #self._criticSemaphore.release()
+        vVlaue.to("cpu")
         return vVlaue
 
     def reset(self):
@@ -337,10 +344,12 @@ class GOD:
 
         return
 
-    def forwardP(self,actions):
+    def forwardP(self,states):
+        states.to(gpu)
         #self._policySemaphore.acquire()
-        actionProb = self.__policyNet.forward(actions)
+        actionProb = self.__policyNet.forward(states)
         #self._policySemaphore.release()
+        actionProb.to("cpu")
         return actionProb
 
     def saveModel(self,path):
@@ -351,14 +360,14 @@ class GOD:
 
     def __loadModel(self,path):
         """
-        If using GPU, this has to be mapped to it while load .. torch.load(path,map_location=device)
+        If using GPU, this has to be mapped to it while load .. torch.load(path,map_location=gpu)
         #"""
         curr = multiprocessing.current_process()
         #self._policySemaphore.acquire()
-        self.__policyNet.loadM(path+"PolicyModel.pt")
+        self.__policyNet.loadM(path+"PolicyModel.pt",gpu)
         #self._policySemaphore.release()
         #self._criticSemaphore.acquire()
-        self.__criticNet.loadM(path+"CritcModel.pt")
+        self.__criticNet.loadM(path+"CritcModel.pt",gpu)
         #self._criticSemaphore.release()
         return
 
@@ -435,7 +444,7 @@ class BOSS(GOD):
 
             """ @BOSS
             Do we need to intiallise here?? when we are re declaring it in the three cal methods
-            Also, if we are declaring them lets declare them instart, and keep it in device
+            Also, if we are declaring them lets declare them instart, and keep it in gpu
             and After each gatherAndStore reset it.
             ## @BLACK :: NO we dont need to initialize here ,i have removed it.
             Also what which advantage function are we calling? @Black :: Nstep advantage.

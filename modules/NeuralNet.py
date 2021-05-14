@@ -12,7 +12,8 @@ import log
 from torch import nn
 import multiprocessing
 # GLOBAL
-device = device("cuda" if torch.cuda.is_available() else "cpu")
+from torch import device
+gpu = device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Network(nn.Module):
     #global device
@@ -80,7 +81,7 @@ class Network(nn.Module):
         self.myLayers=layers
         self.hypoThesis = nn.Sequential(*layers)
 
-        self.to(device)
+        self.to(gpu)
         self.params = self.hypoThesis.parameters()
 
         if self.debug:
@@ -138,8 +139,8 @@ class Network(nn.Module):
         torch.save(self.hypoThesis.state_dict(),name)
         log.info(f"{self.name} saved = {self.hypoThesis}")
 
-    def loadM(self,path):
-        self.hypoThesis.load_state_dict(torch.load(path))
+    def loadM(self,path,location="cpu"):
+        self.hypoThesis.load_state_dict(torch.load(path,map_location=location))
         log.info(f"{self.name} loaded = {self.hypoThesis}")
     pass
 
@@ -152,7 +153,7 @@ class Aktor(nn.Module):
             nn.Linear(in_features=20,out_features=11),
             nn.Softmax(),
         )
-        self.to(device)
+        self.to(gpu)
         self.params = self.model.parameters()
         self.optimizer = torch.optim.SGD(self.params,lr=self.learningRate)
 
@@ -180,7 +181,7 @@ class Kritc(nn.Module):
             nn.Linear(in_features=20,out_features=1),
             nn.LeakyReLU(),
         )
-        self.to(device)
+        self.to(gpu)
         self.params = self.model.parameters()
         self.optimizer = torch.optim.SGD(self.params,lr=self.learningRate)
 
