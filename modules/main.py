@@ -184,7 +184,7 @@ if __name__=="__main__":
         log.info(f"Steps tested for = {keywords['s']}")
         #"""
 
-        # Some params defined for LSTM network
+        # Some params used wrt to LSTM network
         output_size = 13
         input_dim = output_size
         hidden_dim = 40
@@ -211,9 +211,8 @@ if __name__=="__main__":
         log.info("Environment parsed, Boss inititated")
         log.info(f"ENV LSTM: {model}")
 
-        # TODO, update this
-        # Testing
-        # if s<=0 then online, else offline
+        # Testing phase
+        # if testing timeSteps <=0 then proceed in online mode, else offline
         time=int(keywords['s'])
         god.test(time=time)
 
