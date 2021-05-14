@@ -9,12 +9,14 @@ import multiprocessing
 __author__ = 'Biribiri,BlackDChase'
 __version__ = '1.0.0'
 
+# A class for encapsulating the dataset and its related functions
 class DatasetHelper:
     def __init__(self, dataset_path, max_input_len):
         self.dataset_path = dataset_path
         self.df = pd.read_csv(self.dataset_path)
         self.max_input_len = max_input_len
-
+    
+    # This function returns an initial starting state based on the max length allowed 
     def reset(self):
         """
         Choose a random starting timestep for gym resets from dataframe
@@ -56,6 +58,7 @@ class LSTMEnv(gym.Env):
         # list of min / max values for each of the 13 columns used for wrapping inputs and unwrapping outputs
         self.min_max_values = pd.read_csv(min_max_values_csv_file)
 
+        # In case debug is enabled, by default debugging is disabled
         self.debug=debug
 
     def reset(self):
@@ -185,6 +188,19 @@ class LSTMEnv(gym.Env):
         ontario_demand_index = 1
         supply_index = 2
 
+        """
+        The networks are trained based on normalized values of the env states.
+        But the reward calculation can be done using denormalized and normalized values of supply,demand and price
+        
+        Since the reward calculations using normalized values appeared to be less rewarding 
+        than expected in certain cases or was going negative where it shouldnt be so we decided to use denormalized 
+        values of supply,demand and price to compute rewards.
+
+        So we are primarily using denormalized values for reward calculation for now.
+        This reward calculation can be done using normalized values if denormalize is set to False while calling this function.   
+        """
+
+        # Parameters are denormalized for reward calculation 
         if denormalize:
             self.denormalized_current_observation = self.denormalize(self.current_observation)
 
@@ -192,6 +208,7 @@ class LSTMEnv(gym.Env):
             demand = self.denormalized_current_observation[ontario_demand_index]
             supply = self.denormalized_current_observation[supply_index]
             new_price = self.denormalized_current_observation[price_index]
+        # OtherWise normalized values are used 
         else:
             log.debug(f"self.current_observation.shape = {self.current_observation.shape}")
             demand = self.current_observation[ontario_demand_index]
