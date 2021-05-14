@@ -203,9 +203,8 @@ if __name__=="__main__":
             debug=keywords["d"],
         )
         print("Environment inititated")
-        """
-        env = ENV(stateSize,actionSpace)
-        #"""
+        #env = ENV(stateSize,actionSpace)
+        
         log.info("Environment inititated")
         god.giveEnvironment(env)
         log.info("Environment parsed, Boss inititated")
@@ -217,12 +216,6 @@ if __name__=="__main__":
         god.test(time=time)
 
         # TODO verify this (will be moved soon)
-        # Plotting
-        for i in range(len(a3cStates)):
-            log.info(f"A3C State = {a3cStates[i]}")
-            log.info(f"Normal State = {normalStates[i]}")
-        for i in range(len(a3cProfit)):
-            log.info(f"A3C Profit = {a3cProfit[i]}")
-            log.info(f"Normal Profit = {normalProfit[i]}")
-            log.info(f"Diff = {diff[i]}")
+        # Loggings are moved for the offline case 
+        
         print("Testing Complete")
