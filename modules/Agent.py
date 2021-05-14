@@ -39,11 +39,11 @@ input_dim = output_size
 hidden_dim = 40
 layer_dim = 2
 envDATA="../datasets/normalized_weird_13_columns_with_supply.csv"
-# ENV(LSTM,envDATA,actionSpace)
+#ENV(LSTM,envDATA,actionSpace)
 #"""
 
 
-# GLOBAL
+#GLOBAL
 #device = device("cuda" if torch.cuda.is_available() else "cpu")
 """
 if torch.cuda.is_available():
@@ -73,19 +73,28 @@ class GOD:
         Initialization of various GOD parameters, self evident from the code.
         #"""
         self.name=name
+
+        # We will be interacting with the env whose state will have 13 dimensions
+        # i.e for every timeStep the env will represent its current state as a tuple of 13 values 
+        # Dimensions of the state = 13 
         self.stateSize = stateSize
 
-        # state is the 9 dimentional tensor , defined at the top
+        # state is the 13 dimentional tensor, defined at the top
         self._state = Tensor([0]*stateSize)
-
-        # action space is the percent change of the current price.
+        # action space is the list of percent change allowed on the current price based on the number of actions.
         self._actionSpace = Tensor(actionSpace)
+        # Enable debugging if true 
         self.debug = debug
+
         self.price = 0
         self.__nAgent=nAgent
         self.__bossAgent=[]
+
+        # Initializing actor and critic network
         self.makeNetwork(maxEpisode,nAgent,trajectoryLength,alr,clr)
 
+        # Load model if path is specific or else raise exception error if the path is invalid 
+        # If model doesnt exist in that path, it will randomly initialize a model which could be trained later
         if self.__class__==GOD:
             try:
                 if not (path=="None" or path==None):
@@ -96,6 +105,11 @@ class GOD:
         pass
 
     def makeNetwork(self,maxEpisode,nAgent,trajectoryLength,alr,clr):
+        """
+        Initializes the actor and critic network based on the specified params
+        """
+
+        # Setting up relevant params for actor and critic networks using defined setters 
         self.setMaxEpisode(maxEpisode)
         self.setNumberOfAgent(nAgent)
         self.setTrajectoryLength(trajectoryLength)
@@ -155,6 +169,8 @@ class GOD:
         log.info(f"Critic Network: {self.__criticNet}")
         return
 
+    # SETTERS -----------------------------------------------------
+
     def giveEnvironment(self,env):
         self._env=env
         return
@@ -162,10 +178,7 @@ class GOD:
     def setNumberOfAgent(self,nAgent):
         self.__nAgent = nAgent
         return
-
-    def getActionSpace(self):
-        return self._actionSpace
-
+    
     def setMaxEpisode(self,maxEpisode):
         self.maxEpisode = maxEpisode
         return
@@ -174,12 +187,22 @@ class GOD:
         self.trajectoryLength = trajectoryLength
         return
 
+    # GETTERS -----------------------------------------------------
+    
+    def getActionSpace(self):
+        return self._actionSpace
+    
+
+    # The master agent will train with the environment using the worker (BOSS) agents
     def train(self):
         log.info("This GOD will train with the enviornment")
+        
+        # Initialize (BOSS) worker agents 
         self.__initateBoss()
+        # Train using the worker agents 
         self.__trainBoss()
         return
-
+    
     # TODO, Update this
     def test(self,time=100):
         '''
@@ -190,18 +213,29 @@ class GOD:
         trajectory length for online agent. It won't wait to update the net , maybe except
         initially.
         #'''
+
+        # Run in offline mode if testing timeSteps > 0 else in online mode
         if time>0:
             self.__offline(time)
         else:
             self.__online()
         return
 
-
     # TODO, Update this
     def __offline(self,time):
         a3cState = self.__getA3Cstate(time)
         normalStates = self.__getNormalStates(time=time)
         a3cProfit,normalProfit,diff = self.__compare(a3cState=a3cState,normalState=normalStates)
+
+        # Save necessary information for future references and for plotting graphs
+        for i in range(len(a3cState)):
+            log.info(f"A3C State = {a3cState[i]}")
+            log.info(f"Normal State = {normalStates[i]}")
+        for i in range(len(a3cProfit)):
+            log.info(f"A3C Profit = {a3cProfit[i]}")
+            log.info(f"Normal Profit = {normalProfit[i]}")
+            log.info(f"Diff = {diff[i]}")
+
         return diff
 
     def __getA3Cstate(self,time):
@@ -209,25 +243,37 @@ class GOD:
         @input      : Number of time steps for which this model is going to be tested
         @output     : Returns the `time` number of states which occured on the basis of Agent's response.
         #"""
+
+        # Get the initial state from the environment
         currentState = self.reset()
         a3cState=[]
         for i in range(time):
             if self.debug:
                 log.debug(f"a3cState={currentState}")
+            
             a3cState.append(currentState)
+            # Decide what action to take from currentState
             action,_ = self.decideAction(torch.Tensor(currentState))
+            # Observe nextState, reward, info from the environment after taking the action 
             nextState,reward,_,info = self.step(action)
             ## Oi generous env , please tell me the next state and reward for the action i have taken
             log.info(f"{self.name}, {i},  {info}")
             if self.debug:
                 log.debug(f"Reward and Shape = {reward}, {reward.shape}")
                 log.debug(f"Action for {self.name} {i} = {action}, {type(action)}")
+            # Change the currentState to nextState after action has been taken
             currentState=torch.Tensor(nextState)
+
         a3cState.append(currentState)
         a3cState = torch.stack(a3cState)
         return a3cState
 
-    # TODO, Update this
+    # Returns a trajectory of states using only LSTM without A3C feedback
+    def __getNormalStates(self,time=100):
+        normalState = Tensor(self._env.possibleState(time))
+        return normalState
+
+    # Calculates profits in price with and without A3C (only using LSTM) and their difference for comparison purposes
     def __compare(self,a3cState,normalState):
         """
         @input          : a3cState,time,normalState
@@ -237,23 +283,25 @@ class GOD:
         #"""
         normalProfit=[]
         a3cProfit=[]
+
+        # Indices of attributes based on the dataset we have considered
         supply_index = 2
         demand_index = 1
         price_index = 0
+        
+        # Computing profits from the list of states
         for i in range(len(a3cState)):
+            # Profits generated from using only LSTM network
             normalProfit.append(normalState[i][price_index]*(normalState[i][demand_index]-normalState[i][supply_index]))
+            # Profits generated using A3C
             a3cProfit.append(a3cState[i][price_index]*(a3cState[i][demand_index]-a3cState[i][supply_index]))
+
         diff=[]
+        # Computing diff in normal and A3C profits and appending them to diff list
         for i in range(len(a3cProfit)):
             diff.append(a3cProfit[i]-normalProfit[i])
         return a3cProfit,normalProfit,diff
-
-    # TODO, Update this
-    def __getNormalStates(self,time=100):
-        normalState = Tensor(self._env.possibleState(time))
-        return normalState
-
-
+    
     def _updatePolicy(self,lossP):
         self.__policyNet.optimizer.zero_grad()
         lossP.backward(retain_graph=True)
@@ -277,14 +325,16 @@ class GOD:
         actionProb = self._getAction(state)
         """
         actionProb  ::  State-action probability vector from the policy net.
-        Categorical ::  Create a catagorical distribution acording to the actionProb
+        Categorical ::  Create a categorical distribution acording to the actionProb
         #"""
         probabDistribution = Categorical(probs=actionProb)
 
         if self.debug:
             log.debug(f"Deciding action for {state}")
             log.debug(f"Probability Distribution {probabDistribution}, actionProbab = {actionProb}")
+        
         try:
+            # Sampling from the probDistribution if no exceptions occur
             actionIndex = probabDistribution.sample()
         except RuntimeError:
             # For invalid multinomial distribution (encountering probability entry < 0)
@@ -306,10 +356,11 @@ class GOD:
         #self._criticSemaphore.release()
         return vVlaue
 
-    # TODO, Update this
+    # Returns an initial state from the env (Randomized)
     def reset(self):
         return torch.Tensor(self._env.reset())
 
+    # Take the specific action on the env and returns nextState, reward and other relevant params
     def step(self,action):
         return self._env.step(action)
 
@@ -350,32 +401,18 @@ class GOD:
             i.join()
 
         return
-
-    # TODO, Update this
+ 
     def forwardP(self,actions):
+        """
+        To make forward pass in the policy network using the state trajectory
+        @input          = states (list of tuples of states acc to trajectory followed)
+        @output         = actionProb list showing probability distribution of possible actions 
+        """
+
         #self._policySemaphore.acquire()
         actionProb = self.__policyNet.forward(actions)
         #self._policySemaphore.release()
         return actionProb
-
-    def saveModel(self,path):
-        condition = path +"/"+str(self.__nAgent)+"_"+str(self.maxEpisode)+"_"+str(self.trajectoryLength)+"_"+str(len(self._actionSpace))+"_"+str(self.__actorLR)+"_"+str(self.__criticLR)+"_"
-        self.__policyNet.saveM(condition+"PolicyModel.pt")
-        self.__criticNet.saveM(condition+"CritcModel.pt")
-        return
-
-    def __loadModel(self,path):
-        """
-        If using GPU, this has to be mapped to it while load .. torch.load(path,map_location=device)
-        #"""
-        curr = multiprocessing.current_process()
-        #self._policySemaphore.acquire()
-        self.__policyNet.loadM(path+"PolicyModel.pt")
-        #self._policySemaphore.release()
-        #self._criticSemaphore.acquire()
-        self.__criticNet.loadM(path+"CritcModel.pt")
-        #self._criticSemaphore.release()
-        return
 
     # TODO, Update this
     def __online(self):
@@ -480,7 +517,7 @@ class GOD:
         for i in reversed(range(self.trajectoryLength-1)):
             # iterate in reverse order.
             self.vTarget[i] = (self.trajectoryR[i]) + self.gamma*self.vTarget[i+1]
-            # v_tar_currentState = reward + gamma* v_tar_nextState
+            #v_tar_currentState = reward + gamma* v_tar_nextState
         return
 
     def onlineNstepAdvantage(self):
@@ -517,7 +554,6 @@ class GOD:
         dist = Categorical(pd)
         logProb = dist.log_prob(torch.Tensor(list(self.trajectoryA)))
 
-        
         advantage = self.advantage.detach()
         if self.debug:
             log.debug(f"Online: advantage detached for {self.name}")
@@ -548,6 +584,25 @@ class GOD:
         if self.name=='GOD':
             return self.forwardP(states)
         else: return self.god.forwardP(states)
+
+    def saveModel(self,path):
+        condition = path +"/"+str(self.__nAgent)+"_"+str(self.maxEpisode)+"_"+str(self.trajectoryLength)+"_"+str(len(self._actionSpace))+"_"+str(self.__actorLR)+"_"+str(self.__criticLR)+"_"
+        self.__policyNet.saveM(condition+"PolicyModel.pt")
+        self.__criticNet.saveM(condition+"CritcModel.pt")
+        return
+
+    def __loadModel(self,path):
+        """
+        If using GPU, this has to be mapped to it while load .. torch.load(path,map_location=device)
+        #"""
+        curr = multiprocessing.current_process()
+        #self._policySemaphore.acquire()
+        self.__policyNet.loadM(path+"PolicyModel.pt")
+        #self._policySemaphore.release()
+        #self._criticSemaphore.acquire()
+        self.__criticNet.loadM(path+"CritcModel.pt")
+        #self._criticSemaphore.release()
+        return
 
 
 class BOSS(GOD):
@@ -583,7 +638,7 @@ class BOSS(GOD):
         self.trajectoryA = torch.zeros(self.trajectoryLength)
         self.ɤ = gamma
         self.gamma=gamma
-        # self.d = depth # Not using anymore
+        #self.d = depth # Not using anymore
         self.vPredicted = torch.zeros(self.trajectoryLength)
         self.vTarget = torch.zeros(self.trajectoryLength)
         self.advantage = torch.zeros(self.trajectoryLength)
@@ -645,6 +700,7 @@ class BOSS(GOD):
         print(f"{self.name} has completed training")
         pass
 
+    # For creating an instance of env for each worker (BOSS) agent to assist in training 
     def makeENV(self):
         """
         Making enviornment here
@@ -669,26 +725,32 @@ class BOSS(GOD):
         self.reset()
         return
 
-    # TODO, Update this
+    # Gathers trajectories of states,actions,rewards accumulated over the course of time by acting on the environment using current policy
     def gatherAndStore(self):
-        # gather a trajectory by acting in the enviornment using current policy
+        
+        # Initial starting state 
         currentState = self.startState
         log.info(f"Starting state={currentState}, for {self.name}")
         for i in range(self.trajectoryLength):
+            # Decide action to take from currentState
             action = self.getAction(currentState)
             #nextState,reward,info = self.god.step(action)
+            # Take action in the env and observe nextState,reward and other relevant params
             nextState,reward,_,info = self.step(action)
             ## Oi generous env , please tell me the next state and reward for the action i have taken
             log.info(f"{self.name}, {i},  {info}")
             if self.debug:
                 log.debug(f"Reward and Shape = {reward}, {reward.shape}")
+            # Update and store trajectories 
             self.trajectoryS[i] = currentState
             self.trajectoryA[i] = action
             self.trajectoryR[i] = torch.Tensor(reward)
             if self.debug:
                 log.debug(f"Action for {self.name} {i} = {action}, {type(action)}")
                 log.debug(f"Detached Next state {nextState}")
+            # Change currentState to nextState after action has been taken
             currentState=torch.Tensor(nextState)
+
         if self.debug:
             log.debug(f"Action = {self.trajectoryA}")
             log.debug(f"vPred = {self.vPredicted}")
@@ -696,6 +758,11 @@ class BOSS(GOD):
         pass
 
     def getAction(self,state):
+        """
+        To get action based on the state 
+        returns actionIndex based on the list of actionSpace
+        """
+
         actionIndex,probab = self.god.decideAction(state)
         return actionIndex
 
