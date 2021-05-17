@@ -45,10 +45,20 @@ class LSTM(nn.Module):
         # (batch_dim, seq_dim, feature_dim)
         self.lstm = nn.LSTM(input_size=input_dim, hidden_size=hidden_dim, num_layers=layer_dim, batch_first=True)
 
-        # fully connected hidden layer
-        self.fc =  nn.Linear(hidden_dim, output_size)
+        # Fully connected linear layer which adjusts its weights 
+        # based on correlation between inputs from preceding layer (LSTM layer) and outputs 
+        # Since the output from LSTM will depends on the hidden dim hence we need to project them into a vector of size given by output_size (in our case output_size = 13)
+        # which is done by this linear fc layer
+        self.linear =  nn.Linear(hidden_dim, output_size)
 
         #TODO, Find a better way to do this
+        """
+        Final output will be clipped acc to the min-max linear values after passing through the hardTanh layer
+        The output = { min_val if out < min_val
+                       max_val if out > max_val
+                       out      otherwise
+        The output will range from [min_val,max_val]
+        """
         self.norm = nn.Hardtanh(min_val=-0.01,max_val=2)
 
     def forward(self, input_batch, batch=True, numpy=False):
