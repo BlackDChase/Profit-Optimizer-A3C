@@ -122,6 +122,8 @@ class LSTMEnv(gym.Env):
             current_observation = self.denormalize(current_observation)
             log.info(f"Possible set {i} = {current_observation}")
             states.append(current_observation)
+            log.info(f"Normal State = {current_observation}")
+
         return states
 
     def step(self, action):
