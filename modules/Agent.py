@@ -228,13 +228,13 @@ class GOD:
         a3cProfit,normalProfit,diff = self.__compare(a3cState=a3cState,normalState=normalStates)
 
         # Save necessary information for future references and for plotting graphs
-        for i in range(len(a3cState)):
-            log.info(f"A3C State = {a3cState[i]}")
-            log.info(f"Normal State = {normalStates[i]}")
-        for i in range(len(a3cProfit)):
-            log.info(f"A3C Profit = {a3cProfit[i]}")
-            log.info(f"Normal Profit = {normalProfit[i]}")
-            log.info(f"Diff = {diff[i]}")
+        # for i in range(len(a3cState)):
+        #     log.info(f"A3C State = {a3cState[i]}")
+        #     log.info(f"Normal State = {normalStates[i]}")
+        # for i in range(len(a3cProfit)):
+        #     log.info(f"A3C Profit = {a3cProfit[i]}")
+        #     log.info(f"Normal Profit = {normalProfit[i]}")
+        #     log.info(f"Diff = {diff[i]}")
 
         return diff
 
@@ -252,6 +252,8 @@ class GOD:
                 log.debug(f"a3cState={currentState}")
             
             a3cState.append(currentState)
+            log.info(f"A3C State = {currentState}")
+            
             # Decide what action to take from currentState
             action,_ = self.decideAction(torch.Tensor(currentState))
             # Observe nextState, reward, info from the environment after taking the action 
@@ -293,13 +295,17 @@ class GOD:
         for i in range(len(a3cState)):
             # Profits generated from using only LSTM network
             normalProfit.append(normalState[i][price_index]*(normalState[i][demand_index]-normalState[i][supply_index]))
+            log.info(f"Normal Profit = {normalProfit[i]}")
             # Profits generated using A3C
             a3cProfit.append(a3cState[i][price_index]*(a3cState[i][demand_index]-a3cState[i][supply_index]))
+            log.info(f"A3C Profit = {a3cProfit[i]}")
 
         diff=[]
         # Computing diff in normal and A3C profits and appending them to diff list
         for i in range(len(a3cProfit)):
             diff.append(a3cProfit[i]-normalProfit[i])
+            log.info(f"Diff = {diff[i]}")
+        
         return a3cProfit,normalProfit,diff
     
     def _updatePolicy(self,lossP):
