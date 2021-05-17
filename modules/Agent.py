@@ -722,6 +722,13 @@ class BOSS(GOD):
             actionSpace=self._actionSpace,
             debug=self.debug,
         )
+
+        """
+        We are doing env.reset() after every env initialization 
+        to set an initial random starting state from a random timeStep for every individual worker (boss) agent
+        along with initialization of other relevant parameters
+        since every boss agent has their own seperate instance of the env, this needs to be done for every instance of env  
+        """
         self.reset()
         return
 
@@ -733,7 +740,7 @@ class BOSS(GOD):
         log.info(f"Starting state={currentState}, for {self.name}")
         for i in range(self.trajectoryLength):
             # Decide action to take from currentState
-            action = self.getAction(currentState)
+            action,_ = self.getAction(currentState)
             #nextState,reward,info = self.god.step(action)
             # Take action in the env and observe nextState,reward and other relevant params
             nextState,reward,_,info = self.step(action)
@@ -760,11 +767,11 @@ class BOSS(GOD):
     def getAction(self,state):
         """
         To get action based on the state 
-        returns actionIndex based on the list of actionSpace
+        returns actionIndex based on the list of actionSpace and the probability density distribution as well
         """
 
         actionIndex,probab = self.god.decideAction(state)
-        return actionIndex
+        return actionIndex, probab
 
     # def calculateV_p(self):
     #     # calculate the predicted v value by using critic network

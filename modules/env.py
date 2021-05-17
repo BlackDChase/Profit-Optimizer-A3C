@@ -194,7 +194,7 @@ class LSTMEnv(gym.Env):
 
         """
         The networks are trained based on normalized values of the env states.
-        But the reward calculation can be done using denormalized and normalized values of supply,demand and price
+        But the reward calculation has to be done using denormalized (original) values of supply,demand and price
         
         Since the reward calculations using normalized values appeared to be less rewarding 
         than expected in certain cases or was going negative where it shouldnt be so we decided to use denormalized 
