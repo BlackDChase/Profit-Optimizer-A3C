@@ -122,7 +122,9 @@ class LSTMEnv(gym.Env):
             current_observation = self.denormalize(current_observation)
             log.info(f"Possible set {i} = {current_observation}")
             states.append(current_observation)
-            log.info(f"Normal State = {current_observation}")
+            denormalized_current_observation = self.denormalize(current_observation)
+            # Logging normalState (after denormalization)
+            log.info(f"Normal State = {denormalized_current_observation}")
 
         return states
 
