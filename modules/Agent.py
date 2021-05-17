@@ -225,8 +225,8 @@ class GOD:
     def __offline(self,time):
         """
             Logging details:
-            => a3cStates (normalized)
-            => normalStates (normalized)
+            => a3cStates (denormalized)
+            => normalStates (denormalized)
             => a3cProfit, normalProfit, diff (using denormalized/original values of supply,demand and price)
         """
 
@@ -259,7 +259,9 @@ class GOD:
                 log.debug(f"a3cState={currentState}")
             
             a3cState.append(currentState)
-            log.info(f"A3C State = {currentState}")
+            denormalized_a3c_state = self._env.denormalize(currentState)
+            # Logging denormalized (original) a3cState
+            log.info(f"A3C State = {denormalized_a3c_state}")
             
             # Decide what action to take from currentState
             action,_ = self.decideAction(torch.Tensor(currentState))
