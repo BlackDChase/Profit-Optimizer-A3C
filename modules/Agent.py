@@ -223,18 +223,25 @@ class GOD:
 
     # TODO, Update this
     def __offline(self,time):
+        """
+            Logging details:
+            => a3cStates (denormalized)
+            => normalStates (denormalized)
+            => a3cProfit, normalProfit, diff (using denormalized/original values of supply,demand and price)
+        """
+
         a3cState = self.__getA3Cstate(time)
         normalStates = self.__getNormalStates(time=time)
         a3cProfit,normalProfit,diff = self.__compare(a3cState=a3cState,normalState=normalStates)
 
         # Save necessary information for future references and for plotting graphs
-        for i in range(len(a3cState)):
-            log.info(f"A3C State = {a3cState[i]}")
-            log.info(f"Normal State = {normalStates[i]}")
-        for i in range(len(a3cProfit)):
-            log.info(f"A3C Profit = {a3cProfit[i]}")
-            log.info(f"Normal Profit = {normalProfit[i]}")
-            log.info(f"Diff = {diff[i]}")
+        # for i in range(len(a3cState)):
+        #     log.info(f"A3C State = {a3cState[i]}")
+        #     log.info(f"Normal State = {normalStates[i]}")
+        # for i in range(len(a3cProfit)):
+        #     log.info(f"A3C Profit = {a3cProfit[i]}")
+        #     log.info(f"Normal Profit = {normalProfit[i]}")
+        #     log.info(f"Diff = {diff[i]}")
 
         return diff
 
@@ -252,6 +259,10 @@ class GOD:
                 log.debug(f"a3cState={currentState}")
             
             a3cState.append(currentState)
+            denormalized_a3c_state = self._env.denormalize(currentState)
+            # Logging denormalized (original) a3cState
+            log.info(f"A3C State = {denormalized_a3c_state}")
+            
             # Decide what action to take from currentState
             action,_ = self.decideAction(torch.Tensor(currentState))
             # Observe nextState, reward, info from the environment after taking the action 
@@ -281,8 +292,10 @@ class GOD:
         normalState     : Output of states without a3c's feedback
         time            : Timesteps for which this model in being tested
         #"""
+
         normalProfit=[]
         a3cProfit=[]
+        diff=[]
 
         # Indices of attributes based on the dataset we have considered
         supply_index = 2
@@ -291,15 +304,23 @@ class GOD:
         
         # Computing profits from the list of states
         for i in range(len(a3cState)):
-            # Profits generated from using only LSTM network
-            normalProfit.append(normalState[i][price_index]*(normalState[i][demand_index]-normalState[i][supply_index]))
-            # Profits generated using A3C
-            a3cProfit.append(a3cState[i][price_index]*(a3cState[i][demand_index]-a3cState[i][supply_index]))
 
-        diff=[]
-        # Computing diff in normal and A3C profits and appending them to diff list
-        for i in range(len(a3cProfit)):
+            # Profits are computed using denormalized (original) values of price,supply and demand
+            denormalized_normal_state = self._env.denormalize(normalState[i])
+            denormalized_a3c_state = self._env.denormalize(a3cState[i])
+
+            # Profits generated from using only LSTM network
+            normalProfit.append(denormalized_normal_state[price_index]*(denormalized_normal_state[demand_index]-denormalized_normal_state[supply_index]))
+            log.info(f"Normal Profit = {normalProfit[i]}")
+
+            # Profits generated using A3C
+            a3cProfit.append(denormalized_a3c_state[price_index]*(denormalized_a3c_state[demand_index]-denormalized_a3c_state[supply_index]))
+            log.info(f"A3C Profit = {a3cProfit[i]}")
+
+            # Computing diff of normal and A3C profits and appending them to diff list
             diff.append(a3cProfit[i]-normalProfit[i])
+            log.info(f"Diff = {diff[i]}")
+        
         return a3cProfit,normalProfit,diff
     
     def _updatePolicy(self,lossP):
