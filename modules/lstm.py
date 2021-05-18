@@ -45,9 +45,20 @@ class LSTM(nn.Module):
         # (batch_dim, seq_dim, feature_dim)
         self.lstm = nn.LSTM(input_size=input_dim, hidden_size=hidden_dim, num_layers=layer_dim, batch_first=True)
 
-        self.fc =  nn.Linear(hidden_dim, output_size)
+        # Fully connected linear layer which adjusts its weights 
+        # based on correlation between inputs from preceding layer (LSTM layer) and outputs 
+        # Since the output from LSTM will depends on the hidden dim hence we need to project them into a vector of size given by output_size (in our case output_size = 13)
+        # which is done by this linear fc layer
+        self.linear =  nn.Linear(hidden_dim, output_size)
 
         #TODO, Find a better way to do this
+        """
+        Final output will be clipped acc to the min-max linear values after passing through the hardTanh layer
+        The output = { min_val if out < min_val
+                       max_val if out > max_val
+                       out      otherwise
+        The output will range from [min_val,max_val]
+        """
         self.norm = nn.Hardtanh(min_val=-0.01,max_val=2)
 
     def forward(self, input_batch, batch=True, numpy=False):
@@ -103,7 +114,7 @@ class LSTM(nn.Module):
         [1,1], as data is min normalized
         """
         out = self.norm(self.fc(out[:, -1, :]))
-        # out.size() --> 100, 10 (batch_dim, output_size)
+        #out.size() --> 100, 10 (batch_dim, output_size)
 
         # if numpy, then return numpy ndarray
         if numpy:
@@ -119,6 +130,9 @@ class LSTM(nn.Module):
         Do the actual work of:
         1. verifying the csv dataset
         2. splitting the dataset into training and testing
+
+        @input         = csv_path (path of the csv dataset)
+        @output        = train,test 
         """
         df = pd.read_csv(csv_path)
         if self.debug:
@@ -133,6 +147,7 @@ class LSTM(nn.Module):
         size = len(df)
         if self.debug:
             log.debug(f"size = {size}")
+
         # split the dataset 9:1 into train and test
         # TODO Do I need to enable grad on them to make them "differentiable"?
         train = torch.Tensor(df.values)
@@ -201,11 +216,12 @@ class LSTM(nn.Module):
             optimizer.zero_grad()
 
             # forward pass
-
             output = self.forward(input_batch)
+
             if self.debug:
                 log.debug(f"Output shape = {output.shape}")
                 log.debug(f"Label Batch shape = {label_batch.shape}")
+                
             # get loss output
             loss = loss_fn(output, label_batch)
             if self.debug:
@@ -216,6 +232,7 @@ class LSTM(nn.Module):
 
             # Update parameters
             optimizer.step()
+
 
     def test(self,
             test_batch,
@@ -257,7 +274,7 @@ class LSTM(nn.Module):
     def saveM(self,name):
         torch.save(self.lstm.state_dict(),name)
         log.info(f"LSTM saved = {self.lstm}")
-
+    
     def loadM(self,path):
         self.lstm.load_state_dict(torch.load(path))
         log.info(f"LSTM loaded = {self.lstm}")
