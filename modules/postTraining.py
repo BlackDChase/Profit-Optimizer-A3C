@@ -8,6 +8,7 @@ Combinations:
     - [X] Demand
     - [X] Supply
     - [X] Price
+    - [X] Profit
 #"""
 
 __author__ = 'BlackDChase'
@@ -72,14 +73,16 @@ def stateExtract(fileN,order=None):
         corre=[]
         demand=[]
         supply=[]
+        profit=[]
         temp=order
-        x,y,z,w=0,0,0,0
+        x,y,z,w,p=0,0,0,0,0
         for i in state:
             sp = i.strip().split(",")
             x+=float(sp[0])
             y+=float(sp[1])
             z+=float(sp[2])
             w+=float(sp[3])
+            p+=float(sp[4])
             if temp==0:
                 temp=order
             if temp==order:
@@ -88,14 +91,16 @@ def stateExtract(fileN,order=None):
                     y/=order
                     z/=order
                     w/=order
+                    p/=order
                 price.append(x)
                 corre.append(y)
                 demand.append(z)
                 supply.append(w)
-                x,y,z,w=0,0,0,0
+                profit.append(p)
+                x,y,z,w,p=0,0,0,0,0
             if order!=None:
                 temp-=1
-    return price,corre,demand,supply
+    return price,corre,demand,supply,profit
 
 
 
@@ -108,8 +113,8 @@ if __name__ == '__main__':
     avgReward, episodeLength = rewardAvgLen(rewardAvg(folderName+"rewardLog.tsv"))
     policyLoss = modelLoss(folderName+"policyLossLog.tsv")
     criticLoss = modelLoss(folderName+"criticLossLog.tsv")
-    priceAvg,correAvg,demandAvg,supplyAvg = stateExtract(folderName+"stateLog.tsv",len(episodeLength)//4)
-    price,corre,demand,supply = stateExtract(folderName+"stateLog.tsv")
+    priceAvg,correAvg,demandAvg,supplyAvg,profitAvg = stateExtract(folderName+"stateLog.tsv",len(episodeLength)//4)
+    price,corre,demand,supply,profit = stateExtract(folderName+"stateLog.tsv")
     demSupAvg = [-supplyAvg[i]+demandAvg[i] for i in range(len(demandAvg))]
     demSup = [-supply[i]+demand[i] for i in range(len(demand))]
     correAvg2 = []
@@ -141,7 +146,7 @@ if __name__ == '__main__':
 
 
 
-    # Ploting AVG A3C Price vs Exchange
+    # Ploting AVG A3C Price vs Exchange (both have different y-axis scaling and plotted on different axes)
     fig,ax1 = plt.subplots(dpi=400)
     color='r'
     ax1.plot(priceAvg,color=color)
@@ -155,6 +160,21 @@ if __name__ == '__main__':
     ax2.set_ylabel('Demand-Supply',color=color)
     fig.tight_layout()
     plt.savefig(folderName+"AVG Model Price vs Exchange.svg")
+    plt.close()
+
+    # Plotting Avg A3C price vs (Demand - Supply) exchange vs Profits generated (all have same y-axis scaling and plotted on same axis)
+    fig,ax = plt.subplots(dpi=400)
+    fig.suptitle('A3C price vs Exchange vs Profits', fontsize=14)
+    color='r'
+    ax.set_xlabel(f"Average of Per {len(episodeLength)/4} Episode")
+    ax.plot(priceAvg,color=color,label='Model Price')
+    color='b'
+    ax.plot(demSupAvg,color=color,label='Demand-Supply')
+    color='g'
+    ax.plot(profitAvg,color=color,label='Profit')
+    fig.tight_layout()
+    plt.legend()
+    plt.savefig(folderName+"AVG Model Price vs Exchange vs Profit.svg")
     plt.close()
 
     # Ploting average advantage
