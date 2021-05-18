@@ -218,6 +218,7 @@ class GOD:
         if time>0:
             self.__offline(time)
         else:
+            print("ONLINEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
             self.__online()
         return
 
@@ -342,7 +343,7 @@ class GOD:
         @input :: current state
         @output :: the index of action which must be taken from this states, and probability of that action
         #"""
-        state = state.float()
+        state = torch.Tensor(state)
         actionProb = self._getAction(state)
         """
         actionProb  ::  State-action probability vector from the policy net.
@@ -534,11 +535,11 @@ class GOD:
         #"""
         self.vTarget = Tensor(len(self.vTarget))
         
-        self.vTarget[self.trajectoryLength-1] = (self.trajectoryR[self.trajectoryLength-1])
+        self.vTarget[self.trajectoryLength-1] = torch.Tensor((self.trajectoryR[self.trajectoryLength-1]))
         for i in reversed(range(self.trajectoryLength-1)):
             # iterate in reverse order.
-            self.vTarget[i] = (self.trajectoryR[i]) + self.gamma*self.vTarget[i+1]
-            #v_tar_currentState = reward + gamma* v_tar_nextState
+            self.vTarget[i] = torch.Tensor((self.trajectoryR[i])) + self.gamma*self.vTarget[i+1]
+            # v_tar_currentState = reward + gamma* v_tar_nextState
         return
 
     def onlineNstepAdvantage(self):
