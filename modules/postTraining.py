@@ -114,7 +114,7 @@ if __name__ == '__main__':
     policyLoss = modelLoss(folderName+"policyLossLog.tsv")
     criticLoss = modelLoss(folderName+"criticLossLog.tsv")
     priceAvg,correAvg,demandAvg,supplyAvg,profitAvg = stateExtract(folderName+"stateLog.tsv",len(episodeLength)//4)
-    price,corre,demand,supply = stateExtract(folderName+"stateLog.tsv")
+    price,corre,demand,supply,profit = stateExtract(folderName+"stateLog.tsv")
     demSupAvg = [-supplyAvg[i]+demandAvg[i] for i in range(len(demandAvg))]
     demSup = [-supply[i]+demand[i] for i in range(len(demand))]
     correAvg2 = []
