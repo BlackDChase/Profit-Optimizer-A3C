@@ -540,12 +540,14 @@ class GOD:
 
         if self.name=='GOD':
             self.vTarget[self.trajectoryLength-1] = torch.Tensor((self.trajectoryR[self.trajectoryLength-1]))
-        else : self.vTarget[self.trajectoryLength-1] = self.trajectoryR[self.trajectoryLength-1]
+        else : 
+            self.vTarget[self.trajectoryLength-1] = self.trajectoryR[self.trajectoryLength-1]
         for i in reversed(range(self.trajectoryLength-1)):
             # iterate in reverse order.
             if self.name=='GOD':
                 self.vTarget[i] = torch.Tensor((self.trajectoryR[i])) + self.gamma*self.vTarget[i+1]
-            else :  self.vTarget[i] = ((self.trajectoryR[i])) + self.gamma*self.vTarget[i+1]
+            else :
+                self.vTarget[i] = ((self.trajectoryR[i])) + self.gamma*self.vTarget[i+1]
             # v_tar_currentState = reward + gamma* v_tar_nextState
         return
 
