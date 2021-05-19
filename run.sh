@@ -2,6 +2,8 @@
 # Author  : BlackDChase
 # Version : 1.0.0
 
+source bin/activate
+
 getShut(){
     case $1 in
         [Yy]* ) echo "Will shut down once done."
@@ -28,11 +30,11 @@ done
 
 # : '
 # This is for Actuall training
-n=3
-e=50
-t=20
-a=9
-s=50
+n=50
+e=500
+t=55
+a=8
+s=1000
 alr=0.002
 clr=0.009
 f=True
@@ -65,7 +67,7 @@ echo "\"Model Trained and saved, extracting usefull info\""
 echo "\"Extraction successfull, with $n agents training $e episodes of $t length with $a actions as Hyperparameter\""
 # '
 
- : '
+# : '
 # This is for loading Latest trained model and testing it
 
 #d=True
