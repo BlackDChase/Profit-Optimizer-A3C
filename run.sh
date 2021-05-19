@@ -28,11 +28,11 @@ done
 
 # : '
 # This is for Actuall training
-n=50
-e=800
-t=65
+n=3
+e=50
+t=20
 a=9
-s=500
+s=50
 alr=0.002
 clr=0.009
 f=True
@@ -55,7 +55,7 @@ d=True
 echo "\"Model will start training with $n agents, training $e episodes of $t length, with $a actions, and Debugging set to $d, while actor learning rate and critic learining rate being at $alr and $clr respectivly, as Hyperparameters\""
 folder="../Saved_model/" 
 folder="$folder$(ls $folder -Art | grep 'Olog' | tail -n 1)/"
-#p=$(echo "$folder$(ls $folder | grep 'CritcModel.pt')" | rev | cut -b 14- | rev)
+p=$(echo "$folder$(ls $folder | grep 'CritcModel.pt')" | rev | cut -b 14- | rev)
 echo "Path is : $p"
 python main.py -n=$n -e=$e -t=$t -a=$a -alr=$alr -clr=$clr -d=$d -p=$p -f=$f || echo "\"Stopped In Between\""
 
