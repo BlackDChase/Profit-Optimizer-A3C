@@ -68,12 +68,12 @@ echo "\"Model Trained and saved, extracting usefull info\""
 echo "\"Extraction successfull, with $n agents training $e episodes of $t length with $a actions as Hyperparameter\""
 # '
 
-# : '
+ : '
 # This is for loading Latest trained model and testing it
 
 #d=True
 folder="../Saved_model/" 
-folder="$folder$(ls $folder -Art | grep 'Olog' | tail -n 1)/"
+folder="$folder$(ls $folder -Art | grep "Olog" | tail -n 1)/"
 p=$(echo "$folder$(ls $folder | grep "CritcModel.pt")" | rev | cut -b 14- | rev)
 echo "Path is : $p"
 f=False
