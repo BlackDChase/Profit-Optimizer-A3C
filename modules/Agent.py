@@ -534,6 +534,7 @@ class GOD:
         We have chosen choice 2 for v_tar , by iterating in reverse direction in the trajectory list.
         #"""
         self.vTarget = Tensor(len(self.vTarget))
+
         if self.name=='GOD':
             self.vTarget[self.trajectoryLength-1] = torch.Tensor((self.trajectoryR[self.trajectoryLength-1]))
         else : self.vTarget[self.trajectoryLength-1] = self.trajectoryR[self.trajectoryLength-1]
@@ -542,7 +543,6 @@ class GOD:
             if self.name=='GOD':
                 self.vTarget[i] = torch.Tensor((self.trajectoryR[i])) + self.gamma*self.vTarget[i+1]
             else :  self.vTarget[i] = ((self.trajectoryR[i])) + self.gamma*self.vTarget[i+1]
-            # v_tar_currentState = reward + gamma* v_tar_nextState
         return
 
     def onlineNstepAdvantage(self):

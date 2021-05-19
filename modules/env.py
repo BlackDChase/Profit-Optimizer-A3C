@@ -243,7 +243,10 @@ class LSTMEnv(gym.Env):
         if denormalize:
             correction/=(10**17)
         reward = (abs(demand - supply)**3) * (abs(new_price)**2) * correction
-        log.info(f"State set = {new_price}, {correction}, {demand}, {supply}")
+        
+        # Included profits generated in state set (for plotting graph)
+        profit = (demand - supply)*new_price
+        log.info(f"State set = {new_price}, {correction}, {demand}, {supply}, {profit}")
         return reward
 
     def denormalize(self, arr):
