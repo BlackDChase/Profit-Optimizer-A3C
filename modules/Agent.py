@@ -163,10 +163,10 @@ class GOD:
         [Refer](https://pytorch.org/docs/stable/notes/multiprocessing.html)
         To be sent to device before sharing
         #"""
-        """
+        
         self.__policyNet.share_memory()
         self.__criticNet.share_memory()
-        #"""
+        
         log.info(f"Policy Network: {self.__policyNet}")
         log.info(f"Critic Network: {self.__criticNet}")
         return
