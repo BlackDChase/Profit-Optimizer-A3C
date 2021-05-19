@@ -305,7 +305,7 @@ class GOD:
         supply_index = 2
         demand_index = 1
         price_index = 0
-        
+
         # Computing profits from the list of states
         for i in range(len(a3cState)):
 
@@ -324,7 +324,7 @@ class GOD:
             # Computing diff of normal and A3C profits and appending them to diff list
             diff.append(a3cProfit[i]-normalProfit[i])
             log.info(f"Diff = {diff[i]}")
-        
+
         return a3cProfit,normalProfit,diff
     
     def _updatePolicy(self,lossP):
