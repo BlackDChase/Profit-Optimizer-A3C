@@ -2,18 +2,19 @@
 Main function
 python main.py -n=3 -e=100 -t=50 -a=7 -d=t -alr=0.001 -clr=0.001 -p="../Saved_model/Sun-04-04-21/"
 Parameters:
-    - n = Number of agents
-    - e = Number of episodes
-    - t = Length of trajectory
-    - a = Number of deviations in action
-        - This means if a=5, 5*2+1 number of action [-12.5,-10 ... 0 ... +10,+12.5] percent change in price
-    - d = If debug to be part of logs
-    - alr = Actor Learning rate
-    - clr = Critic Learning rate
-    - p = Path of folder which contains PolicModel.py, CriticModel.pt
-    - s = Times steps to test for
-    - f = Finetune trained Model
-    - h = Help
+    - n     Number of agents
+    - e     Number of episodes
+    - t     Length of trajectory
+    - a     Number of deviations in action
+            This means if a=5, 5*2+1 number of action [-12.5,-10 ... 0 ... +10,+12.5] percent change in price
+    - d     If debug to be part of logs
+    - alr   Actor Learning rate
+    - clr   Critic Learning rate
+    - p     Path of folder which contains PolicModel.py, CriticModel.pt
+    - s     Times steps to test for, if 0, will test in  online mode until KeyboardInterrupt.
+            I is not initialised, will be parsed when called god.test().
+    - f     Finetune trained Model
+    - h     Help
 #"""
 
 __author__ = 'BlackDChase,MR-TLL'
@@ -30,7 +31,7 @@ keywords={
         "d":"",
         "alr":1e-3,
         "clr":1e-3,
-        "s":100,
+        "s":0,
         "p":None,
         "f":"",
     }
@@ -71,37 +72,12 @@ Parameters:
     - alr   Actor Learning rate
     - clr   Critic Learning rate
     - p     Path of folder which contains PolicModel.py, CriticModel.pt
-    - s     Times steps to test for
+    - s     Times steps to test for, if 0, will test in  online mode until KeyboardInterrupt
     - f     Finetune trained Model
-    - h     Help""")
+    - h     Help
+""")
     sys.exit()
 
-"""
-Making the actionSpace based on '-a = Number of possible actions
-
-Case 1: If the number of actions are even
-actionSpace = List of actions based on percentage change to be made on the current price 
-              with fixed difference of 5% between consecutive actions in the list
-
-Ex - For -a = 4 | actionSpace = [-10, -5, 5, 10]
-     For -a = 8 | actionSpace = [-20, -15, -10, -5, 5, 10, 15, 20]
-
-Case 2: If the number of actions are odd
-actionSpace = List of actions based on percentage change to be made on the current price 
-              with fixed difference of 5.5% between consecutive actions in the list
-
-Ex - For -a = 5 | actionSpace = [-11.0, -5.5, 0.0, 5.5, 11.0]
-     For -a = 9 | actionSpace = [-22.0, -16.5, -11.0, -5.5, 0.0, 5.5, 11.0, 16.5, 22.0]
-
-Note - The actions are centered around zero i.e the mean of actionSpace is zero in both cases
-"""
-n=int(keywords['a']//2)
-if keywords['a']%2==0:
-    actionSpace = [i for i in range(-n*5,n*5+1,5)]
-    actionSpace.pop(len(actionSpace)//2)
-else:
-    actionSpace = [i/10 for i in range(-n*55,n*55+1,55)]
-keywords['a']=actionSpace
 
 # Imports
 """
@@ -113,22 +89,49 @@ from env import LSTMEnv as ENV
 from Agent import GOD
 
 if __name__=="__main__":
+    """
+    Making the actionSpace based on '-a = Number of possible actions
 
+    Case 1: If the number of actions are even
+    actionSpace = List of actions based on percentage change to be made on the current price 
+                  with fixed difference of 5% between consecutive actions in the list
+
+    Ex - For -a = 4 | actionSpace = [-10, -5, 5, 10]
+         For -a = 8 | actionSpace = [-20, -15, -10, -5, 5, 10, 15, 20]
+
+    Case 2: If the number of actions are odd
+    actionSpace = List of actions based on percentage change to be made on the current price 
+                  with fixed difference of 5.5% between consecutive actions in the list
+
+    Ex - For -a = 5 | actionSpace = [-11.0, -5.5, 0.0, 5.5, 11.0]
+         For -a = 9 | actionSpace = [-22.0, -16.5, -11.0, -5.5, 0.0, 5.5, 11.0, 16.5, 22.0]
+
+    Note - The actions are centered around zero i.e the mean of actionSpace is zero in both cases
+    #"""
+    n=int(keywords['a']//2)
+    if keywords['a']%2==0:
+        actionSpace = [i for i in range(-n*5,n*5+1,5)]
+        actionSpace.pop(len(actionSpace)//2)
+    else:
+        actionSpace = [i/10 for i in range(-n*55,n*55+1,55)]
+    keywords['a']=actionSpace
+    print(keywords['t'])
     # If path for trained model is not given or fine-tuning is enabled then training process is initiated 
     if keywords["p"] is None or keywords["f"]:
         print("Model Will be trained")
-
+        print(f"Debuggin set to {keywords['d']}")
+        log.info(f"Model will be trained")
         # Initializing GOD (master) agent 
         god = GOD(
             stateSize=int(stateSize),
+            nAgent=int(keywords["n"]),
+            maxEpisode=int(keywords["e"]),
+            trajectoryLength=int(keywords["t"]),
             actionSpace=keywords["a"],
+            alr=keywords["alr"],
+            clr=keywords["clr"],
             debug=keywords["d"],
             path=keywords["p"],
-            maxEpisode=int(keywords["e"]),
-            nAgent=int(keywords["n"]),
-            trajectoryLength=int(keywords["t"]),
-            alr=keywords["alr"],
-            clr=keywords["clr"]
         )
 
         # Logging all details about the God agent created during training phase
@@ -164,14 +167,19 @@ if __name__=="__main__":
     else:
         # Testing the model
         print("Model will be tested")
-
+        log.info(f"Model will be tested")
+        print(f"Debuggin set to {keywords['d']}")
         # GOD (master) agent is initialized in debug mode for testing with trained model
         god = GOD(
-            debug=keywords["d"],
             stateSize=int(stateSize),
+            # Not using Boss agents while Online/Offline testing
+            #nAgent=int(keywords["n"]),
+            trajectoryLength=int(keywords["t"]),
             actionSpace=keywords["a"],
             path=keywords["p"],
-            trajectoryLength=int(keywords["t"]),
+            debug=keywords["d"],
+            alr=keywords["alr"],
+            clr=keywords["clr"],
         )
 
         # Logging all details about the God agent created during testing phase
@@ -182,7 +190,6 @@ if __name__=="__main__":
         log.info(f"Debug = {keywords['d']}")
         log.info(f"Path of Model = {keywords['p']}")
         log.info(f"Steps tested for = {keywords['s']}")
-        #"""
 
         # Some params used wrt to LSTM network
         output_size = 13
