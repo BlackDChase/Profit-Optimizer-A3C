@@ -628,6 +628,8 @@ class GOD:
         return
 
     # TODO, Update this
+    # Updates the value (critic) network 
+    # using the loss function = Average[(VPred - VTarget)^2]
     def calculateAndUpdateL_C(self):
         """
         vTarget detached because it is assumed to be correct and thus should not be the variable that is
