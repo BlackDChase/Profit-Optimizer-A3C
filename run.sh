@@ -1,6 +1,6 @@
 #!/bin/bash
 # Author  : 'BlackDChase'
-# Version : '1.0.7'
+# Version : '1.1.0'
 
 source bin/activate
 
@@ -35,7 +35,7 @@ a=8
 s=0
 alr=0.01
 clr=0.07
-#f=True
+f=True
 d=True
 # '
 

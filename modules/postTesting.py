@@ -7,7 +7,7 @@ Post processing to produce graphs from logs
 - [X] Diff
 #"""
 __author__ = 'BlackDChase'
-__version__ = '1.0.7'
+__version__ = '1.1.0'
 
 # Imports
 
@@ -65,7 +65,7 @@ if __name__ == '__main__':
         #normalState = readState(folderName+"NormalState.tsv")
         normalProfit = readProfit(folderName+"NormalProfit.tsv")
         meanNormalProfit = normalProfit.mean()
-        mean = np.ones(shape=normalProfit.shape)*meanNormalProfit
+        mean = np.ones(shape=a3cProfit.shape)*meanNormalProfit
         diff = readProfit(folderName+"ProfitDiff.tsv")
     except:
         offline=False
@@ -79,7 +79,7 @@ if __name__ == '__main__':
     ax1.set_ylabel('A3C Profit',color=color)
     ax1.set_xlabel(f"Time step")
     ax2 = ax1.twinx()
-    color='b'
+    color='orange'
     if offline:
         ax2.plot(normalProfit,color=color)
         ax2.plot(mean,color='y')
@@ -89,12 +89,12 @@ if __name__ == '__main__':
         mean = np.ones(shape=a3cProfit.shape)*106272
         mini = np.ones(shape=a3cProfit.shape)*0.19
         maxi = np.ones(shape=a3cProfit.shape)*5860463
-        ax2.plot(mean,color='y')
-        ax2.plot(mini,color='g')
-        ax2.plot(maxi,color='orange')
-        ax2.tick_params(axis='y',labelcolor=color)
+        ax2.plot(mean,color=color,label="Dataset Mean")
+        ax2.plot(mini,color=color,label="Dataset Min")
+        ax2.plot(maxi,color=color,label="Dataset Max")
+        ax2.tick_params(axis=color,labelcolor=color)
         ax2.set_ylabel('Orignal Dataset',color=color)
-    ax1.plot(meanProfit,color='k')
+    ax1.plot(meanProfit,color='k',label='A3C mean')
     fig.tight_layout()
     plt.savefig(folderName+"Profit.svg")
     plt.close()
