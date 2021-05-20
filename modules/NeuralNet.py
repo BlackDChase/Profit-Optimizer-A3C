@@ -1,17 +1,17 @@
 """
-Conatins Various Neural Nets that an Agent can use
+Contains Various Neural Nets that an Agent can use
 Primarily We would be using Network Class as it is more robust to change
 Aktor, Kritc are standins for testing
 #"""
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '1.0.0'
+__version__ = '1.1.0'
 
 # Imports
 import torch
 import log
 from torch import nn
 import multiprocessing
-# GLOBAL
+#GLOBAL
 #device = device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Network(nn.Module):
@@ -56,8 +56,8 @@ class Network(nn.Module):
             """
             kwargs[l1][0] : name of the layer
             kwargs[l1][1] : inputSize of the layer
-            kwargs[l2][1] : outputSize pf the layer == inputSize of next layer
             kwargs[l1][2] : activation function of the layer
+            kwargs[l2][1] : outputSize pf the layer == inputSize of next layer
             #"""
             layers.append(kwargs[l1][0](in_features=kwargs[l1][1],out_features=kwargs[l2][1]))
             if len(kwargs[l1])>=3:
@@ -86,7 +86,7 @@ class Network(nn.Module):
             log.debug(f"{self.name} Model: {self.hypoThesis}")
 
         """
-        Initiallising model
+        Initializing model
         Rest parameters to uniform
         0 is lower bound, 1 is upper bound
         But thats not working
@@ -132,18 +132,29 @@ class Network(nn.Module):
         return output
 
     def saveM(self,name):
+        curr = multiprocessing.current_process()
         torch.save(self.hypoThesis.state_dict(),name)
         log.info(f"{self.name} saved = {self.hypoThesis}")
+        if self.debug:
+            log.debug(f"Model saved for {self.name} of {curr.ident} : {self.hypoThesis}")
 
     def loadM(self,path):
+        curr = multiprocessing.current_process()
         self.hypoThesis.load_state_dict(torch.load(path))
         log.info(f"{self.name} loaded = {self.hypoThesis}")
+        if self.debug:
+            log.debug(f"Model loaded for {self.name} of {curr.ident} : {self.hypoThesis}")
     pass
 
+# This was the proposed predefined testing model class for handling and managing actor network 
+# which is now replaced with the more general Network class to avoid conflicts
 class Aktor(nn.Module):
     def __init__(self):
         super(Aktor,self).__init__()
+
+        # Default learning rate
         self.learningRate = 1e-3
+        # Actor Network internal sequential layers 
         self.model = nn.Sequential(
             nn.Linear(in_features=13,out_features=20),
             nn.Linear(in_features=20,out_features=11),
@@ -166,10 +177,15 @@ class Aktor(nn.Module):
         log.info(f"Kritc loaded = {self.model}")
     pass
 
+# This was the proposed predefined testing model class for handling and managing critic network 
+# which is now replaced with the more general Network class to avoid conflicts 
 class Kritc(nn.Module):
     def __init__(self):
         super(Kritc,self).__init__()
+
+        # Default learning rate
         self.learningRate = 1e-3
+        # Critic Network internal sequential layers 
         self.model = nn.Sequential(
             nn.Linear(in_features=13,out_features=20),
             nn.ELU(),

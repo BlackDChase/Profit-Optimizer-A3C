@@ -7,18 +7,20 @@ import log
 import multiprocessing
 
 __author__ = 'Biribiri,BlackDChase'
-__version__ = '1.0.0'
+__version__ = '1.1.0'
 
+# A class for encapsulating the dataset
+# This class maintains the original dataset along with its related parameters and functions
 class DatasetHelper:
     def __init__(self, dataset_path, max_input_len):
         self.dataset_path = dataset_path
         self.df = pd.read_csv(self.dataset_path)
         self.max_input_len = max_input_len
-
+    
     def reset(self):
         """
-        Choose a random starting timestep for gym resets from dataframe
-        Return it as a numpy array
+        This function returns a random starting state from a random timestep based on the max length allowed 
+        and returns it as a numpy array
         """
         random_index = random.randint(0, len(self.df) - self.max_input_len + 1)
         self.first_input = self.df.iloc[random_index:random_index + self.max_input_len, :].values
@@ -56,6 +58,7 @@ class LSTMEnv(gym.Env):
         # list of min / max values for each of the 13 columns used for wrapping inputs and unwrapping outputs
         self.min_max_values = pd.read_csv(min_max_values_csv_file)
 
+        # In case debug is enabled, by default debugging is disabled
         self.debug=debug
 
     def reset(self):
@@ -92,6 +95,8 @@ class LSTMEnv(gym.Env):
         price_index = 0
         current_observation[price_index] = float(np.random.rand(1)*(0.6)+0.2)
         self.current_observation = current_observation
+    
+        # Denormalizing current observation for storing in logs along with normalized observations
         self.denormalized_current_observation = self.denormalize(self.current_observation)
         self.oldPrice = self.current_observation[price_index]
 
@@ -117,6 +122,10 @@ class LSTMEnv(gym.Env):
             current_observation = self.denormalize(current_observation)
             log.info(f"Possible set {i} = {current_observation}")
             states.append(current_observation)
+            denormalized_current_observation = self.denormalize(current_observation)
+            # Logging normalState (after denormalization)
+            log.info(f"Normal State = {denormalized_current_observation}")
+
         return states
 
     def step(self, action):
@@ -181,10 +190,25 @@ class LSTMEnv(gym.Env):
         electricity would either be sent at a loss, or would be bought from
         these smaller producers.
         """
+
+        # Indices of attributes based on the Ontario dataset we are using 
         price_index = 0
         ontario_demand_index = 1
         supply_index = 2
 
+        """
+        The networks are trained based on normalized values of the env states.
+        But the reward calculation has to be done using denormalized (original) values of supply,demand and price
+        
+        Since the reward calculations using normalized values appeared to be less rewarding 
+        than expected in certain cases or was going negative where it shouldnt be so we decided to use denormalized 
+        values of supply,demand and price to compute rewards.
+
+        So we are primarily using denormalized values for reward calculation for now.
+        This reward calculation can be done using normalized values if denormalize is set to False while calling this function.   
+        """
+
+        # Parameters are denormalized for reward calculation 
         if denormalize:
             self.denormalized_current_observation = self.denormalize(self.current_observation)
 
@@ -192,6 +216,7 @@ class LSTMEnv(gym.Env):
             demand = self.denormalized_current_observation[ontario_demand_index]
             supply = self.denormalized_current_observation[supply_index]
             new_price = self.denormalized_current_observation[price_index]
+        # OtherWise normalized values are used 
         else:
             log.debug(f"self.current_observation.shape = {self.current_observation.shape}")
             demand = self.current_observation[ontario_demand_index]
@@ -206,6 +231,7 @@ class LSTMEnv(gym.Env):
         Demand - Supply, Price Positive and in domain   : Profit, Rewarded
         Decreaseing the overall Reward value: Correction/=(10**8)
         """
+        
         # TODO Make Reward Better
         maxAllowed = self.min_max_values["max"][price_index]
         minAllowed = self.min_max_values["min"][price_index]
@@ -215,9 +241,12 @@ class LSTMEnv(gym.Env):
             correction=0-abs(correction)
 
         if denormalize:
-            correction/=(10**15)
+            correction/=(10**17)
         reward = (abs(demand - supply)**3) * (abs(new_price)**2) * correction
-        log.info(f"State set = {new_price}, {correction}, {demand}, {supply}")
+        
+        # Included profits generated in state set (for plotting graph)
+        profit = (demand - supply)*new_price
+        log.info(f"State set = {new_price}, {correction}, {demand}, {supply}, {profit}")
         return reward
 
     def denormalize(self, arr):
