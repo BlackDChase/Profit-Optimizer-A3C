@@ -99,8 +99,10 @@ class GOD:
             try:
                 if not (path=="None" or path==None):
                     self.__loadModel(path)
+                log.info(f"Model loaded from : {path}")
                 print("Model loaded from : ",path)
-            except:
+            except FileNotFoundError:
+                log.info(f"Model not found at : {path}")
                 print("Model Not Found")
         pass
 
@@ -161,10 +163,10 @@ class GOD:
         [Refer](https://pytorch.org/docs/stable/notes/multiprocessing.html)
         To be sent to device before sharing
         #"""
-        """
+        
         self.__policyNet.share_memory()
         self.__criticNet.share_memory()
-        #"""
+        
         log.info(f"Policy Network: {self.__policyNet}")
         log.info(f"Critic Network: {self.__criticNet}")
         return
@@ -204,7 +206,7 @@ class GOD:
         return
     
     # TODO, Update this
-    def test(self,time=100):
+    def test(self,time=0):
         '''
         onlineUpdateLength is the amount of episodes the online agent must wait to gather
         trajectory from the real env, after which it finally updates the network.
@@ -216,9 +218,10 @@ class GOD:
 
         # Run in offline mode if testing timeSteps > 0 else in online mode
         if time>0:
+            log.info("Testing Mode\tOffline")
             self.__offline(time)
         else:
-            print("ONLINEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
+            log.info("Testing Mode\tOnline")
             self.__online()
         return
 
@@ -302,7 +305,7 @@ class GOD:
         supply_index = 2
         demand_index = 1
         price_index = 0
-        
+
         # Computing profits from the list of states
         for i in range(len(a3cState)):
 
@@ -321,7 +324,7 @@ class GOD:
             # Computing diff of normal and A3C profits and appending them to diff list
             diff.append(a3cProfit[i]-normalProfit[i])
             log.info(f"Diff = {diff[i]}")
-        
+
         return a3cProfit,normalProfit,diff
     
     def _updatePolicy(self,lossP):
@@ -429,7 +432,7 @@ class GOD:
         To make forward pass in the policy network using the state trajectory
         @input          = states (list of tuples of states acc to trajectory followed)
         @output         = actionProb list showing probability distribution of possible actions 
-        """
+        #"""
 
         #self._policySemaphore.acquire()
         actionProb = self.__policyNet.forward(actions)
@@ -458,9 +461,13 @@ class GOD:
                 self.trajectoryA.popleft()
 
                 currentState=self.onlineGatherAndStore(currentState)
-                self.calculateV_tar()
                 self.calculateV_p()
+                self.calculateV_tar()
                 self.onlineNstepAdvantage()
+                if self.debug:
+                    log.debug(f"Online: Action = {self.trajectoryA}")
+                    log.debug(f"Online: vPred = {self.vPredicted}")
+                    log.debug(f"Online: vTar = {self.vTarget}")
 
                 self.calculateAndUpdateL_P()
                 self.calculateAndUpdateL_C()
@@ -471,34 +478,31 @@ class GOD:
         return
 
     def resetTrajectory(self):
-        self.trajectoryS =  deque([], maxlen=self.trajectoryLength) #[[0 for i in range(self.stateSize)] for j in range(self.trajectoryLength) ] # torch.zeros([self.trajectoryLength,self.stateSize])
-        self.trajectoryR =  deque([], maxlen=self.trajectoryLength) # torch.zeros(self.trajectoryLength)
+        self.trajectoryS =  deque([], maxlen=self.trajectoryLength)
+        self.trajectoryR =  deque([], maxlen=self.trajectoryLength)
         self.trajectoryA =  deque([], maxlen=self.trajectoryLength)
-        self.vPredicted  = torch.zeros(self.trajectoryLength)#[0 for i in range(self.trajectoryLength)]
-        self.vTarget     = torch.zeros(self.trajectoryLength)#[0 for i in range(self.trajectoryLength)]
-        self.advantage   = torch.zeros(self.trajectoryLength)#[0 for i in range(self.trajectoryLength)]
+        self.vPredicted  = torch.zeros(self.trajectoryLength)
+        self.vTarget     = torch.zeros(self.trajectoryLength)
+        self.advantage   = torch.zeros(self.trajectoryLength)
         return
 
     # TODO, Update this
     def onlineGatherAndStore(self,currentState):
          action,probab = self.decideAction(currentState)
-         #nextState,reward,info = self.god.step(action)
          nextState,reward,_,info = self.step(action)
          log.info(f"Online: {self.name}, {info}")
          if self.debug:
             log.debug(f"Online: Reward and Shape = {reward}, {reward.shape}")
-         print(len(self.trajectoryS))
+            log.debug(f"Traj length: {self.trajectoryLength}\tCurrent Trajectory {self.trajectoryS}")
          self.trajectoryS.append(currentState)
          self.trajectoryA.append(action)
-         self.trajectoryR.append(reward) #torch.Tensor(reward).tolist()
+         self.trajectoryR.append(reward) 
+         #torch.Tensor(reward).tolist()
          if self.debug:
             log.debug(f"Online: Action for {self.name}, {action}, {type(action)}")
             log.debug(f"Online: Detached Next state {nextState}")
             currentState=torch.Tensor(nextState)
-         if self.debug:
-            log.debug(f"Online: Action = {self.trajectoryA}")
-            log.debug(f"Online: vPred = {self.vPredicted}")
-            log.debug(f"Online: vTar = {self.vTarget}")
+
          return nextState
 
     def calculateV_p(self):
@@ -506,7 +510,9 @@ class GOD:
         self.vPredicted = Tensor(len(self.vPredicted))
         for i in range(self.trajectoryLength):
             state=torch.Tensor(self.trajectoryS[i])
+            #print("Calculate VPPPPP ",state)
             self.vPredicted[i]=self._getCriticValue(state)
+            #print("VPredicted ",self.vPredicted[i])
         return
 
     def calculateV_tar(self):
@@ -534,18 +540,24 @@ class GOD:
         We have chosen choice 2 for v_tar , by iterating in reverse direction in the trajectory list.
         #"""
         self.vTarget = Tensor(len(self.vTarget))
-        
-        self.vTarget[self.trajectoryLength-1] = torch.Tensor((self.trajectoryR[self.trajectoryLength-1]))
+
+        if self.name=='GOD':
+            self.vTarget[self.trajectoryLength-1] = ((self.vPredicted[self.trajectoryLength-1]))
+        else : 
+            self.vTarget[self.trajectoryLength-1] = self.vPredicted[self.trajectoryLength-1]
         for i in reversed(range(self.trajectoryLength-1)):
             # iterate in reverse order.
-            self.vTarget[i] = torch.Tensor((self.trajectoryR[i])) + self.gamma*self.vTarget[i+1]
+            if self.name=='GOD':
+                self.vTarget[i] = torch.Tensor((self.trajectoryR[i])) + self.gamma*self.vTarget[i+1]
+            else :
+                self.vTarget[i] = ((self.trajectoryR[i])) + self.gamma*self.vTarget[i+1]
             # v_tar_currentState = reward + gamma* v_tar_nextState
         return
 
     def onlineNstepAdvantage(self):
         """
         Calculate Advantage using TD error/N-STEP for online scenario.
-        """
+        #"""
         vPredLast = self.vPredicted[self.trajectoryLength-1]
         self.advantage =  Tensor(len(self.advantage))
         self.advantage[-1]=vPredLast
@@ -618,6 +630,8 @@ class GOD:
         If using GPU, this has to be mapped to it while load .. torch.load(path,map_location=device)
         #"""
         curr = multiprocessing.current_process()
+        if self.debug:
+            log.debug(f"{curr.name} Loading Models")
         #self._policySemaphore.acquire()
         self.__policyNet.loadM(path+"PolicyModel.pt")
         #self._policySemaphore.release()

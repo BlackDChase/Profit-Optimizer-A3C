@@ -132,12 +132,18 @@ class Network(nn.Module):
         return output
 
     def saveM(self,name):
+        curr = multiprocessing.current_process()
         torch.save(self.hypoThesis.state_dict(),name)
         log.info(f"{self.name} saved = {self.hypoThesis}")
+        if self.debug:
+            log.debug(f"Model saved for {self.name} of {curr.ident} : {self.hypoThesis}")
 
     def loadM(self,path):
+        curr = multiprocessing.current_process()
         self.hypoThesis.load_state_dict(torch.load(path))
         log.info(f"{self.name} loaded = {self.hypoThesis}")
+        if self.debug:
+            log.debug(f"Model loaded for {self.name} of {curr.ident} : {self.hypoThesis}")
     pass
 
 # This was the proposed predefined testing model class for handling and managing actor network 

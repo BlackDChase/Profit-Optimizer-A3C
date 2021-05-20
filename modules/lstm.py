@@ -113,7 +113,7 @@ class LSTM(nn.Module):
         Norm is Hardtanh, will force thevalues to stay between [-0.5,10], while values should be between
         [1,1], as data is min normalized
         """
-        out = self.norm(self.fc(out[:, -1, :]))
+        out = self.norm(self.linear(out[:, -1, :]))
         #out.size() --> 100, 10 (batch_dim, output_size)
 
         # if numpy, then return numpy ndarray
