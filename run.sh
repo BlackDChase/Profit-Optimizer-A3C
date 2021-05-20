@@ -47,14 +47,14 @@ n=3
 e=10
 t=10
 a=8
-s=100
+#s=100
 alr=0.01
 clr=0.07
 f=True
 d=True
 # '
 
-# : ' Training
+ : ' Training
 echo "\"Model will start training with $n agents, training $e episodes of $t length, with $a actions, and Debugging set to $d, while actor learning rate and critic learining rate being at $alr and $clr respectivly, as Hyperparameters\""
 folder="../Saved_model/" 
 folder="$folder$(ls $folder -Art | grep "Olog" | tail -n 1)/"
@@ -68,7 +68,7 @@ echo "\"Model Trained and saved, extracting usefull info\""
 echo "\"Extraction successfull, with $n agents training $e episodes of $t length with $a actions as Hyperparameter\""
 # '
 
- : '
+# : '
 # This is for loading Latest trained model and testing it
 
 #d=True

@@ -461,9 +461,13 @@ class GOD:
                 self.trajectoryA.popleft()
 
                 currentState=self.onlineGatherAndStore(currentState)
-                self.calculateV_tar()
                 self.calculateV_p()
+                self.calculateV_tar()
                 self.onlineNstepAdvantage()
+                if self.debug:
+                    log.debug(f"Online: Action = {self.trajectoryA}")
+                    log.debug(f"Online: vPred = {self.vPredicted}")
+                    log.debug(f"Online: vTar = {self.vTarget}")
 
                 self.calculateAndUpdateL_P()
                 self.calculateAndUpdateL_C()
@@ -498,10 +502,7 @@ class GOD:
             log.debug(f"Online: Action for {self.name}, {action}, {type(action)}")
             log.debug(f"Online: Detached Next state {nextState}")
             currentState=torch.Tensor(nextState)
-         if self.debug:
-            log.debug(f"Online: Action = {self.trajectoryA}")
-            log.debug(f"Online: vPred = {self.vPredicted}")
-            log.debug(f"Online: vTar = {self.vTarget}")
+
          return nextState
 
     def calculateV_p(self):
@@ -509,7 +510,9 @@ class GOD:
         self.vPredicted = Tensor(len(self.vPredicted))
         for i in range(self.trajectoryLength):
             state=torch.Tensor(self.trajectoryS[i])
+            #print("Calculate VPPPPP ",state)
             self.vPredicted[i]=self._getCriticValue(state)
+            #print("VPredicted ",self.vPredicted[i])
         return
 
     def calculateV_tar(self):
@@ -539,9 +542,9 @@ class GOD:
         self.vTarget = Tensor(len(self.vTarget))
 
         if self.name=='GOD':
-            self.vTarget[self.trajectoryLength-1] = torch.Tensor((self.trajectoryR[self.trajectoryLength-1]))
+            self.vTarget[self.trajectoryLength-1] = ((self.vPredicted[self.trajectoryLength-1]))
         else : 
-            self.vTarget[self.trajectoryLength-1] = self.trajectoryR[self.trajectoryLength-1]
+            self.vTarget[self.trajectoryLength-1] = self.vPredicted[self.trajectoryLength-1]
         for i in reversed(range(self.trajectoryLength-1)):
             # iterate in reverse order.
             if self.name=='GOD':
