@@ -11,8 +11,8 @@ logs/*
 Saved_model/*
 Saved_test/*
 todo
-delayedStart
 Final Performance/*
 .vscode/*
 updateVersion.sh
 .fuse_h*
+OUTPUT.log
