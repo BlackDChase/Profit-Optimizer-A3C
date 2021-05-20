@@ -13,3 +13,5 @@ Saved_test/*
 todo
 delayedStart
 Final Performance/*
+.vscode/*
+updateVersion.sh

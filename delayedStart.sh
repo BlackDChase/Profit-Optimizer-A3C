@@ -1,4 +1,6 @@
-#/bin/bash
+#!/bin/bash
+# Author  : 'BlackDChase'
+# Version : '1.0.4'
 
 # Shut condition
 getShut(){
