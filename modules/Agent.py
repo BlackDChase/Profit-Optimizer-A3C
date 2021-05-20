@@ -340,6 +340,8 @@ class GOD:
         return
 
     # TODO, Update this
+    # In this function we are sampling an action 
+    # from the output of a policy (Actor) network which will be applied on the env later.
     def decideAction(self,state):
         """
         Responsible for taking the correct action from the given state using the neural net.
@@ -440,6 +442,15 @@ class GOD:
         return actionProb
 
     # TODO, Update this
+    """
+    This function is an implementation of A3C in online mode
+    Here we gather states using a sliding window of size [trajectoryLength] initially 
+    which slides and gathers one state each time 
+    after the networks (actor + critic) are updated 
+    using the data currently present in the sliding window
+
+    NOTE: This process will run indefintely since this is online and will stop after encountering an user interrupt 
+    """
     def __online(self):
         self.gamma=0.9 ## gamma wasn't defined in GOD
         episodes=0
@@ -487,23 +498,41 @@ class GOD:
         return
 
     # TODO, Update this
+    """
+    This function 
+    => performs a single state transition using the current network configurations (for online)
+    => takes action on the env based on the currentState
+    => computes the currentState, action taken, reward gained after state transistion
+    => stores the above computed values to the respective trajectory buffers which is used as sliding window buffers
+    => and finally returns the nextState (based on state transistion [currentState => nextState])
+    """
     def onlineGatherAndStore(self,currentState):
-         action,probab = self.decideAction(currentState)
-         nextState,reward,_,info = self.step(action)
-         log.info(f"Online: {self.name}, {info}")
-         if self.debug:
+        action,probab = self.decideAction(currentState)
+
+        denormalized_a3c_state = self._env.denormalize(currentState)
+        # Logging denormalized a3cStates
+        log.info(f"A3C State = {denormalized_a3c_state}")
+        # Indices of attributes based on the dataset we have considered
+        price_index,demand_index,supply_index=0,1,2
+        a3cProfit = denormalized_a3c_state[price_index]*(denormalized_a3c_state[demand_index]-denormalized_a3c_state[supply_index])
+        # Logging denormalized profit
+        log.info(f"A3C Profit = {a3cProfit}")
+
+        nextState,reward,_,info = self.step(action)
+        log.info(f"Online: {self.name}, {info}")
+        if self.debug:
             log.debug(f"Online: Reward and Shape = {reward}, {reward.shape}")
             log.debug(f"Traj length: {self.trajectoryLength}\tCurrent Trajectory {self.trajectoryS}")
-         self.trajectoryS.append(currentState)
-         self.trajectoryA.append(action)
-         self.trajectoryR.append(reward) 
-         #torch.Tensor(reward).tolist()
-         if self.debug:
+        self.trajectoryS.append(currentState)
+        self.trajectoryA.append(action)
+        self.trajectoryR.append(reward) 
+        #torch.Tensor(reward).tolist()
+        if self.debug:
             log.debug(f"Online: Action for {self.name}, {action}, {type(action)}")
             log.debug(f"Online: Detached Next state {nextState}")
-            currentState=torch.Tensor(nextState)
+        currentState=torch.Tensor(nextState)
 
-         return nextState
+        return nextState
 
     def calculateV_p(self):
         # calculate the predicted v value by using critic network
