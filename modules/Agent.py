@@ -12,7 +12,7 @@ BOSS AGENT
 State = Ontario Price, Ontario Demand, Ontario Supply,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, Northwest Nigiria, West
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '1.0.3'
+__version__ = '1.0.7'
 
 # Imports
 from torch import nn, Tensor
@@ -449,7 +449,7 @@ class GOD:
     after the networks (actor + critic) are updated 
     using the data currently present in the sliding window
 
-    NOTE: This process will run indefintely since this is online and will stop after encountering an user interrupt 
+    NOTE: This process will run indefintely since this is online and will stop after encountering an user interrupt
     """
     def __online(self):
         self.gamma=0.9 ## gamma wasn't defined in GOD
@@ -460,17 +460,11 @@ class GOD:
         self.resetTrajectory()
         currentState=self.reset()
         # get start state from the env.
-        
+
         try:
-            for _ in range(self.trajectoryLength):
+            for _ in range(self.trajectoryLength-1):
                 currentState=self.onlineGatherAndStore(currentState)
             while(True):
-                ## remove the first entry
-                #print("Episodes: ",episodes)
-                self.trajectoryS.popleft()
-                self.trajectoryR.popleft()
-                self.trajectoryA.popleft()
-
                 currentState=self.onlineGatherAndStore(currentState)
                 self.calculateV_p()
                 self.calculateV_tar()
@@ -482,10 +476,17 @@ class GOD:
 
                 self.calculateAndUpdateL_P()
                 self.calculateAndUpdateL_C()
+
+                ## remove the oldest entry
+                #print("Episodes: ",episodes)
+                self.trajectoryS.popleft()
+                self.trajectoryR.popleft()
+                self.trajectoryA.popleft()
         except KeyboardInterrupt:
-            print("Online training terminated >_<")
+            print("\nOnline training terminated >_<")
             print("Episodes: ",episodes)
-            # TODO, dont you wanna save or something?
+        finally:
+            self.saveModel("../Saved_model")
         return
 
     def resetTrajectory(self):
@@ -514,24 +515,25 @@ class GOD:
         log.info(f"A3C State = {denormalized_a3c_state}")
         # Indices of attributes based on the dataset we have considered
         price_index,demand_index,supply_index=0,1,2
-        a3cProfit = denormalized_a3c_state[price_index]*(denormalized_a3c_state[demand_index]-denormalized_a3c_state[supply_index])
+        exchange = (denormalized_a3c_state[demand_index]-denormalized_a3c_state[supply_index])
+        a3cProfit = denormalized_a3c_state[price_index]*exchange
+
         # Logging denormalized profit
         log.info(f"A3C Profit = {a3cProfit}")
 
         nextState,reward,_,info = self.step(action)
-        log.info(f"Online: {self.name}, {info}")
         if self.debug:
+            log.debug(f"Online: {self.name}, {info}")
             log.debug(f"Online: Reward and Shape = {reward}, {reward.shape}")
             log.debug(f"Traj length: {self.trajectoryLength}\tCurrent Trajectory {self.trajectoryS}")
         self.trajectoryS.append(currentState)
         self.trajectoryA.append(action)
-        self.trajectoryR.append(reward) 
+        self.trajectoryR.append(reward)
         #torch.Tensor(reward).tolist()
+
         if self.debug:
             log.debug(f"Online: Action for {self.name}, {action}, {type(action)}")
             log.debug(f"Online: Detached Next state {nextState}")
-        currentState=torch.Tensor(nextState)
-
         return nextState
 
     def calculateV_p(self):
@@ -613,7 +615,6 @@ class GOD:
         critic model might face issues during it's own backpropagation
         #"""
         pd = self.auxillaryForward(torch.Tensor(self.trajectoryS))
-        
         dist = Categorical(pd)
         logProb = dist.log_prob(torch.Tensor(list(self.trajectoryA)))
 
@@ -621,10 +622,9 @@ class GOD:
         if self.debug:
             log.debug(f"Online: advantage detached for {self.name}")
         loss = -1*torch.mean(advantage*logProb)
-        #log.info(f"Policy loss = {loss}")
+        log.info(f"Policy loss = {loss}")
         self._updatePolicy(loss)
         #log.info(f"Updated policyLoss for {self.name}")
-        
         return
 
     # TODO, Update this
@@ -640,7 +640,7 @@ class GOD:
         pred = self.vPredicted
         targ = self.vTarget.detach()
         loss = torch.mean(torch.pow(pred-targ,2))
-        log.info(f"Online: Critic loss = {loss}")
+        log.info(f"Critic loss = {loss}")
         self._updateCritc(loss)
         log.info(f"Online: Updated criticLoss for {self.name}")
         return
@@ -648,7 +648,8 @@ class GOD:
     def auxillaryForward(self,states):
         if self.name=='GOD':
             return self.forwardP(states)
-        else: return self.god.forwardP(states)
+        else:
+            return self.god.forwardP(states)
 
     def saveModel(self,path):
         condition = path +"/"+str(self.__nAgent)+"_"+str(self.maxEpisode)+"_"+str(self.trajectoryLength)+"_"+str(len(self._actionSpace))+"_"+str(self.__actorLR)+"_"+str(self.__criticLR)+"_"

@@ -7,7 +7,7 @@ import log
 import multiprocessing
 
 __author__ = 'Biribiri,BlackDChase'
-__version__ = '1.0.4'
+__version__ = '1.0.7'
 
 # A class for encapsulating the dataset
 # This class maintains the original dataset along with its related parameters and functions

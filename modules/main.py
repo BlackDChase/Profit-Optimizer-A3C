@@ -18,7 +18,7 @@ Parameters:
 #"""
 
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '1.0.3'
+__version__ = '1.0.7'
 
 # Input from outside
 import log
@@ -116,7 +116,7 @@ if __name__=="__main__":
         actionSpace = [i/10 for i in range(-n*55,n*55+1,55)]
     keywords['a']=actionSpace
     print(keywords['t'])
-    # If path for trained model is not given or fine-tuning is enabled then training process is initiated 
+    # If path for trained model is not given or fine-tuning is enabled then training process is initiated
     if keywords["p"] is None or keywords["f"]:
         print("Model Will be trained")
         print(f"Debuggin set to {keywords['d']}")
@@ -222,7 +222,4 @@ if __name__=="__main__":
         time=int(keywords['s'])
         god.test(time=time)
 
-        # TODO verify this (will be moved soon)
-        # Loggings are moved for the offline case 
-        
         print("Testing Complete")

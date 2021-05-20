@@ -7,7 +7,7 @@ Post processing to produce graphs from logs
 - [X] Diff
 #"""
 __author__ = 'BlackDChase'
-__version__ = '1.0.4'
+__version__ = '1.0.7'
 
 # Imports
 
@@ -46,7 +46,7 @@ def readProfit(fileN):
     with open(fileN) as state:
         for i in state:
             profit.append(float(i.strip()))
-    return profit
+    return np.array(profit)
 
 
 if __name__ == '__main__':
@@ -58,9 +58,18 @@ if __name__ == '__main__':
     # TODO, Update this
     #a3cState = readState(folderName+"A3CState.tsv")
     a3cProfit = readProfit(folderName+"A3CProfit.tsv")
-    #normalState = readState(folderName+"NormalState.tsv")
-    normalProfit = readProfit(folderName+"NormalProfit.tsv")
-    diff = readProfit(folderName+"ProfitDiff.tsv")
+    meanProfit = a3cProfit.mean()
+    meanProfit = np.ones(shape=a3cProfit.shape)*meanProfit
+    offline=True
+    try:
+        #normalState = readState(folderName+"NormalState.tsv")
+        normalProfit = readProfit(folderName+"NormalProfit.tsv")
+        meanNormalProfit = normalProfit.mean()
+        mean = np.ones(shape=normalProfit.shape)*meanNormalProfit
+        diff = readProfit(folderName+"ProfitDiff.tsv")
+    except:
+        offline=False
+        pass
 
     # Ploting Profit
     fig,ax1 = plt.subplots(dpi=400)
@@ -71,23 +80,39 @@ if __name__ == '__main__':
     ax1.set_xlabel(f"Time step")
     ax2 = ax1.twinx()
     color='b'
-    ax2.plot(normalProfit,color=color)
-    ax2.tick_params(axis='y',labelcolor=color)
-    ax2.set_ylabel('Profit w/o A3C',color=color)
+    if offline:
+        ax2.plot(normalProfit,color=color)
+        ax2.plot(mean,color='y')
+        ax2.tick_params(axis='y',labelcolor=color)
+        ax2.set_ylabel('Profit w/o A3C',color=color)
+    else:
+        mean = np.ones(shape=a3cProfit.shape)*106272
+        mini = np.ones(shape=a3cProfit.shape)*0.19
+        maxi = np.ones(shape=a3cProfit.shape)*5860463
+        ax2.plot(mean,color='y')
+        ax2.plot(mini,color='g')
+        ax2.plot(maxi,color='orange')
+        ax2.tick_params(axis='y',labelcolor=color)
+        ax2.set_ylabel('Orignal Dataset',color=color)
+    ax1.plot(meanProfit,color='k')
     fig.tight_layout()
     plt.savefig(folderName+"Profit.svg")
     plt.close()
 
-    # Plotting Differnce in Profit
-    fig,ax = plt.subplots(dpi=100)
-    ax.set_xlabel(f"Time step")
-    ax.plot(diff)
-    ax.set_ylabel(f"A3C Profit - Normal Profit")
-    fig.tight_layout()
-    plt.savefig(folderName+"Differnce in profit.svg")
-    plt.close()
-
-
+    if offline:
+        # Plotting Differnce in Profit
+        fig,ax = plt.subplots(dpi=100)
+        ax.set_xlabel(f"Time step")
+        ax.plot(diff)
+        ax.set_ylabel(f"A3C Profit - Normal Profit")
+        fig.tight_layout()
+        plt.savefig(folderName+"Differnce in profit.svg")
+        plt.close()
+    
+    print(f"Min of Profit Acquired: {a3cProfit.min()}")
+    print(f"Max of Profit Acquired: {a3cProfit.max()}")
+    print(f"Avg of Profit Acquired: {a3cProfit.mean()}")
+    print(f"STD of Profit Acquired: {a3cProfit.std()}")
     """
     # Ploting States
     # Plotting A3C State
