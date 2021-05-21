@@ -274,6 +274,7 @@ class GOD:
             action,_ = self.decideAction(Tensor(currentState))
             # Observe nextState, reward, info from the environment after taking the action 
             nextState,reward,_,info = self.step(action)
+            log.info(f"rewards = {reward}")
             ## Oi generous env , please tell me the next state and reward for the action i have taken
             log.info(f"{self.name}, {i},  {info}")
             if self.debug:
@@ -539,6 +540,8 @@ class GOD:
         log.info(f"A3C Profit = {a3cProfit}")
 
         nextState,reward,_,info = self.step(action)
+        log.info(f"rewards = {reward}")
+
         if self.debug:
             log.debug(f"Online: {self.name}, {info}")
             log.debug(f"Online: Reward and Shape = {reward}, {reward.shape}")
@@ -612,7 +615,9 @@ class GOD:
         self.advantage[-1]=vPredLast
         for i in reversed(range(self.trajectoryLength-1)):
             self.advantage[i] = Tensor(self.trajectoryR[i]) + self.gamma*self.advantage[i+1] - self.vPredicted[i]
-        log.info(f"Online : Advantage {self.name} = {self.advantage}")
+        #log.info(f"Online : Advantage {self.name} = {self.advantage}")
+        # Advantage logged with correct format
+        log.info(f"Advantage {self.name} = {self.advantage}")
         return
 
     def calculateAndUpdateL_P(self):
@@ -926,6 +931,7 @@ class BOSS(GOD):
             self.advantage[i] = self.trajectoryR[i].clone() + self.ɤ*self.advantage[i+1].clone() - self.vPredicted[i].clone()
         log.info(f"Advantage {self.name} = {self.advantage}")
         return
+
     # TODO, Update on this
     # def calculateAndUpdateL_P(self):
     #     ### Semaphore stuff for safe update of network by multiple bosses.
