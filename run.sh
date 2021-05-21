@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Author  : 'BlackDChase'
-# Version : '1.2.8'
+# Version : '1.2.9'
 
 source bin/activate
 
@@ -44,7 +44,7 @@ d=True
 # : '
 # This is for Actuall training
 n=50
-e=1000
+e=800
 t=55
 a=8
 s=1000
@@ -56,11 +56,11 @@ d=False
 # '
 
 
-# : ' Training
+ : ' Training
 echo "Model will start training with $n agents, training $e episodes of $t length, with $a actions, and Debugging set to $d, while actor learning rate and critic learining rate being at $alr and $clr respectivly, as Hyperparameters"
 folder="../Saved_model/" 
 folder="$folder$(ls $folder -Art | grep "Olog" | tail -n 1)/"
-p=$(echo "$folder$(ls $folder | grep "CritcModel.pt")" | rev | cut -b 14- | rev)
+#p=$(echo "$folder$(ls $folder | grep "CritcModel.pt")" | rev | cut -b 14- | rev)
 echo "Path is : $p"
 python main.py -n=$n -e=$e -t=$t -a=$a -alr=$alr -clr=$clr -d=$d -p=$p -f=$f || echo "Stopped In Between"
 
@@ -71,18 +71,18 @@ echo "Extraction successfull, with $n agents training $e episodes of $t length w
 # '
 
 
- : '
+# : '
 # This is for loading Latest trained model and testing it
 
 #d=True
 folder="../Saved_model/" 
 folder="$folder$(ls $folder -Art | grep "Olog" | tail -n 1)/"
 
-#p=$(echo "$folder$(ls $folder | grep "CritcModel.pt")" | rev | cut -b 14- | rev)
+p=$(echo "$folder$(ls $folder | grep "CritcModel.pt")" | rev | cut -b 14- | rev)
 s=0
-s=1000
+#s=1000
 m=True
-m=False
+#m=False
 
 echo "Path is : $p"
 f=False
@@ -93,6 +93,7 @@ echo "Model Tested for $fileName for $s time steps"
 fileName=$(echo $folder | cut -b 16- | rev | cut -b 2- | rev)
 ./extractTestLog.sh "$s"
 echo "Extraction successfull, for $s timesteps"
+echo "Sliding window is $m"
 # '
 
 

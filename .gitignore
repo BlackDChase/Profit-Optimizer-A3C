@@ -15,4 +15,4 @@ Final Performance/*
 *.vscode
 updateVersion.sh
 .fuse_h*
-OUTPUT.log
+OUT*.log

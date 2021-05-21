@@ -1,5 +1,5 @@
 # Adjusting Price to maximize profit using A3C 
-`Version : '1.2.7'`
+`Version : '1.2.9'`
 
 ## Ref
 - [Research Paper](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/MARKDOWN/Reinforcement%20Learning%20for%20Optimizing%20the%20Demand%20Response.pdf)

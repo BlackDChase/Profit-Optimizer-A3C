@@ -1,6 +1,6 @@
 #!/bin/bash
 # Author  : 'BlackDChase'
-# Version : '1.2.8'
+# Version : '1.2.9'
 
 # To Run            Shutdown afterwards     After end of process    Process ID      Intrupt time
 # ./delayedStart.sh "y"                     "1"                     "3990"          "3000"
@@ -13,7 +13,7 @@ getShut(){
     case $1 in
         [Yy]* ) echo "Will shut down once done."
             return 1;;
-        [Nn]* ) echo "Will not shutdown";
+        [Nn]* ) echo "Will not shutdown"
             return 2;;
         * ) echo "Please answer yes or no.";;
     esac
@@ -23,9 +23,9 @@ getShut(){
 # Checking if waiting has recived a valid response
 waitValid(){
     case $1 in
-        [1]* ) "Will wait for process to die"
+        [1]* ) echo "Will wait for process to die"
             return 1;;
-        [2]* ) "Will wait for some time"
+        [2]* ) echo "Will wait for some time"
             return 2;;
         * ) echo "Please answer among 1 or 2.";;
     esac
@@ -67,13 +67,13 @@ done
 
 
 # Waiting conditon
-echo "Choose wait waitOption:"
-echo "1. Process to die"
-echo "2. Seconds"
 waitOption=$2
 waitValid $waitOption
 validity=$?
 while [[ "$validity" = 0 ]];do
+    echo "Choose wait waitOption:"
+    echo "1. Process to die"
+    echo "2. Seconds"
     read -p "waitOption [1,2]  : " waitOption
     waitValid $waitOption
     validity=$?
@@ -95,11 +95,11 @@ done
 
 
 # Intrupt conditon
-echo "Do you want to intrupt:"
 intrupt=$4
 intruptValid $intrupt
 validity=$?
 while [[ "$validity" = 0 ]];do
+    echo "Do you want to intrupt:"
     read -p "Should Intrupt time(s) /No  : " intrupt
     intruptValid $intrupt
     validity=$?
@@ -107,17 +107,15 @@ done
 
 # Waiting
 case $waitOption in
-    [1]*) read -p "Process ID  : " pid;
-        while true;do
-            x=$(ps -l $pid)
-            if [[ "$x" =~ "$pid" ]];then
+    [1]*) while true;do
+            x=$(ps -l $waitCommand)
+            if [[ "$x" =~ "$waitCommand" ]];then
                 sleep 60
             else
                 break
             fi
         done;;
-    [2]*) read -p "Sleep time  : " t
-        sleep $t;;
+    [2]*) sleep $waitCommand;;
 esac
 
 # Running training on parallel thread
