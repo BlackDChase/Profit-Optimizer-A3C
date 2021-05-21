@@ -12,7 +12,7 @@ BOSS AGENT
 State = Ontario Price, Ontario Demand, Ontario Supply,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, Northwest Nigiria, West
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '1.0.0'
+__version__ = '1.1.0'
 
 # Imports
 from torch import nn, Tensor
@@ -20,7 +20,6 @@ from torch.distributions import Categorical
 from collections import deque
 import torch
 import numpy as np
-from torch.nn.modules.activation import SELU
 from tqdm import tqdm
 import log
 import sys
@@ -68,7 +67,7 @@ class GOD:
     @Input (From Enviorenment) :: The Current State.
     @Output (To enviorenment)  :: The Final Action Taken.
     """
-    def __init__(self,maxEpisode=100,nAgent=1,debug=False,trajectoryLength=25,stateSize=9,actionSpace=[-15,-10,0,+10,+15],name="GOD",path=None,alr=1e-3,clr=1e-3):
+    def __init__(self,maxEpisode=100,nAgent=1,debug=False,trajectoryLength=25,stateSize=9,actionSpace=[-15,-10,0,+10,+15],name="GOD",path=None,alr=1e-3,clr=1e-3,gamma=0.9):
         """
         Initialization of various GOD parameters, self evident from the code.
         #"""
@@ -83,8 +82,12 @@ class GOD:
         self._state = Tensor([0]*stateSize)
         # action space is the list of percent change allowed on the current price based on the number of actions.
         self._actionSpace = Tensor(actionSpace)
+        
         # Enable debugging if true 
         self.debug = debug
+
+        # Discount factor
+        self.gamma = gamma
 
         self.price = 0
         self.__nAgent=nAgent
@@ -268,7 +271,7 @@ class GOD:
             log.info(f"A3C State = {denormalized_a3c_state}")
             
             # Decide what action to take from currentState
-            action,_ = self.decideAction(torch.Tensor(currentState))
+            action,_ = self.decideAction(Tensor(currentState))
             # Observe nextState, reward, info from the environment after taking the action 
             nextState,reward,_,info = self.step(action)
             ## Oi generous env , please tell me the next state and reward for the action i have taken
@@ -277,7 +280,7 @@ class GOD:
                 log.debug(f"Reward and Shape = {reward}, {reward.shape}")
                 log.debug(f"Action for {self.name} {i} = {action}, {type(action)}")
             # Change the currentState to nextState after action has been taken
-            currentState=torch.Tensor(nextState)
+            currentState=Tensor(nextState)
 
         a3cState.append(currentState)
         a3cState = torch.stack(a3cState)
@@ -340,13 +343,15 @@ class GOD:
         return
 
     # TODO, Update this
+    # In this function we are sampling an action 
+    # from the output of a policy (Actor) network which will be applied on the env later.
     def decideAction(self,state):
         """
         Responsible for taking the correct action from the given state using the neural net.
         @input :: current state
         @output :: the index of action which must be taken from this states, and probability of that action
         #"""
-        state = torch.Tensor(state)
+        state = Tensor(state)
         actionProb = self._getAction(state)
         """
         actionProb  ::  State-action probability vector from the policy net.
@@ -383,7 +388,7 @@ class GOD:
 
     # Returns an initial state from the env (Randomized)
     def reset(self):
-        return torch.Tensor(self._env.reset())
+        return Tensor(self._env.reset())
 
     # Take the specific action on the env and returns nextState, reward and other relevant params
     def step(self,action):
@@ -402,6 +407,7 @@ class GOD:
                 debug=self.debug,
                 trajectoryLength=self.trajectoryLength,
                 stateSize=self.stateSize,
+                gamma=self.gamma,
             )
             self.__bossAgent.insert(i,boss)
             if self.debug:
@@ -439,9 +445,22 @@ class GOD:
         #self._policySemaphore.release()
         return actionProb
 
+    def __progressWatch(self):
+        while True:
+            yield
+
     # TODO, Update this
     def __online(self):
-        self.gamma=0.9 ## gamma wasn't defined in GOD
+        """
+        This function is an implementation of A3C in online mode.
+        Here we gather states using a sliding window of size [trajectoryLength] initially which slides and
+        gathers one state each time after the networks (actor + critic) are updated using the data currently
+        present in the sliding window
+
+        NOTE: This process will run indefintely since this is online and will stop after encountering an user
+        interrupt
+        #"""
+
         episodes=0
         # These self variables necessary for doing gather and store.
         # The same way they are used in the BOSS agent.
@@ -449,17 +468,11 @@ class GOD:
         self.resetTrajectory()
         currentState=self.reset()
         # get start state from the env.
-        
         try:
-            for _ in range(self.trajectoryLength):
+            for _ in range(self.trajectoryLength-1):
                 currentState=self.onlineGatherAndStore(currentState)
-            while(True):
-                ## remove the first entry
-                #print("Episodes: ",episodes)
-                self.trajectoryS.popleft()
-                self.trajectoryR.popleft()
-                self.trajectoryA.popleft()
-
+                episodes+=1
+            for _ in tqdm(self.__progressWatch()):
                 currentState=self.onlineGatherAndStore(currentState)
                 self.calculateV_p()
                 self.calculateV_tar()
@@ -471,10 +484,18 @@ class GOD:
 
                 self.calculateAndUpdateL_P()
                 self.calculateAndUpdateL_C()
+
+                ## remove the oldest entry
+                #print("Episodes: ",episodes)
+                self.trajectoryS.popleft()
+                self.trajectoryR.popleft()
+                self.trajectoryA.popleft()
+                episodes+=1
         except KeyboardInterrupt:
-            print("Online training terminated >_<")
+            print("\nOnline training terminated >_<")
             print("Episodes: ",episodes)
-            # TODO, dont you wanna save or something?
+        finally:
+            self.saveModel("../Saved_test/")
         return
 
     def resetTrajectory(self):
@@ -488,28 +509,49 @@ class GOD:
 
     # TODO, Update this
     def onlineGatherAndStore(self,currentState):
-         action,probab = self.decideAction(currentState)
-         nextState,reward,_,info = self.step(action)
-         log.info(f"Online: {self.name}, {info}")
-         if self.debug:
+        """
+        Performs a single state transition using the current network configurations (for online)
+        Takes action on the env based on the currentState
+        Computes the currentState, action taken, reward gained after state transistion
+        Stores the above computed values to the respective trajectory buffers which is used as sliding 
+        window buffers
+        And finally returns the nextState (based on state transistion [currentState -> nextState])
+        #"""
+
+        action,probab = self.decideAction(currentState)
+
+        denormalized_a3c_state = self._env.denormalize(currentState)
+        # Logging denormalized a3cStates
+        log.info(f"A3C State = {denormalized_a3c_state}")
+        # Indices of attributes based on the dataset we have considered
+        price_index,demand_index,supply_index=0,1,2
+        exchange = (denormalized_a3c_state[demand_index]-denormalized_a3c_state[supply_index])
+        a3cProfit = denormalized_a3c_state[price_index]*exchange
+
+        # Logging denormalized profit
+        log.info(f"A3C Profit = {a3cProfit}")
+
+        nextState,reward,_,info = self.step(action)
+        if self.debug:
+            log.debug(f"Online: {self.name}, {info}")
             log.debug(f"Online: Reward and Shape = {reward}, {reward.shape}")
             log.debug(f"Traj length: {self.trajectoryLength}\tCurrent Trajectory {self.trajectoryS}")
-         self.trajectoryS.append(currentState)
-         self.trajectoryA.append(action)
-         self.trajectoryR.append(reward) 
-         #torch.Tensor(reward).tolist()
-         if self.debug:
+
+        self.trajectoryS.append(currentState)
+        self.trajectoryA.append(action)
+        self.trajectoryR.append(reward)
+        #Tensor(reward).tolist()
+
+        if self.debug:
             log.debug(f"Online: Action for {self.name}, {action}, {type(action)}")
             log.debug(f"Online: Detached Next state {nextState}")
-            currentState=torch.Tensor(nextState)
-
-         return nextState
+        return Tensor(nextState)
 
     def calculateV_p(self):
         # calculate the predicted v value by using critic network
         self.vPredicted = Tensor(len(self.vPredicted))
         for i in range(self.trajectoryLength):
-            state=torch.Tensor(self.trajectoryS[i])
+            state=Tensor(self.trajectoryS[i])
             #print("Calculate VPPPPP ",state)
             self.vPredicted[i]=self._getCriticValue(state)
             #print("VPredicted ",self.vPredicted[i])
@@ -548,7 +590,7 @@ class GOD:
         for i in reversed(range(self.trajectoryLength-1)):
             # iterate in reverse order.
             if self.name=='GOD':
-                self.vTarget[i] = torch.Tensor((self.trajectoryR[i])) + self.gamma*self.vTarget[i+1]
+                self.vTarget[i] = Tensor((self.trajectoryR[i])) + self.gamma*self.vTarget[i+1]
             else :
                 self.vTarget[i] = ((self.trajectoryR[i])) + self.gamma*self.vTarget[i+1]
             # v_tar_currentState = reward + gamma* v_tar_nextState
@@ -562,7 +604,7 @@ class GOD:
         self.advantage =  Tensor(len(self.advantage))
         self.advantage[-1]=vPredLast
         for i in reversed(range(self.trajectoryLength-1)):
-            self.advantage[i] = torch.Tensor(self.trajectoryR[i]) + self.gamma*self.advantage[i+1] - self.vPredicted[i]
+            self.advantage[i] = Tensor(self.trajectoryR[i]) + self.gamma*self.advantage[i+1] - self.vPredicted[i]
         log.info(f"Online : Advantage {self.name} = {self.advantage}")
         return
 
@@ -583,22 +625,25 @@ class GOD:
         # Advantage detached because: Advantage is the result of critc, and if it is backpropagated here,
         critic model might face issues during it's own backpropagation
         #"""
-        pd = self.auxillaryForward(torch.Tensor(self.trajectoryS))
-        
-        dist = Categorical(pd)
-        logProb = dist.log_prob(torch.Tensor(list(self.trajectoryA)))
+        if self.debug:
+            log.debug(f"Trajectory S type: {type(self.trajectoryS)}\t{self.trajectoryS}")
+        states = torch.stack(list(self.trajectoryS))
+        probabDistribution = self.auxillaryForward(states)
+        action = Categorical(probabDistribution)
+        logProb = action.log_prob(Tensor(list(self.trajectoryA)))
 
         advantage = self.advantage.detach()
         if self.debug:
             log.debug(f"Online: advantage detached for {self.name}")
         loss = -1*torch.mean(advantage*logProb)
-        #log.info(f"Policy loss = {loss}")
+        log.info(f"Policy loss = {loss}")
         self._updatePolicy(loss)
         #log.info(f"Updated policyLoss for {self.name}")
-        
         return
 
     # TODO, Update this
+    # Updates the value (critic) network 
+    # using the loss function = Average[(VPred - VTarget)^2]
     def calculateAndUpdateL_C(self):
         """
         vTarget detached because it is assumed to be correct and thus should not be the variable that is
@@ -609,7 +654,7 @@ class GOD:
         pred = self.vPredicted
         targ = self.vTarget.detach()
         loss = torch.mean(torch.pow(pred-targ,2))
-        log.info(f"Online: Critic loss = {loss}")
+        log.info(f"Critic loss = {loss}")
         self._updateCritc(loss)
         log.info(f"Online: Updated criticLoss for {self.name}")
         return
@@ -617,7 +662,8 @@ class GOD:
     def auxillaryForward(self,states):
         if self.name=='GOD':
             return self.forwardP(states)
-        else: return self.god.forwardP(states)
+        else:
+            return self.god.forwardP(states)
 
     def saveModel(self,path):
         condition = path +"/"+str(self.__nAgent)+"_"+str(self.maxEpisode)+"_"+str(self.trajectoryLength)+"_"+str(len(self._actionSpace))+"_"+str(self.__actorLR)+"_"+str(self.__criticLR)+"_"
@@ -705,8 +751,7 @@ class BOSS(GOD):
         for e in tqdm(range(self.maxEpisode),ascii=True,desc=self.name):
             if self.debug:
                 log.debug(f"{self.name} e = {e}")
-            resetState = self.reset()
-            self.startState = torch.Tensor(resetState)
+            self.startState = self.reset()
             if self.debug:
                 log.debug(f"{self.name} Start state = {self.startState}")
             self.gatherAndStore()
@@ -787,12 +832,12 @@ class BOSS(GOD):
             # Update and store trajectories 
             self.trajectoryS[i] = currentState
             self.trajectoryA[i] = action
-            self.trajectoryR[i] = torch.Tensor(reward)
+            self.trajectoryR[i] = Tensor(reward)
             if self.debug:
                 log.debug(f"Action for {self.name} {i} = {action}, {type(action)}")
                 log.debug(f"Detached Next state {nextState}")
             # Change currentState to nextState after action has been taken
-            currentState=torch.Tensor(nextState)
+            currentState=Tensor(nextState)
 
         if self.debug:
             log.debug(f"Action = {self.trajectoryA}")

@@ -17,7 +17,12 @@
 ## PROFIT
 - Bare Profit Given by Enviorenment without any A3C --> 696756.5274361509 
 - Bare Profit Given by Enviorenment with A3C --> 1277335.7448592219
-
+- Bare profit of dataset 
+    - Mean = 106272.98738089424
+    - STD = 74348.89390813262
+    - Min = 0.19366888086732809
+    - Max = 5860463.267796092
+    - Median = 104574.45803202249
 ## Bird Eye View
 - God Agent:
     - Will take final action

@@ -3,7 +3,7 @@ Temporary enviornment functional as standin
 Sends random states
 #"""
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '0.2.0'
+__version__ = '1.1.0'
 
 # Imports
 import torch
