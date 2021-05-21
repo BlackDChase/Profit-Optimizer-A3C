@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Author  : 'BlackDChase'
-# Version : '1.2.2'
+# Version : '1.2.3'
 
 source bin/activate
 

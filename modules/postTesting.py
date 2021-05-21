@@ -7,7 +7,7 @@ Post processing to produce graphs from logs
 - [X] Diff
 #"""
 __author__ = 'BlackDChase'
-__version__ = '1.2.2'
+__version__ = '1.2.3'
 
 # Imports
 
@@ -79,7 +79,7 @@ if __name__ == '__main__':
     ax1.set_ylabel('A3C Profit',color=color)
     ax1.set_xlabel(f"Time step")
     ax2 = ax1.twinx()
-    color='orange'
+    color='green'
     if offline:
         ax2.plot(normalProfit,color=color)
         ax2.plot(mean,color='y')
@@ -92,7 +92,7 @@ if __name__ == '__main__':
         ax2.plot(mean,color=color,label="Dataset Mean")
         ax2.plot(mini,color=color,label="Dataset Min")
         ax2.plot(maxi,color=color,label="Dataset Max")
-        ax2.tick_params(axis=color,labelcolor=color)
+        ax2.tick_params(axis='y',labelcolor=color)
         ax2.set_ylabel('Orignal Dataset',color=color)
     ax1.plot(meanProfit,color='k',label='A3C mean')
     fig.tight_layout()
