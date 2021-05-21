@@ -39,13 +39,13 @@ f=True
 d=True
 # '
 
- : '
+# : '
 # This is for Actuall training
 n=50
-e=500
+e=1000
 t=55
 a=8
-s=1000
+#s=1000
 alr=0.002
 clr=0.009
 f=True
@@ -53,7 +53,7 @@ f=True
 # '
 
 
-# : ' Training
+ : ' Training
 echo "\"Model will start training with $n agents, training $e episodes of $t length, with $a actions, and Debugging set to $d, while actor learning rate and critic learining rate being at $alr and $clr respectivly, as Hyperparameters\""
 folder="../Saved_model/" 
 folder="$folder$(ls $folder -Art | grep "Olog" | tail -n 1)/"
