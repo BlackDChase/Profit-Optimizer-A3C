@@ -102,8 +102,6 @@ def stateExtract(fileN,order=None):
                 temp-=1
     return price,corre,demand,supply,profit
 
-
-
 if __name__ == '__main__':
     #print(sys.argv)
     #print(os.path.dirname(os.path.realpath("")))
@@ -145,7 +143,6 @@ if __name__ == '__main__':
     plt.close()
 
 
-
     # Ploting AVG A3C Price vs Exchange (both have different y-axis scaling and plotted on different axes)
     fig,ax1 = plt.subplots(dpi=400)
     color='r'
@@ -162,31 +159,90 @@ if __name__ == '__main__':
     plt.savefig(folderName+"AVG Model Price vs Exchange.svg")
     plt.close()
 
-    # Plotting Avg A3C price vs (Demand - Supply) exchange vs Profits generated (all have same y-axis scaling and plotted on same axis)
+    # # Plotting Avg A3C price vs (Demand - Supply) exchange vs Profits generated (all have same y-axis scaling and plotted on same axis)
+    # fig,ax = plt.subplots(dpi=400)
+    # fig.suptitle('A3C price vs Exchange vs Profits', fontsize=14)
+    # ax.set_xlabel(f"Average of Per {len(episodeLength)/4} Episode")
+    # color='g'
+    # ax.plot(profitAvg,color=color,label='Model Profit')
+    # color='r'
+    # dataAvg=np.ones(len(profitAvg))*106272
+    # ax.plot(dataAvg,color=color,label='Model Price')
+    # ax.tick_params(axis='y',labelcolor=color)
+
+    # ax1 = ax.twinx()
+    # color='b'
+    # ax1.plot(priceAvg,color=color)
+    # ax1.tick_params(axis='y',labelcolor=color)
+    # ax1.set_ylabel('Model Price',color=color)
+
+    # color='y'
+    # ax2 = ax.twinx()
+    # ax2.plot(demSupAvg,color=color)
+    # ax2.tick_params(axis='y',labelcolor=color)
+    # ax2.set_ylabel('Demand-Supply',color=color)
+    # fig.tight_layout()
+    # plt.legend()
+    # plt.savefig(folderName+"AVG Model Price vs Exchange vs Profit.svg")
+    # plt.close()
+
+    # Plotting Avg A3C price vs (Demand - Supply) exchange vs Profits generated (different y-axis scaling)
     fig,ax = plt.subplots(dpi=400)
     fig.suptitle('A3C price vs Exchange vs Profits', fontsize=14)
     ax.set_xlabel(f"Average of Per {len(episodeLength)/4} Episode")
-    color='g'
+    ax.set_ylabel('Profit')
+    color='b'
     ax.plot(profitAvg,color=color,label='Model Profit')
-    color='r'
-    dataAvg=np.ones(len(profitAvg))*106272
-    ax.plot(dataAvg,color=color,label='Model Price')
+    color='m'
+    bareProfitMean=np.ones(len(profitAvg))*106272
+    ax.plot(bareProfitMean,color=color,label='Mean Profit (Dataset)')
+    # color='r'
+    # bareProfitMax=np.ones(len(profitAvg))*5860463
+    # ax.plot(bareProfitMax,color=color,label='Max Profit (Dataset)')
+    # color='y'
+    # bareProfitStd=np.ones(len(profitAvg))*74348
+    # ax.plot(bareProfitStd,color=color,label='STD Profit (Dataset)')
     ax.tick_params(axis='y',labelcolor=color)
 
+    color='g'
     ax1 = ax.twinx()
-    color='b'
-    ax1.plot(priceAvg,color=color)
+    ax1.plot(priceAvg,color=color,label='Model Price')
     ax1.tick_params(axis='y',labelcolor=color)
     ax1.set_ylabel('Model Price',color=color)
 
-    color='y'
+    color='k'
     ax2 = ax.twinx()
-    ax2.plot(demSupAvg,color=color)
+    ax2.plot(demSupAvg,color=color,label='Demand-Supply')
     ax2.tick_params(axis='y',labelcolor=color)
     ax2.set_ylabel('Demand-Supply',color=color)
     fig.tight_layout()
     plt.legend()
-    plt.savefig(folderName+"AVG Model Price vs Exchange vs Profit.svg")
+    plt.savefig(folderName+"AVG Model Price vs Exchange vs Profit_2.svg")
+    plt.close()
+
+    # Profits 
+    fig,ax = plt.subplots(dpi=400)
+    fig.suptitle('Profits Accumulated', fontsize=14)
+    ax.set_xlabel(f"Average of Per {len(episodeLength)/4} Episode")
+    ax.set_ylabel('Profit')
+    color='b'
+    ax.plot(profitAvg,color=color,label='Model Profit')
+    color='g'
+    bareProfitMean=np.ones(len(profitAvg))*106272
+    ax.plot(bareProfitMean,color=color,label='Mean Profit (Dataset)')
+    color='r'
+    bareProfitMax=np.ones(len(profitAvg))*5860463
+    ax.plot(bareProfitMax,color=color,label='Max Profit (Dataset)')
+    color='m'
+    bareProfitStd=np.ones(len(profitAvg))*74348
+    ax.plot(bareProfitStd,color=color,label='STD Profit (Dataset)')
+    color='y'
+    bareProfitMedian=np.ones(len(profitAvg))*104574
+    ax.plot(bareProfitMedian,color=color,label='Median Profit (Dataset)')
+    ax.tick_params(axis='y',labelcolor=color)
+    fig.tight_layout()
+    plt.legend()
+    plt.savefig(folderName+"Profits.svg")
     plt.close()
 
     # Ploting average advantage
