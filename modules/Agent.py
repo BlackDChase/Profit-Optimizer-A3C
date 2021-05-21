@@ -317,11 +317,15 @@ class GOD:
             denormalized_a3c_state = self._env.denormalize(a3cState[i])
 
             # Profits generated from using only LSTM network
-            normalProfit.append(denormalized_normal_state[price_index]*(denormalized_normal_state[demand_index]-denormalized_normal_state[supply_index]))
+            exchange = denormalized_normal_state[demand_index]-denormalized_normal_state[supply_index]
+            profit = exchange*denormalized_normal_state[price_index]
+            normalProfit.append(profit)
             log.info(f"Normal Profit = {normalProfit[i]}")
 
             # Profits generated using A3C
-            a3cProfit.append(denormalized_a3c_state[price_index]*(denormalized_a3c_state[demand_index]-denormalized_a3c_state[supply_index]))
+            exchange = denormalized_a3c_state[demand_index]-denormalized_a3c_state[supply_index]
+            profit = exchange*denormalized_a3c_state[price_index]
+            a3cProfit.append(profit)
             log.info(f"A3C Profit = {a3cProfit[i]}")
 
             # Computing diff of normal and A3C profits and appending them to diff list
@@ -333,22 +337,24 @@ class GOD:
     def _updatePolicy(self,lossP):
         self.__policyNet.optimizer.zero_grad()
         lossP.backward(retain_graph=True)
+        #lossP.backward(retain_graph=False)
         self.__policyNet.optimizer.step()
         return
 
     def _updateCritc(self,lossC):
         self.__criticNet.optimizer.zero_grad()
         lossC.backward(retain_graph=True)
+        #lossC.backward(retain_graph=False)
         self.__criticNet.optimizer.step()
         return
 
     # TODO, Update this
-    # In this function we are sampling an action 
-    # from the output of a policy (Actor) network which will be applied on the env later.
     def decideAction(self,state):
         """
-        Responsible for taking the correct action from the given state using the neural net.
-        @input :: current state
+        Gets actionProbability from the given state using the neural net. 
+        Then sampling an action.
+        ___________________________________________________________________________________________________
+        @input  :: current state
         @output :: the index of action which must be taken from this states, and probability of that action
         #"""
         state = Tensor(state)
@@ -436,6 +442,7 @@ class GOD:
     def forwardP(self,actions):
         """
         To make forward pass in the policy network using the state trajectory
+        ___________________________________________________________________________________________________
         @input          = states (list of tuples of states acc to trajectory followed)
         @output         = actionProb list showing probability distribution of possible actions 
         #"""
@@ -563,7 +570,7 @@ class GOD:
         1. v_target(s) = summation( reward + v_predicted(ss)) , where ss is some state after the trajectory.
         2. calculate v_target with the help of advantage function itself.
 
-        #####################################################################################################
+        ___________________________________________________________________________________________________
         Another Huge Doubt regarding v_target and GAE is::
 
         DO WE NEED TO CONSTRUCT NEW EXPERIENCE(ENVIORENMENT EXPLORATION) FOR CALCULATING V_tar OR WE CAN USE THE
@@ -689,16 +696,15 @@ class GOD:
 
 class BOSS(GOD):
     """
-   The actual class which does the exploration of the state space.
-   Contains the code for the actor critic algorithm (Trajectory generation+ Policy gradient and value net updation )
-
-   @Input :: (From Enviorenment) The current state + next state according to the current price to create trajectory.
-
-   @Output:: (To Enviorenment)   The action taken for creating trajectory.
-
-   @Actual Job :: To update the policy network and critic net by creating the trajectory and calculating losses.
-
-
+    The actual class which does the exploration of the state space.
+    Contains the code for the actor critic algorithm
+    Trajectory generation+ Policy gradient and value net updation
+    ___________________________________________________________________________________________________
+    @Input      :: (From Enviorenment) The current state + next state according to the current price to 
+                   create trajectory.
+    @Output     :: (To Enviorenment)   The action taken for creating trajectory.
+    @Actual Job :: To update the policy network and critic net by creating the trajectory and calculating    
+                   losses.
     #"""
     def __init__(self,
                  maxEpisode,
@@ -805,10 +811,11 @@ class BOSS(GOD):
         )
 
         """
-        We are doing env.reset() after every env initialization 
-        to set an initial random starting state from a random timeStep for every individual worker (boss) agent
-        along with initialization of other relevant parameters
-        since every boss agent has their own seperate instance of the env, this needs to be done for every instance of env  
+        We are doing `env.reset()` after every env initialization to set an initial random starting state 
+        from a random timeStep for every individual worker (boss) agent along with initialization of other 
+        relevant parameters.
+        Since every boss agent has their own seperate instance of the env, this needs to be done for every
+        instance of env  
         """
         self.reset()
         return
@@ -853,7 +860,8 @@ class BOSS(GOD):
 
         actionIndex,probab = self.god.decideAction(state)
         return actionIndex, probab
-
+    
+    # TODO, Update on this
     # def calculateV_p(self):
     #     # calculate the predicted v value by using critic network
     #     # Predicted value is just the value returned by the critic network.
@@ -918,7 +926,7 @@ class BOSS(GOD):
             self.advantage[i] = self.trajectoryR[i].clone() + self.ɤ*self.advantage[i+1].clone() - self.vPredicted[i].clone()
         log.info(f"Advantage {self.name} = {self.advantage}")
         return
-
+    # TODO, Update on this
     # def calculateAndUpdateL_P(self):
     #     ### Semaphore stuff for safe update of network by multiple bosses.
     #     """
