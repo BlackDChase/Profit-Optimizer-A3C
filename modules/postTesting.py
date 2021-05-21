@@ -108,7 +108,7 @@ if __name__ == '__main__':
         fig.tight_layout()
         plt.savefig(folderName+"Differnce in profit.svg")
         plt.close()
-    
+ 
     print(f"Min of Profit Acquired: {a3cProfit.min()}")
     print(f"Max of Profit Acquired: {a3cProfit.max()}")
     print(f"Avg of Profit Acquired: {a3cProfit.mean()}")
