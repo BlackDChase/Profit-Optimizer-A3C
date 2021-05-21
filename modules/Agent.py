@@ -209,7 +209,7 @@ class GOD:
         return
     
     # TODO, Update this
-    def test(self,time=0):
+    def test(self,time=0,newMethod=True):
         '''
         onlineUpdateLength is the amount of episodes the online agent must wait to gather
         trajectory from the real env, after which it finally updates the network.
@@ -225,7 +225,7 @@ class GOD:
             self.__offline(time)
         else:
             log.info("Testing Mode\tOnline")
-            self.__online()
+            self.__online(newMethod)
         return
 
     # TODO, Update this
@@ -457,7 +457,7 @@ class GOD:
             yield
 
     # TODO, Update this
-    def __online(self):
+    def __online(self,newMethod=True):
         """
         This function is an implementation of A3C in online mode.
         Here we gather states using a sliding window of size [trajectoryLength] initially which slides and
@@ -465,9 +465,13 @@ class GOD:
         present in the sliding window
 
         NOTE: This process will run indefintely since this is online and will stop after encountering an user
-        interrupt
+        interrupt.
+        NewMethod is a flag , which will enable the new method of updating networks in online mode which was 
+        invented by disscussion b/w BlackDChase,Europe-asia-america and MR-TLL, due to inherent problems present
+        in the sliding window method. Please refer issue #28 for more details.
         #"""
-
+        if self.debug:
+            log.debug(f"New Method is {newMethod}")
         episodes=0
         # These self variables necessary for doing gather and store.
         # The same way they are used in the BOSS agent.
@@ -476,11 +480,17 @@ class GOD:
         currentState=self.reset()
         # get start state from the env.
         try:
-            for _ in range(self.trajectoryLength-1):
-                currentState=self.onlineGatherAndStore(currentState)
-                episodes+=1
+            if newMethod==False:
+                for _ in range(self.trajectoryLength-1):
+                    currentState=self.onlineGatherAndStore(currentState)
+                    episodes+=1
             for _ in tqdm(self.__progressWatch()):
                 currentState=self.onlineGatherAndStore(currentState)
+
+                if newMethod==True and episodes<self.trajectoryLength:
+                    episodes+=1
+                    continue
+
                 self.calculateV_p()
                 self.calculateV_tar()
                 self.onlineNstepAdvantage()
@@ -491,6 +501,11 @@ class GOD:
 
                 self.calculateAndUpdateL_P()
                 self.calculateAndUpdateL_C()
+
+                if newMethod==True:
+                    episodes=0
+                    self.resetTrajectory()
+                    continue
 
                 ## remove the oldest entry
                 #print("Episodes: ",episodes)
