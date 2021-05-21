@@ -12,7 +12,7 @@ Combinations:
 #"""
 
 __author__ = 'BlackDChase'
-__version__ = '1.1.0'
+__version__ = '1.2.2'
 
 # Imports
 import os
@@ -165,13 +165,25 @@ if __name__ == '__main__':
     # Plotting Avg A3C price vs (Demand - Supply) exchange vs Profits generated (all have same y-axis scaling and plotted on same axis)
     fig,ax = plt.subplots(dpi=400)
     fig.suptitle('A3C price vs Exchange vs Profits', fontsize=14)
-    color='r'
     ax.set_xlabel(f"Average of Per {len(episodeLength)/4} Episode")
-    ax.plot(priceAvg,color=color,label='Model Price')
-    color='b'
-    ax.plot(demSupAvg,color=color,label='Demand-Supply')
     color='g'
-    ax.plot(profitAvg,color=color,label='Profit')
+    ax.plot(profitAvg,color=color,label='Model Profit')
+    color='r'
+    dataAvg=np.ones(len(profitAvg))*106272
+    ax.plot(dataAvg,color=color,label='Model Price')
+    ax.tick_params(axis='y',labelcolor=color)
+
+    ax1 = ax.twinx()
+    color='b'
+    ax1.plot(priceAvg,color=color)
+    ax1.tick_params(axis='y',labelcolor=color)
+    ax1.set_ylabel('Model Price',color=color)
+
+    color='y'
+    ax2 = ax.twinx()
+    ax2.plot(demSupAvg,color=color)
+    ax2.tick_params(axis='y',labelcolor=color)
+    ax2.set_ylabel('Demand-Supply',color=color)
     fig.tight_layout()
     plt.legend()
     plt.savefig(folderName+"AVG Model Price vs Exchange vs Profit.svg")
