@@ -16,6 +16,14 @@ import matplotlib.pyplot as plt
 import sys
 import numpy as np
 
+def modelLoss(fileN):
+    arr = []
+    with open(fileN) as loss:
+        for line in loss:
+            l = line.strip()
+            arr.append(float(l))
+    return arr
+
 def uniqueColor():
     """There're better ways to generate unique colors, but this isn't awful."""
     return plt.cm.gist_ncar(np.random.random())
@@ -48,7 +56,6 @@ def readProfit(fileN):
             profit.append(float(i.strip()))
     return np.array(profit)
 
-
 if __name__ == '__main__':
     #print(sys.argv)
     #print(os.path.dirname(os.path.realpath("")))
@@ -60,6 +67,9 @@ if __name__ == '__main__':
     a3cProfit = readProfit(folderName+"A3CProfit.tsv")
     meanProfit = a3cProfit.mean()
     meanProfit = np.ones(shape=a3cProfit.shape)*meanProfit
+    policyLoss = modelLoss(folderName+"policyLossLog.tsv")
+    criticLoss = modelLoss(folderName+"criticLossLog.tsv")
+    rewards = readProfit(folderName+"rewardLog.tsv")
     offline=True
     try:
         #normalState = readState(folderName+"NormalState.tsv")
@@ -93,14 +103,14 @@ if __name__ == '__main__':
         ax2.plot(mini,color=color,label="Dataset Min")
         ax2.plot(maxi,color=color,label="Dataset Max")
         ax2.tick_params(axis='y',labelcolor=color)
-        ax2.set_ylabel('Orignal Dataset',color=color)
+        ax2.set_ylabel('Original Dataset',color=color)
     ax1.plot(meanProfit,color='k',label='A3C mean')
     fig.tight_layout()
     plt.savefig(folderName+"Profit.svg")
     plt.close()
 
     if offline:
-        # Plotting Differnce in Profit
+        # Plotting Difference in Profit
         fig,ax = plt.subplots(dpi=100)
         ax.set_xlabel(f"Time step")
         ax.plot(diff)
@@ -108,11 +118,36 @@ if __name__ == '__main__':
         fig.tight_layout()
         plt.savefig(folderName+"Differnce in profit.svg")
         plt.close()
- 
+
+    # Ploting episodic Policy Loss
+    plt.figure(dpi=400)
+    plt.xlabel("Episode")
+    plt.ylabel("Policy Loss")
+    plt.plot(policyLoss)
+    plt.savefig(folderName+"policyLoss.svg")
+    plt.close()
+
+    # Ploting episodic Critic Loss
+    plt.figure(dpi=400)
+    plt.xlabel("Episode")
+    plt.ylabel("criticLoss")
+    plt.plot(criticLoss)
+    plt.savefig(folderName+"criticLoss.svg")
+    plt.close()
+
+    # Rewards accumulated
+    plt.figure(dpi=400)
+    plt.xlabel("Episode")
+    plt.ylabel("Reward")
+    plt.plot(rewards)
+    plt.savefig(folderName+"rewards.svg")
+    plt.close()
+
     print(f"Min of Profit Acquired: {a3cProfit.min()}")
     print(f"Max of Profit Acquired: {a3cProfit.max()}")
     print(f"Avg of Profit Acquired: {a3cProfit.mean()}")
     print(f"STD of Profit Acquired: {a3cProfit.std()}")
+
     """
     # Ploting States
     # Plotting A3C State
