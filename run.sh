@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Author  : 'BlackDChase'
-# Version : '1.2.4'
+# Version : '1.2.6'
 
 source bin/activate
 
@@ -36,7 +36,7 @@ a=8
 s=0
 alr=0.01
 clr=0.07
-f=True
+f=False
 d=True
 # '
 
@@ -75,7 +75,7 @@ echo "Extraction successfull, with $n agents training $e episodes of $t length w
 #d=True
 folder="../Saved_model/" 
 folder="$folder$(ls $folder -Art | grep "Olog" | tail -n 1)/"
-p=$(echo "$folder$(ls $folder | grep "CritcModel.pt")" | rev | cut -b 14- | rev)
+#p=$(echo "$folder$(ls $folder | grep "CritcModel.pt")" | rev | cut -b 14- | rev)
 echo "Path is : $p"
 f=False
 python main.py -n=$n -t=$t -a=$a -p=$p -s=$s -d=$d -f=$f -alr=$alr -clr=$clr  

@@ -18,7 +18,7 @@ Parameters:
 #"""
 
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '1.2.4'
+__version__ = '1.2.6'
 
 # Input from outside
 import log
