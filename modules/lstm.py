@@ -17,7 +17,7 @@ import multiprocessing
 
 
 __author__ = 'Biribiri,BlackDChase'
-__version__ = '1.2.3'
+__version__ = '1.2.4'
 
 
 class LSTM(nn.Module):
