@@ -6,7 +6,7 @@ import logging
 import datetime
 
 __author__ = 'Biribiri,BlackDChase'
-__version__ = '1.2.7'
+__version__ = '1.2.8'
 
 """
 weeks = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]
