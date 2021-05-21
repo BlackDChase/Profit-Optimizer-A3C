@@ -7,7 +7,7 @@ Parameteres made:
     - All data with necessory elements seprated [reducedDF]
 """
 __author__ = 'BlackDChase'
-__version__ = '1.0.0'
+__version__ = '1.2.2'
 
 
 import pandas as pd
@@ -117,3 +117,24 @@ for i in range(len(r)):
 reCorr1.to_csv('../Dataset/reCorr.csv')
 adCorr1.to_csv('../Dataset/adCorr.csv')
 
+
+# Supply demand data Normalized
+norm = pd.read_csv('normalized_weird_13_columns_with_supply.csv')
+maxmin = pd.read_csv('min_max_values_13_columns_with_supply.csv')
+denorm = pd.DataFrame(columns=norm.columns)
+
+for i in range(len(norm.columns)):
+    col=norm.columns[i]
+    denorm[col]= norm[col]*(maxmin['max'][i]-maxmin['min'][i]) + maxmin['min'][i]
+denorm['Profit']=(denorm['Ontario Demand']-denorm['supply'])*denorm['Ontario Price']
+profit=denorm['Profit']
+profit.mean()
+#106272.98738089424
+profit.std()
+#74348.89390813262
+profit.min()
+#0.19366888086732809
+profit.max()
+#5860463.267796092
+profit.median()
+#104574.45803202249
