@@ -1,6 +1,6 @@
 #!/bin/bash
 # Author  : 'BlackDChase'
-# Version : '1.2.1'
+# Version : '1.2.2'
 
 # To Run            Shutdown afterwards     After end of process    Process ID      Intrupt time
 # ./delayedStart.sh "y"                     "1"                     "3990"          "3000"
@@ -13,7 +13,8 @@ getShut(){
     case $1 in
         [Yy]* ) echo "Will shut down once done."
             return 1;;
-        [Nn]* ) return 2;;
+        [Nn]* ) echo "Will not shutdown";
+            return 2;;
         * ) echo "Please answer yes or no.";;
     esac
     return 0
@@ -22,8 +23,10 @@ getShut(){
 # Checking if waiting has recived a valid response
 waitValid(){
     case $1 in
-        [1]* ) return 1;;
-        [2]* ) return 2;;
+        [1]* ) "Will wait for process to die"
+            return 1;;
+        [2]* ) "Will wait for some time"
+            return 2;;
         * ) echo "Please answer among 1 or 2.";;
     esac
     return 0
@@ -31,7 +34,7 @@ waitValid(){
 
 waitCommandValidity(){
     if [[ $1 =~ ^[+-]?[0-9]+$ ]]; then
-        return 1
+        return 1;
     fi
     return 0
 }
