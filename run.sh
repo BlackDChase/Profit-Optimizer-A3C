@@ -86,6 +86,7 @@ m=True
 
 echo "Path is : $p"
 f=False
+t=1000
 python main.py -n=$n -t=$t -a=$a -p=$p -s=$s -d=$d -f=$f -alr=$alr -clr=$clr  
 echo "Model Tested for $fileName for $s time steps"
 
