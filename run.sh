@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Author  : 'BlackDChase'
-# Version : '1.3.1'
+# Version : '1.3.2'
 
 source bin/activate
 
@@ -44,19 +44,19 @@ d=True
 # : '
 # This is for Actuall training
 n=50
-e=800
-t=55
+e=400
+t=200
 a=8
 s=1000
 alr=0.002
 clr=0.009
-g=0.99
+g=0.9
 f=True
 d=False
 # '
 
 
- : ' Training
+# : ' Training
 echo "Model will start training with $n agents, training $e episodes of $t length, with $a actions, and Debugging set to $d, while actor learning rate and critic learining rate being at $alr and $clr respectivly, as Hyperparameters"
 folder="../Saved_model/" 
 folder="$folder$(ls $folder -Art | grep "Olog" | tail -n 1)/"
@@ -80,13 +80,13 @@ folder="$folder$(ls $folder -Art | grep "Olog" | tail -n 1)/"
 
 p=$(echo "$folder$(ls $folder | grep "CritcModel.pt")" | rev | cut -b 14- | rev)
 s=0
-#s=1000
+s=1000
 m=True
 #m=False
 
 echo "Path is : $p"
 f=False
-t=1000
+t=2000
 python main.py -n=$n -t=$t -a=$a -p=$p -s=$s -d=$d -f=$f -alr=$alr -clr=$clr  
 echo "Model Tested for $fileName for $s time steps"
 

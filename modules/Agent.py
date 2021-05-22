@@ -12,7 +12,7 @@ BOSS AGENT
 State = Ontario Price, Ontario Demand, Ontario Supply,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, Northwest Nigiria, West
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '1.3.1'
+__version__ = '1.3.2'
 
 # Imports
 from torch import nn, Tensor
@@ -152,8 +152,14 @@ class GOD:
             1,
             lr=self.__criticLR,
             name="Critic Net",
-            L1=(nn.Linear,15,nn.SELU()),
-            L2=(nn.Linear,10,nn.LeakyReLU()),
+            # TODO, try different varients
+            #"""
+            L1=(nn.Linear,15,nn.LeakyReLU(1)),
+            L2=(nn.Linear,10,nn.LeakyReLU(1)),
+            #"""
+            #L1=(nn.Linear,15,nn.SELU()),
+            #L2=(nn.Linear,10,nn.Tanh()),
+            #"""
             debug=self.debug,
         )
         """
@@ -512,13 +518,18 @@ class GOD:
         if self.debug:
             log.debug(f"Deciding action for {state}")
             log.debug(f"Probability Distribution {probabDistribution}, actionProbab = {actionProb}")
-        
+       
+        # TODO
+        #"""
+        actionIndex = probabDistribution.sample()
+        """
         try:
             # Sampling from the probDistribution if no exceptions occur
             actionIndex = probabDistribution.sample()
         except RuntimeError:
             # For invalid multinomial distribution (encountering probability entry < 0)
             actionIndex = np.random.randint(0,len(self._actionSpace))
+        #"""
         ## sample the action according to the probability distribution.
         if self.debug:
             log.debug(f"Action: {actionIndex}")
@@ -574,7 +585,7 @@ class GOD:
         #self._policySemaphore.release()
         return actionProb
 
-
+    # TODO
     # A3C governing variable -----------------------------------------------------
 
     def calculateV_p(self):

@@ -7,7 +7,7 @@ import log
 import multiprocessing
 
 __author__ = 'Biribiri,BlackDChase'
-__version__ = '1.3.1'
+__version__ = '1.3.2'
 
 # A class for encapsulating the dataset
 # This class maintains the original dataset along with its related parameters and functions
@@ -232,7 +232,6 @@ class LSTMEnv(gym.Env):
         Decreaseing the overall Reward value: Correction/=(10**8)
         """
         
-        # TODO Make Reward Better
         maxAllowed = self.min_max_values["max"][price_index]
         minAllowed = self.min_max_values["min"][price_index]
 
@@ -240,8 +239,10 @@ class LSTMEnv(gym.Env):
         if ((demand-supply) <0) or (new_price<minAllowed) or (new_price>maxAllowed):
             correction=0-abs(correction)
 
+        # TODO try different corrections
         if denormalize:
             correction/=(10**17)
+            #correction/=(10**19)
         reward = (abs(demand - supply)**3) * (abs(new_price)**2) * correction
         
         # Included profits generated in state set (for plotting graph)
