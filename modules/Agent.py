@@ -309,7 +309,7 @@ class GOD:
             action,_ = self.decideAction(Tensor(currentState))
             # Observe nextState, reward, info from the environment after taking the action 
             nextState,reward,_,info = self.step(action)
-            log.info(f"rewards = {reward}")
+            log.info(f"rewards = {Tensor(reward)}")
             ## Oi generous env , please tell me the next state and reward for the action i have taken
             log.info(f"{self.name}, {i},  {info}")
             if self.debug:
@@ -422,6 +422,9 @@ class GOD:
                 self.calculateAndUpdateL_P()
                 self.calculateAndUpdateL_C()
 
+                # Logging rewards from the current trajectoryR buffer before flushing
+                log.info(f"rewards = {Tensor(self.trajectoryR)}")
+
                 if newMethod==True:
                     episodes=0
                     self.resetTrajectory()
@@ -473,7 +476,7 @@ class GOD:
         log.info(f"A3C Profit = {a3cProfit}")
 
         nextState,reward,_,info = self.step(action)
-        log.info(f"rewards = {reward}")
+        #log.info(f"rewards = {Tensor(reward)}")
 
         if self.debug:
             log.debug(f"Online: {self.name}, {info}")
@@ -699,7 +702,6 @@ class GOD:
 
 
     # Model saving/loading  -----------------------------------------------------
-
     def saveModel(self,path):
         condition = path +"/"+str(self.__nAgent)+"_"+str(self.maxEpisode)+"_"+str(self.trajectoryLength)+"_"+str(len(self._actionSpace))+"_"+str(self.__actorLR)+"_"+str(self.__criticLR)+"_"
         self.__policyNet.saveM(condition+"PolicyModel.pt")
