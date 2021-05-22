@@ -1,12 +1,20 @@
 #!/bin/bash
 # Author  : 'BlackDChase'
-# Version : '1.2.9'
+# Version : '1.3.1'
+
+# How to run --------------------------------------------------------------------------------------
 
 # To Run            Shutdown afterwards     After end of process    Process ID      Intrupt time
 # ./delayedStart.sh "y"                     "1"                     "3990"          "3000"
+
 # To Run            Keepworking             After some time         Wait Time       Dont intrupt
 # ./delayedStart.sh "N"                     "2"                     "1000"          "n"
 
+# Example run:
+#./delayedStart.sh "y" "1"  "19450"  "2000" >> OUTDelayed.log
+
+
+# Functions ---------------------------------------------------------------------------------------
 
 # Shut condition
 getShut(){
@@ -52,8 +60,12 @@ intruptValid(){
 run(){
     # Running RUN
     echo "Running the algo"
-    ./run.sh > Out.log "$1"
+    ./run.sh > OUT.log "$1"
 }
+
+
+
+# Condition checks --------------------------------------------------------------------------------
 
 # Shutdown conditon
 shutCon=$1
@@ -64,7 +76,6 @@ while [[ "$shut" = 0 ]]; do
     getShut $shutCon
     shut=$?
 done
-
 
 # Waiting conditon
 waitOption=$2
@@ -79,7 +90,6 @@ while [[ "$validity" = 0 ]];do
     validity=$?
 done
 
-
 # Waiting PID/sleeping time
 waitCommand=$3
 waitCommandValidity $waitCommand
@@ -92,7 +102,6 @@ while [[ "$validity" = 0 ]];do
     waitValid $waitCommand
     validity=$?
 done
-
 
 # Intrupt conditon
 intrupt=$4
@@ -118,6 +127,8 @@ case $waitOption in
     [2]*) sleep $waitCommand;;
 esac
 
+# Actual Run --------------------------------------------------------------------------------------
+
 # Running training on parallel thread
 run $shutCon &
 childPid=($!)
@@ -134,4 +145,4 @@ case $validity in
     *) echo "Invalid Option";;
 esac
 
-echo "Output will be saved in Out.log"
+echo "Output will be saved in OUT.log"
