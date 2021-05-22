@@ -7,7 +7,7 @@ Post processing to produce graphs from logs
 - [X] Diff
 #"""
 __author__ = 'BlackDChase'
-__version__ = '1.2.3'
+__version__ = '1.3.1'
 
 # Imports
 
@@ -55,6 +55,25 @@ def readProfit(fileN):
         for i in state:
             profit.append(float(i.strip()))
     return np.array(profit)
+
+def rewardAvg(fileN):
+    arr = []
+    with open(fileN) as reward:
+        for line in reward:
+            avgReward = line.strip().replace(' ','').split(",")
+            while '' in avgReward:
+                avgReward.remove('')
+            if len(avgReward)>0:
+                arr.append(getAvg(avgReward))
+    return arr
+
+def rewardAvgLen(data):
+    avgReward = []
+    rewardLen = []
+    for avg,length in data:
+        avgReward.append(avg)
+        rewardLen.append(length)
+    return avgReward,rewardLen
 
 def stateExtract(fileN,order=None):
     with open(fileN) as state:
@@ -116,10 +135,15 @@ if __name__ == '__main__':
     criticLoss = modelLoss(folderName+"criticLossLog.tsv")
     rewards = readProfit(folderName+"rewardLog.tsv")
 
-    # Advantage and state values 
-    advantage = readProfit(folderName+"advantageLog.tsv")
-    price,correction,demand,supply,profit = stateExtract(folderName+"stateLog.tsv")
-    dem_Sup = [demand[i]-supply[i] for i in range(len(demand))]
+    # Advantage logged in both online/offline inside their respective nStepAdvantage()
+    avgAdvantage,episodeLength = rewardAvgLen(rewardAvg(folderName+"advantageLog.tsv"))
+    # Reward logged in online in size(trajectoryR)/ offline one at a time
+    avgReward, episodeLength = rewardAvgLen(rewardAvg(folderName+"rewardLog.tsv"))
+    # Extracting state attributes from state set logged in both online and offline internally within env after env.step() is called 
+    priceAvg,correAvg,demandAvg,supplyAvg,profitAvg = stateExtract(folderName+"stateLog.tsv",len(episodeLength)//4)
+    price,corre,demand,supply,profit = stateExtract(folderName+"stateLog.tsv")
+    demSupAvg = [-supplyAvg[i]+demandAvg[i] for i in range(len(demandAvg))]
+    demSup = [-supply[i]+demand[i] for i in range(len(demand))]
 
     offline=True
     try:
@@ -229,29 +253,29 @@ if __name__ == '__main__':
     plt.close()
 
     # Avg advantage
-    episodeLength = 2000
-    avgAdvantage = computeAvgChunks(advantage,episodeLength)
+    #episodeLength = 2000
+    #avgAdvantage = computeAvgChunks(advantage,episodeLength)
     plt.figure(dpi=400)
-    plt.xlabel(f"Average per {episodeLength} episodes")
+    plt.xlabel(f"Episode")
     plt.ylabel("Advantage")
     plt.plot(avgAdvantage)
     plt.savefig(folderName+"Avg_Advantage.svg")
     plt.close()
 
     # Avg rewards vs correction (on seperate y axis scaling)
-    episodeLength = 2000
-    avgRewards = computeAvgChunks(rewards,episodeLength)
-    avgCorrection = computeAvgChunks(correction,episodeLength)
+    #episodeLength = 2000
+    #avgRewards = computeAvgChunks(rewards,episodeLength)
+    #avgCorrection = computeAvgChunks(correction,episodeLength)
     fig,ax = plt.subplots(dpi=400)
     fig.suptitle('Avg rewards vs correction', fontsize=14)
-    ax.set_xlabel(f"Average per {episodeLength} episodes")
+    ax.set_xlabel(f"Average per {episodeLength//4} episodes")
     ax.set_ylabel('Rewards')
     color='b'
-    ax.plot(avgRewards,color=color,label='Avg rewards')
+    ax.plot(avgReward,color=color,label='Avg rewards')
     ax2 = ax.twinx()
     ax2.set_ylabel('Correction')
     color='r'
-    ax2.plot(avgCorrection,color=color,label='Avg Correction')
+    ax2.plot(correAvg,color=color,label='Avg Correction')
     ax2.tick_params(axis='y',labelcolor=color)
     fig.tight_layout()
     plt.legend()
@@ -259,25 +283,25 @@ if __name__ == '__main__':
     plt.close()
 
     # Avg model price vs exchange vs profit (on seperate y axis scaling)
-    episodeLength = 2000
-    avgPrice = computeAvgChunks(price,episodeLength)
-    avgExchange = computeAvgChunks(dem_Sup,episodeLength)
-    avgProfit = computeAvgChunks(profit,episodeLength)
+    #episodeLength = 2000
+    #avgPrice = computeAvgChunks(price,episodeLength)
+    #avgExchange = computeAvgChunks(dem_Sup,episodeLength)
+    #avgProfit = computeAvgChunks(profit,episodeLength)
     fig,ax = plt.subplots(dpi=400)
     fig.suptitle('Avg model price vs exchange vs profit', fontsize=14)
-    ax.set_xlabel(f"Average per {episodeLength} episodes")
+    ax.set_xlabel(f"Average per {episodeLength//4} episodes")
     ax.set_ylabel('Demand-Supply')
     color='b'
-    ax.plot(avgExchange,color=color,label='Avg Exchange(demand-supply)')
+    ax.plot(demSupAvg,color=color,label='Avg Exchange(demand-supply)')
     ax2 = ax.twinx()
     ax2.set_ylabel('Price')
     color='r'
-    ax2.plot(avgPrice,color=color,label='Avg model price')
+    ax2.plot(priceAvg,color=color,label='Avg model price')
     ax2.tick_params(axis='y',labelcolor=color)
     color='g'
     ax3 = ax.twinx()
     ax3.set_ylabel('Profit')
-    ax3.plot(avgProfit,color=color,label='Avg profit')
+    ax3.plot(profitAvg,color=color,label='Avg profit')
     ax3.tick_params(axis='y',labelcolor=color)
     fig.tight_layout()
     plt.legend()
