@@ -41,7 +41,7 @@ f=True
 d=True
 # '
 
-# : '
+ : '
 # This is for Actuall training
 n=50
 e=400
@@ -80,13 +80,13 @@ folder="$folder$(ls $folder -Art | grep "Olog" | tail -n 1)/"
 
 p=$(echo "$folder$(ls $folder | grep "CritcModel.pt")" | rev | cut -b 14- | rev)
 s=0
-s=1000
+#s=1000
 m=True
 #m=False
 
 echo "Path is : $p"
 f=False
-t=2000
+#t=2000
 python main.py -n=$n -t=$t -a=$a -p=$p -s=$s -d=$d -f=$f -alr=$alr -clr=$clr  
 echo "Model Tested for $fileName for $s time steps"
 
