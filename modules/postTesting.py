@@ -7,7 +7,7 @@ Post processing to produce graphs from logs
 - [X] Diff
 #"""
 __author__ = 'BlackDChase'
-__version__ = '1.3.3'
+__version__ = '1.3.5'
 
 # Imports
 
