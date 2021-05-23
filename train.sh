@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Author  : 'BlackDChase'
-# Version : '1.3.7'
+# Version : '1.3.9'
 
 # Finetuning and debugging
 f=$1

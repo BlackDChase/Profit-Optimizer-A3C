@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # Author  : 'BlackDChase'
-# Version : '1.3.7'
+# Version : '1.3.9'
 
 source bin/activate
 
-# ./run "y" "F" "F" "3" "2" "200"
+# ./run.sh "y" "F" "F" "3" "2" "200"
 shutCon=$1
 f=$2
 d=$3
@@ -86,20 +86,26 @@ intruptValid(){
 }
 
 run(){
-    ./test.sh "$1" "$2" "$d"
+    m=$1
+    echo "Testing for $m"
+    # For Testing , fine tuning is disabled by default
+    # If set to True, then will not load the recent model, rather train from scratch
+    ./test.sh "$m" "False" "$d" &
+    childPid=($!)
+    if [[ "$m" != "o" ]]; then
+        echo "Will intrupt $childPid after $intrupt"
+        intruptValid $intrupt
+        validity=$?
+        if [[ "$validity" = "1" ]]; then
+            sleep $intrupt
+            kill -SIGINT $childPid
+        else
+            echo "Will not Intrupt, have to do it manually"
+            echo "Command will be 'kill -SIGINT ' $childPid"
+        fi
+    fi
 }
 
-intruptCheck(){
-    case $1 in
-    [1]* ) echo "Will wait for $1 before Intruptting $2"
-        sleep $1
-        kill -SIGINT $2;;
-    [2]*) echo "Will not intrupt $2"
-        echo "To manually intrupt 'kill -SIGINT $2";;
-    *) echo "Invalid Option";;
-    esac
-    return 0
-}
 
 # Shutdown conditon
 getShut $shutCon
@@ -169,27 +175,19 @@ done
 # Model Train and Test
 
 # Finetuning, Debugging
-
+echo "Will train for $i times while Finetuning is $f"
 while [[ $i != 0 ]];do
     ./train.sh "$f" "$d"
     i=$((i-1))
 done
 
 case $m in
-    [0]*) run "o" "True";;
-    [1]*) run "s" "True"  &
-        childPid=($!)
-        intruptCheck $intrupt $childPid;;
-    [2]*) ./test.sh "e" "True"  &
-        childPid=($!)
-        intruptCheck $intrupt $childPid;;
-    [3]*) ./test.sh "o" "True"
-        ./test.sh "s" "True" &
-        childPid=($!)
-        intruptCheck $intrupt $childPid
-        ./test.sh "e" "True" &
-        childPid=($!)
-        intruptCheck $intrupt $childPid;;
+    [0]*) run "o" ;;
+    [1]*) run "s" ;;
+    [2]*) run "e" ;;
+    [3]*) run "o" ;
+        run "s" ;
+        run "e" ;;
     [4]*) echo "Training concludes"
 esac
 

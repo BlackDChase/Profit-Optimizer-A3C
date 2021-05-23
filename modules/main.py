@@ -20,7 +20,7 @@ Parameters:
 #"""
 
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '1.3.7'
+__version__ = '1.3.9'
 
 # Input from outside
 import log
@@ -55,11 +55,13 @@ try:
         elif key[1:]=="p":
             if value!="":
                 keywords[key[1:]] = value
-        # Rest arguments
-        else:
+        elif key[1:]=="alr" or key[1:]=="clr" or key[1:]=="g":
             keywords[key[1:]] = float(value)
+        else:
+            keywords[key[1:]] = int(value)
         log.info(f"Parameter {key[1:]} is {value}")
 except:
+    print("Error in input")
     print(key,arg,value)
 
 # To show more info about the list of parameters that can be passed during runtime when -h is enabled
@@ -122,8 +124,10 @@ if __name__=="__main__":
     else:
         actionSpace = [i/10 for i in range(-n*55,n*55+1,55)]
     keywords['a']=actionSpace
+
+    print(keywords)
+    
     # If path for trained model is not given or fine-tuning is enabled then training process is initiated
-    print(f"Path = {keywords['p']}")
     if keywords["p"] is None or keywords["f"]:
         print("Model Will be trained")
         print(f"Debuggin set to {keywords['d']}")
