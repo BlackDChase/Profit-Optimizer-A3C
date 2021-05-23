@@ -1,6 +1,6 @@
 #!/bin/bash
 # Author  : 'BlackDChase'
-# Version : '1.3.9'
+# Version : '1.4.0'
 s=$?
 name=$(ls ../logs -Art | grep "Olog.tsv" | tail -n 1)
 IFS='.'
@@ -15,9 +15,9 @@ awk "/\tA3C Profit/ {print}" $name.tsv > "A3CProfit.tsv"
 
 echo "$name" > README.md
 awk "/\tTesting Mode\t/{print}" $name.tsv >> "README.md"
-awk "/\tParameter\t/{print}" $name.tsv >> "README.md"
+awk "/\tPara/ {print}" $name.tsv >> "README.md"
 vim README.md -c ':%s/.*\tTesting Mode/# Testing Mode/g' -c ':wq'
-vim README.md -c ':%s/.*Parameter/- Parameter\t/g' -c ':wq'
+vim README.md -c ':%s/.*Para/- Para\t/g' -c ':wq'
 
 if (( $s > 0 ));then
     awk "/\tNormal State/ {print}" $name.tsv > "NormalState.tsv"

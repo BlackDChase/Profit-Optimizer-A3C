@@ -1,7 +1,9 @@
 #!/bin/bash
 
 # Author  : 'BlackDChase'
-# Version : '1.3.9'
+# Version : '1.4.0'
+
+# ./train.sh "True" "False"
 
 # Finetuning and debugging
 f=$1
@@ -12,7 +14,7 @@ cd modules
 # : ' This is default
 n=10
 e=200
-t=60
+t=30
 a=9
 alr=0.01
 clr=0.07
@@ -21,13 +23,13 @@ g=0.6
 
 # : '
 # This is for Actuall training
-#n=50
-e=400
-t=200
+n=50
+e=40
+#t=200
 a=8
-alr=0.002
-clr=0.009
-g=0.9
+#alr=0.002
+#clr=0.009
+#g=0.9
 # '
 
 

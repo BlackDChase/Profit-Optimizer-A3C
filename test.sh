@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Author  : 'BlackDChase'
-# Version : '1.3.9'
+# Version : '1.4.0'
 
 # Default Hyperparameters
 testVarient=$1
@@ -71,14 +71,14 @@ case $testVarient in
         g=0.8
         slidingOnlineTest $t $g $alr $clr;;
     [eE2]* ) # Hyperparameters for Episodic Online
-        # : ' 
+         : ' 
         t=2000
         g=0.99
         alr=0.05
         clr=0.1
          : '
-        t=200
-        g=0.9
+        t=60
+        g=0.6
         alr=0.01
         clr=0.05
         # '

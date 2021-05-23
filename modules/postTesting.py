@@ -7,7 +7,7 @@ Post processing to produce graphs from logs
 - [X] Diff
 #"""
 __author__ = 'BlackDChase'
-__version__ = '1.3.9'
+__version__ = '1.4.0'
 
 # Imports
 
@@ -115,7 +115,7 @@ def stateExtract(fileN,order=None):
                 x,y,z,w,p=0,0,0,0,0
             if order!=None:
                 temp-=1
-    return price,corre,demand,supply,profit
+    return np.array(price),np.array(corre),np.array(demand),np.array(supply),np.array(profit)
 
 def computeAvg(data):
     avg = 0
@@ -134,10 +134,10 @@ if __name__ == '__main__':
     folderName = ""
 
     # TODO, Update this
-    #a3cState = readState(folderName+"A3CState.tsv")
-    a3cProfit = readProfit(folderName+"A3CProfit.tsv")
-    meanProfit = a3cProfit.mean()
-    meanProfit = np.ones(shape=a3cProfit.shape)*meanProfit
+    
+    price,corre,demand,supply,profit = stateExtract(folderName+"stateLog.tsv")
+    a3cProfit = profit
+    #a3cProfit = readProfit(folderName+"A3CProfit.tsv")
     policyLoss = modelLoss(folderName+"policyLossLog.tsv")
     criticLoss = modelLoss(folderName+"criticLossLog.tsv")
 
@@ -147,7 +147,6 @@ if __name__ == '__main__':
     avgReward, episodeLength = rewardAvgLen(rewardAvg(folderName+"rewardLog.tsv"))
     # Extracting state attributes from state set logged in both online and offline internally within env after env.step() is called 
     priceAvg,correAvg,demandAvg,supplyAvg,profitAvg = stateExtract(folderName+"stateLog.tsv",len(episodeLength)//4)
-    price,corre,demand,supply,profit = stateExtract(folderName+"stateLog.tsv")
     demSupAvg = [-supplyAvg[i]+demandAvg[i] for i in range(len(demandAvg))]
     demSup = [-supply[i]+demand[i] for i in range(len(demand))]
 
@@ -162,33 +161,7 @@ if __name__ == '__main__':
         offline=False
         pass
 
-    # Ploting Profit
-    fig,ax1 = plt.subplots(dpi=400)
-    color='r'
-    ax1.plot(a3cProfit,color=color)
-    ax1.tick_params(axis='y',labelcolor=color)
-    ax1.set_ylabel('A3C Profit',color=color)
-    ax1.set_xlabel(f"Time step")
-    ax2 = ax1.twinx()
-    color='green'
-    if offline:
-        ax2.plot(normalProfit,color=color)
-        ax2.plot(mean,color='y')
-        ax2.tick_params(axis='y',labelcolor=color)
-        ax2.set_ylabel('Profit w/o A3C',color=color)
-    else:
-        mean = np.ones(shape=a3cProfit.shape)*106272
-        mini = np.ones(shape=a3cProfit.shape)*0.19
-        maxi = np.ones(shape=a3cProfit.shape)*5860463
-        ax2.plot(mean,color=color,label="Dataset Mean")
-        ax2.plot(mini,color=color,label="Dataset Min")
-        ax2.plot(maxi,color=color,label="Dataset Max")
-        ax2.tick_params(axis='y',labelcolor=color)
-        ax2.set_ylabel('Original Dataset',color=color)
-    ax1.plot(meanProfit,color='k',label='A3C mean')
-    fig.tight_layout()
-    plt.savefig(folderName+"Profit.svg")
-    plt.close()
+
 
     # Model Profit and Data Profits (STD not included)
     fig,ax = plt.subplots(dpi=400)
@@ -196,28 +169,31 @@ if __name__ == '__main__':
     ax.set_xlabel(f"Time steps")
     ax.set_ylabel('Profit')
     color='b'
-    ax.plot(a3cProfit,color=color,label='Model Profit')
+    ax.plot(profitAvg,color=color,label='Model Profit')
     ax2 = ax.twinx()
     # Based on data profit (original)
     color='g'
-    bareProfitMean=np.ones(len(profitAvg))*106272
+    bareProfitMean=np.ones(len(profitAvg)//4)*106272
     ax2.plot(bareProfitMean,color=color,label='Mean Profit (Dataset)')
-    color='r'
+    color='g'
+    #"""
     bareProfitMax=np.ones(len(profitAvg))*5860463
     ax2.plot(bareProfitMax,color=color,label='Max Profit (Dataset)')
-    color='m'
+    color='g'
     bareProfitMin=np.ones(len(profitAvg))*0.1
     ax2.plot(bareProfitMin,color=color,label='Min Profit (Dataset)')
     # Based on model profit
     color='c'
     modelProfitMean=np.ones(len(profitAvg))*a3cProfit.mean()
     ax2.plot(modelProfitMean,color=color,label='Mean Profit (Model)')
-    color='y'
+    color='c'
     modelProfitMax=np.ones(len(profitAvg))*a3cProfit.max()
     ax2.plot(modelProfitMax,color=color,label='Max Profit (Model)')
-    color='k'
+    color='c'
     modelProfitMin=np.ones(len(profitAvg))*a3cProfit.min()
     ax2.plot(modelProfitMin,color=color,label='Min Profit (Model)')
+    #"""
+    
     ax2.tick_params(axis='y',labelcolor='r')
     fig.tight_layout()
     plt.legend()

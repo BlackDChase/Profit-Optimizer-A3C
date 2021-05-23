@@ -12,7 +12,7 @@ BOSS AGENT
 State = Ontario Price, Ontario Demand, Ontario Supply,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, Northwest Nigiria, West
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '1.3.9'
+__version__ = '1.4.0'
 
 # Imports
 from torch import nn, Tensor
@@ -318,7 +318,7 @@ class GOD:
             action,_ = self.decideAction(Tensor(currentState))
             # Observe nextState, reward, info from the environment after taking the action 
             nextState,reward,_,info = self.step(action)
-            log.info(f"rewards = {Tensor(reward)}")
+            log.info(f"rewards = {[reward]}")
             ## Oi generous env , please tell me the next state and reward for the action i have taken
             log.info(f"{self.name}, {i},  {info}")
             if self.debug:
@@ -432,7 +432,7 @@ class GOD:
                 self.calculateAndUpdateL_C()
 
                 # Logging rewards from the current trajectoryR buffer before flushing
-                log.info(f"rewards = {Tensor(self.trajectoryR)}")
+                log.info(f"rewards = \t {Tensor(self.trajectoryR).squeeze()}")
 
                 if newMethod==True:
                     episodes=0
@@ -485,7 +485,6 @@ class GOD:
         log.info(f"A3C Profit = {a3cProfit}")
 
         nextState,reward,_,info = self.step(action)
-        #log.info(f"rewards = {Tensor(reward)}")
 
         if self.debug:
             log.debug(f"Online: {self.name}, {info}")
@@ -629,17 +628,19 @@ class GOD:
         We have chosen choice 2 for v_tar , by iterating in reverse direction in the trajectory list.
         #"""
         self.vTarget = Tensor(len(self.vTarget))
-
+        #print("")
+        reward = Tensor(self.trajectoryR).squeeze()
+        #log.info(f"rewards = {reward}")
         if self.name=='GOD':
-            self.vTarget[self.trajectoryLength-1] = ((self.vPredicted[self.trajectoryLength-1]))
+            self.vTarget[self.trajectoryLength-1] = self.vPredicted[self.trajectoryLength-1]
         else : 
             self.vTarget[self.trajectoryLength-1] = self.vPredicted[self.trajectoryLength-1]
         for i in reversed(range(self.trajectoryLength-1)):
             # iterate in reverse order.
             if self.name=='GOD':
-                self.vTarget[i] = Tensor((self.trajectoryR[i])) + self.gamma*self.vTarget[i+1]
+                self.vTarget[i] = reward[i] + self.gamma*self.vTarget[i+1]
             else :
-                self.vTarget[i] = ((self.trajectoryR[i])) + self.gamma*self.vTarget[i+1]
+                self.vTarget[i] = reward[i] + self.gamma*self.vTarget[i+1]
             # v_tar_currentState = reward + gamma* v_tar_nextState
         return
 
@@ -649,9 +650,10 @@ class GOD:
         #"""
         vPredLast = self.vPredicted[self.trajectoryLength-1]
         self.advantage =  Tensor(len(self.advantage))
+        reward = Tensor(self.trajectoryR).squeeze()
         self.advantage[-1]=vPredLast
         for i in reversed(range(self.trajectoryLength-1)):
-            self.advantage[i] = Tensor(self.trajectoryR[i]) + self.gamma*self.advantage[i+1] - self.vPredicted[i]
+            self.advantage[i] = reward[i] + self.gamma*self.advantage[i+1] - self.vPredicted[i]
         #log.info(f"Online : Advantage {self.name} = {self.advantage}")
         # Advantage logged with correct format
         log.info(f"Advantage {self.name} = {self.advantage}")

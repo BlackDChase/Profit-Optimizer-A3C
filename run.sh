@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Author  : 'BlackDChase'
-# Version : '1.3.9'
+# Version : '1.4.0'
 
 source bin/activate
 
@@ -52,7 +52,7 @@ getDebug(){
 getTestingMethodolgy(){
     case $1 in
         [nN]*  ) echo "No testing at all"
-            shut 5;;
+            shut=5;;
         [oO0]* ) echo "Offline"
             shut=1;;
         [sS1]* ) echo "Sliding Window"
@@ -85,26 +85,6 @@ intruptValid(){
     return 0
 }
 
-run(){
-    m=$1
-    echo "Testing for $m"
-    # For Testing , fine tuning is disabled by default
-    # If set to True, then will not load the recent model, rather train from scratch
-    ./test.sh "$m" "False" "$d" &
-    childPid=($!)
-    if [[ "$m" != "o" ]]; then
-        echo "Will intrupt $childPid after $intrupt"
-        intruptValid $intrupt
-        validity=$?
-        if [[ "$validity" = "1" ]]; then
-            sleep $intrupt
-            kill -SIGINT $childPid
-        else
-            echo "Will not Intrupt, have to do it manually"
-            echo "Command will be 'kill -SIGINT ' $childPid"
-        fi
-    fi
-}
 
 
 # Shutdown conditon
@@ -182,15 +162,51 @@ while [[ $i != 0 ]];do
 done
 
 case $m in
-    [0]*) run "o" ;;
-    [1]*) run "s" ;;
-    [2]*) run "e" ;;
-    [3]*) run "o" ;
-        run "s" ;
-        run "e" ;;
+    [0]*) ./test.sh "o" "$d";;
+    
+    [1]*) intruptValid $intrupt
+        validity=$?
+        if [[ "$validity" = "1" ]]; then
+            ./test.sh "s" "$d" &
+            childPid=($!)
+            sleep $intrupt
+            kill -SIGINT $childPid
+        else
+            ./test.sh "s" "$d"
+             echo "Will not Intrupt, have to do it manually"
+        fi
+        echo "Intrupt success";;
+    [2]*) intruptValid $intrupt
+        validity=$?
+        if [[ "$validity" = "1" ]]; then
+            ./test.sh "o" "$d" &
+            childPid=($!)
+            sleep $intrupt
+            kill -SIGINT $childPid
+        else
+            ./test.sh "s" "$d"
+             echo "Will not Intrupt, have to do it manually"
+        fi
+        echo "Intrupt success";;
+    [3]*) ./test.sh "o" ;
+        intruptValid $intrupt
+        validity=$?
+        if [[ "$validity" = "1" ]]; then
+            ./test.sh "s" "$d" &
+            childPid=($!)
+            sleep $intrupt
+            kill -SIGINT $childPid
+            ./test.sh "o" "$d" &
+            childPid=($!)
+            sleep $intrupt
+            kill -SIGINT $childPid
+        else
+            ./test.sh "s" "$d"
+             echo "Will not Intrupt, have to do it manually"
+        fi
+        echo "Intrupt success";;
     [4]*) echo "Training concludes"
 esac
-
 
 # For shutting down system
 if [[ "$shut" = 1 ]];then
