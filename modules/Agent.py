@@ -12,7 +12,7 @@ BOSS AGENT
 State = Ontario Price, Ontario Demand, Ontario Supply,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, Northwest Nigiria, West
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '1.3.5'
+__version__ = '1.3.7'
 
 # Imports
 from torch import nn, Tensor
@@ -274,7 +274,10 @@ class GOD:
             log.info("Testing Mode\tOffline")
             self.__offline(time)
         else:
-            log.info("Testing Mode\tOnline")
+            if newMethod:
+                log.info("Testing Mode\tOnline\tEpisodic Protocol")
+            else:
+                log.info("Testing Mode\tOnline\tSliding Window Protocol")
             self.__online(newMethod)
         return
 

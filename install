@@ -1,0 +1,22 @@
+#!/bin/bash
+
+if [ ! -d bin ];then
+    pip3 install virtualenv
+fi
+
+if [ ! -f bin/activate ];then
+    virtualenv .
+fi
+
+source bin/activate
+cd ./modules
+
+if [ ! -f requirements.txt ]; then
+    echo "Generating requirements"
+    pip install pipreqs
+    pipreqs .
+fi
+
+echo "Installing requirements"
+pip install -r requirements.txt
+echo "\nInstallation Concluded\n"

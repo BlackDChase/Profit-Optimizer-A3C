@@ -1,5 +1,42 @@
 # Adjusting Price to maximize profit using A3C 
-`Version : '1.3.5'`
+`Version : '1.3.7'`
+
+## How to Use
+### Installing
+It will setup a virtual environment and install all the required dependancies.
+```
+chmod +x install
+./install
+```
+### Running (Train/Test)
+#### Training
+```
+source bin/activate
+./train.sh 
+```
+#### Testing
+```
+source bin/activate
+./train.sh 
+```
+#### Advanced Training and Testing
+1. If should shutdown the system once done `yes/N`.
+2. If we should do a headstart by using a previusly trained model and fine tune it `True/false`.
+3. Debugging, if logs shoul contain debugging or not `True/false`.
+4. Testing methodology (all using a headstart and fine tuning over it).
+    - `n`. No testing what so ever
+    - `0`. Offline mode
+    - `1`. Sliding Window Protocol
+    - `2`. Episodic Protocol
+    - `3`. All the protocols
+5. Number of Indifferent Trains to perform. (1 is ideal, can opt 1-3 is recommended, keep the better perfomning one , delte the other)
+6. Intrupting Test, as the model is for a live Electric Grid hence will not stop.
+    - `n`. manually stopping by `KeyboardIntrupt`
+    - `8`. Seconds after which it will Intrupt on its own.
+```sh
+#Points (1) (2) (3) (4) (5) (6)
+./run   "y" "F" "F" "3" "2" "200"
+```
 
 ## Ref
 - [Research Paper](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/MARKDOWN/Reinforcement%20Learning%20for%20Optimizing%20the%20Demand%20Response.pdf)
@@ -10,32 +47,51 @@
     - [Rithik Seth](https://github.com/ronin117-prog)
     - [Priyatam Somagattu](https://github.com/Pri1437)
 
-## Loss
-### Policy 
+## Metrics and Graphs
+### A3C
+#### Policy Gradient
 
 [//]: # (Add Graph here)
 
 [![Policy Gradient](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/MARKDOWN/)](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/MARKDOWN/)
 
-### Critic
+#### Critic
 
 [//]: # (Add Graph here)
 
 [![Critic Loss](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/MARKDOWN/)](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/MARKDOWN/)
 
-
-## Reward
-### Advantage
+#### Advantage
 
 [//]: # (Add Graph here)
 
 [![Average Advantage](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/MARKDOWN/)](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/MARKDOWN/)
 
-### ENV Reward
+#### Reward
 
 [//]: # (Add Graph here)
 
 [![Average Reward](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/MARKDOWN/)](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/MARKDOWN/)
+
+### REINFORCE
+A previosly trained model For comparison. It uses [REINFORCE](https://github.com/BlackDChase/Profit-Optimizer-REINFORCE) a policy based algorithms.
+#### Loss
+
+[//]: # (Add Graph here)
+
+#### Reward
+
+[//]: # (Add Graph here)
+
+#### Profit
+
+[//]: # (Add Graph here)
+
+### Environment
+Both the algorithms were trained on an Environment which is based on an [LSTM](https://github.com/BlackDChase/Environment-Profit-Optimizer)
+#### Loss
+
+[//]: # (Add Graph here)
 
 
 ## Decisions

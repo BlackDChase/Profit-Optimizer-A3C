@@ -20,7 +20,7 @@ Parameters:
 #"""
 
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '1.3.5'
+__version__ = '1.3.7'
 
 # Input from outside
 import log
@@ -53,7 +53,8 @@ try:
             keywords[key[1:]] = True if "t" in value.lower() else False
         # For assigning the path of the policy and critic models
         elif key[1:]=="p":
-            keywords[key[1:]] = value
+            if value!="":
+                keywords[key[1:]] = value
         # Rest arguments
         else:
             keywords[key[1:]] = float(value)
@@ -122,6 +123,7 @@ if __name__=="__main__":
         actionSpace = [i/10 for i in range(-n*55,n*55+1,55)]
     keywords['a']=actionSpace
     # If path for trained model is not given or fine-tuning is enabled then training process is initiated
+    print(f"Path = {keywords['p']}")
     if keywords["p"] is None or keywords["f"]:
         print("Model Will be trained")
         print(f"Debuggin set to {keywords['d']}")
