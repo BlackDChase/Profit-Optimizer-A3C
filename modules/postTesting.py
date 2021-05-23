@@ -7,7 +7,7 @@ Post processing to produce graphs from logs
 - [X] Diff
 #"""
 __author__ = 'BlackDChase'
-__version__ = '1.3.2'
+__version__ = '1.3.3'
 
 # Imports
 
@@ -55,6 +55,13 @@ def readProfit(fileN):
         for i in state:
             profit.append(float(i.strip()))
     return np.array(profit)
+
+
+def getAvg(array):
+    arr = []
+    for i in array:
+        arr.append(float(i))
+    return (sum(arr)/len(arr),len(arr))
 
 def rewardAvg(fileN):
     arr = []
@@ -133,7 +140,6 @@ if __name__ == '__main__':
     meanProfit = np.ones(shape=a3cProfit.shape)*meanProfit
     policyLoss = modelLoss(folderName+"policyLossLog.tsv")
     criticLoss = modelLoss(folderName+"criticLossLog.tsv")
-    rewards = readProfit(folderName+"rewardLog.tsv")
 
     # Advantage logged in both online/offline inside their respective nStepAdvantage()
     avgAdvantage,episodeLength = rewardAvgLen(rewardAvg(folderName+"advantageLog.tsv"))
@@ -244,12 +250,12 @@ if __name__ == '__main__':
     plt.savefig(folderName+"criticLoss.svg")
     plt.close()
 
-    # Rewards accumulated
+    # Rewards Accumulated (TESTING)
     plt.figure(dpi=400)
     plt.xlabel("Episode")
-    plt.ylabel("Reward")
-    plt.plot(rewards)
-    plt.savefig(folderName+"rewards.svg")
+    plt.ylabel("Avg Reward")
+    plt.plot(avgReward)
+    plt.savefig(folderName+"Avg_rewards.svg")
     plt.close()
 
     # Avg advantage
@@ -268,7 +274,8 @@ if __name__ == '__main__':
     #avgCorrection = computeAvgChunks(correction,episodeLength)
     fig,ax = plt.subplots(dpi=400)
     fig.suptitle('Avg rewards vs correction', fontsize=14)
-    ax.set_xlabel(f"Average per {episodeLength//4} episodes")
+    la=len(episodeLength)//4
+    ax.set_xlabel(f"Average per {la} episodes")
     ax.set_ylabel('Rewards')
     color='b'
     ax.plot(avgReward,color=color,label='Avg rewards')
@@ -289,7 +296,7 @@ if __name__ == '__main__':
     #avgProfit = computeAvgChunks(profit,episodeLength)
     fig,ax = plt.subplots(dpi=400)
     fig.suptitle('Avg model price vs exchange vs profit', fontsize=14)
-    ax.set_xlabel(f"Average per {episodeLength//4} episodes")
+    ax.set_xlabel(f"Average per  {la} episodes")
     ax.set_ylabel('Demand-Supply')
     color='b'
     ax.plot(demSupAvg,color=color,label='Avg Exchange(demand-supply)')

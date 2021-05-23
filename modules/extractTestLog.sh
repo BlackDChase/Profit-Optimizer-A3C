@@ -1,6 +1,6 @@
 #!/bin/bash
 # Author  : 'BlackDChase'
-# Version : '1.3.2'
+# Version : '1.3.3'
 s=$?
 name=$(ls ../logs -Art | grep "Olog.tsv" | tail -n 1)
 IFS='.'
@@ -26,11 +26,14 @@ else
     awk "/Policy loss/ {print}" $name.tsv > "policyLossLog.tsv"
     awk "/Critic loss/ {print}" $name.tsv > "criticLossLog.tsv"
     awk "/\tAdvantage/ {print}" $name.tsv > "advantageLog.tsv"
+    awk "/\tState set/ {print}" $name.tsv > "stateLog.tsv"
+
     echo "Loss logs are made"
     vim policyLossLog.tsv  -c ':%s/.*loss = //g' -c ':wq'
-    vim rewardLog.tsv  -c ':%s/.*tensor//g' -c ':%s/(\[//g'  -c ':%s/\].*//g' -c ':wq'
+    vim rewardLog.tsv  -c ':%s/.*\[//g'  -c ':%s/\].*//g' -c ':wq'
     vim criticLossLog.tsv  -c ':%s/.*loss = //g' -c ':wq'
     vim advantageLog.tsv  -c ':%s/.*tensor//g' -c ':%s/(\[//g'  -c ':%s/\].*//g' -c ':wq'
+    vim stateLog.tsv -c ':%s/.*State set = //g' -c ':wq'
 fi
 
 vim A3CProfit.tsv  -c ':%s/.*Profit = //g' -c ':wq'
