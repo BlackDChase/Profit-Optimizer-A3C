@@ -12,7 +12,7 @@ BOSS AGENT
 State = Ontario Price, Ontario Demand, Ontario Supply,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, Northwest Nigiria, West
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '1.1.0'
+__version__ = '1.3.5'
 
 # Imports
 from torch import nn, Tensor
@@ -152,8 +152,14 @@ class GOD:
             1,
             lr=self.__criticLR,
             name="Critic Net",
-            L1=(nn.Linear,15,nn.SELU()),
-            L2=(nn.Linear,10,nn.Tanh()),
+            # TODO, try different varients
+            #"""
+            L1=(nn.Linear,15,nn.LeakyReLU(1)),
+            L2=(nn.Linear,10,nn.LeakyReLU(1)),
+            #"""
+            #L1=(nn.Linear,15,nn.SELU()),
+            #L2=(nn.Linear,10,nn.Tanh()),
+            #"""
             debug=self.debug,
         )
         """
@@ -173,6 +179,7 @@ class GOD:
         log.info(f"Policy Network: {self.__policyNet}")
         log.info(f"Critic Network: {self.__criticNet}")
         return
+
 
     # SETTERS -----------------------------------------------------
 
@@ -198,6 +205,8 @@ class GOD:
         return self._actionSpace
     
 
+    # TRAIN -----------------------------------------------------
+
     # The master agent will train with the environment using the worker (BOSS) agents
     def train(self):
         log.info("This GOD will train with the enviornment")
@@ -207,9 +216,50 @@ class GOD:
         # Train using the worker agents 
         self.__trainBoss()
         return
+
+    def __initateBoss(self):
+        """
+        Initialize all the boss agents for training
+        #"""
+        self.__bossAgent=[]
+        for i in range(self.__nAgent):
+            boss = BOSS(
+                god=self,
+                name="BOSS "+str(i).zfill(2),
+                maxEpisode=self.maxEpisode,
+                debug=self.debug,
+                trajectoryLength=self.trajectoryLength,
+                stateSize=self.stateSize,
+                gamma=self.gamma,
+            )
+            self.__bossAgent.insert(i,boss)
+            if self.debug:
+                log.debug(f"Boss{str(i).zfill(2)} created")
+        return self.__bossAgent
+
+    def __trainBoss(self):
+        # To be defined Later :: the actual function to train multiple bosses.
+        #"""
+        bossThreads=[]
+        for i in range(self.__nAgent):
+            process = Process(
+                target=self.__bossAgent[i].train,
+                #args=(self._resetSemaphore,),  # Not using semaphores
+            )
+            bossThreads.append(process)
+
+        for i in range(len(bossThreads)):
+            bossThreads[i].start()
+            log.info(f"Boss{str(i).zfill(2)} training started via GOD")
+        for i in bossThreads:
+            i.join()
+
+        return
+
+
+    # TEST -----------------------------------------------------
     
-    # TODO, Update this
-    def test(self,time=0):
+    def test(self,time=0,newMethod=True):
         '''
         onlineUpdateLength is the amount of episodes the online agent must wait to gather
         trajectory from the real env, after which it finally updates the network.
@@ -225,10 +275,12 @@ class GOD:
             self.__offline(time)
         else:
             log.info("Testing Mode\tOnline")
-            self.__online()
+            self.__online(newMethod)
         return
 
-    # TODO, Update this
+
+    # OFFLINE TEST -----------------------------------------------------
+
     def __offline(self,time):
         """
             Logging details:
@@ -236,20 +288,9 @@ class GOD:
             => normalStates (denormalized)
             => a3cProfit, normalProfit, diff (using denormalized/original values of supply,demand and price)
         """
-
         a3cState = self.__getA3Cstate(time)
         normalStates = self.__getNormalStates(time=time)
-        a3cProfit,normalProfit,diff = self.__compare(a3cState=a3cState,normalState=normalStates)
-
-        # Save necessary information for future references and for plotting graphs
-        # for i in range(len(a3cState)):
-        #     log.info(f"A3C State = {a3cState[i]}")
-        #     log.info(f"Normal State = {normalStates[i]}")
-        # for i in range(len(a3cProfit)):
-        #     log.info(f"A3C Profit = {a3cProfit[i]}")
-        #     log.info(f"Normal Profit = {normalProfit[i]}")
-        #     log.info(f"Diff = {diff[i]}")
-
+        _,_,diff = self.__compare(a3cState=a3cState,normalState=normalStates)
         return diff
 
     def __getA3Cstate(self,time):
@@ -274,6 +315,7 @@ class GOD:
             action,_ = self.decideAction(Tensor(currentState))
             # Observe nextState, reward, info from the environment after taking the action 
             nextState,reward,_,info = self.step(action)
+            log.info(f"rewards = {Tensor(reward)}")
             ## Oi generous env , please tell me the next state and reward for the action i have taken
             log.info(f"{self.name}, {i},  {info}")
             if self.debug:
@@ -317,11 +359,15 @@ class GOD:
             denormalized_a3c_state = self._env.denormalize(a3cState[i])
 
             # Profits generated from using only LSTM network
-            normalProfit.append(denormalized_normal_state[price_index]*(denormalized_normal_state[demand_index]-denormalized_normal_state[supply_index]))
+            exchange = denormalized_normal_state[demand_index]-denormalized_normal_state[supply_index]
+            profit = exchange*denormalized_normal_state[price_index]
+            normalProfit.append(profit)
             log.info(f"Normal Profit = {normalProfit[i]}")
 
             # Profits generated using A3C
-            a3cProfit.append(denormalized_a3c_state[price_index]*(denormalized_a3c_state[demand_index]-denormalized_a3c_state[supply_index]))
+            exchange = denormalized_a3c_state[demand_index]-denormalized_a3c_state[supply_index]
+            profit = exchange*denormalized_a3c_state[price_index]
+            a3cProfit.append(profit)
             log.info(f"A3C Profit = {a3cProfit[i]}")
 
             # Computing diff of normal and A3C profits and appending them to diff list
@@ -329,128 +375,15 @@ class GOD:
             log.info(f"Diff = {diff[i]}")
 
         return a3cProfit,normalProfit,diff
-    
-    def _updatePolicy(self,lossP):
-        self.__policyNet.optimizer.zero_grad()
-        lossP.backward(retain_graph=True)
-        self.__policyNet.optimizer.step()
-        return
 
-    def _updateCritc(self,lossC):
-        self.__criticNet.optimizer.zero_grad()
-        lossC.backward(retain_graph=True)
-        self.__criticNet.optimizer.step()
-        return
 
-    # TODO, Update this
-    # In this function we are sampling an action 
-    # from the output of a policy (Actor) network which will be applied on the env later.
-    def decideAction(self,state):
-        """
-        Responsible for taking the correct action from the given state using the neural net.
-        @input :: current state
-        @output :: the index of action which must be taken from this states, and probability of that action
-        #"""
-        state = Tensor(state)
-        actionProb = self._getAction(state)
-        """
-        actionProb  ::  State-action probability vector from the policy net.
-        Categorical ::  Create a categorical distribution acording to the actionProb
-        #"""
-        probabDistribution = Categorical(probs=actionProb)
-
-        if self.debug:
-            log.debug(f"Deciding action for {state}")
-            log.debug(f"Probability Distribution {probabDistribution}, actionProbab = {actionProb}")
-        
-        try:
-            # Sampling from the probDistribution if no exceptions occur
-            actionIndex = probabDistribution.sample()
-        except RuntimeError:
-            # For invalid multinomial distribution (encountering probability entry < 0)
-            actionIndex = np.random.randint(0,len(self._actionSpace))
-        ## sample the action according to the probability distribution.
-        if self.debug:
-            log.debug(f"Action: {actionIndex}")
-        return actionIndex,probabDistribution
-
-    def _getAction(self,state):
-        #self._policySemaphore.acquire()
-        actionProbab = self.__policyNet.forward(state)
-        #self._policySemaphore.release()
-        return actionProbab
-
-    def _getCriticValue(self,state):
-        #self._criticSemaphore.acquire()
-        vVlaue = self.__criticNet.forward(state)
-        #self._criticSemaphore.release()
-        return vVlaue
-
-    # Returns an initial state from the env (Randomized)
-    def reset(self):
-        return Tensor(self._env.reset())
-
-    # Take the specific action on the env and returns nextState, reward and other relevant params
-    def step(self,action):
-        return self._env.step(action)
-
-    def __initateBoss(self):
-        """
-        Initialize all the boss agents for training
-        #"""
-        self.__bossAgent=[]
-        for i in range(self.__nAgent):
-            boss = BOSS(
-                god=self,
-                name="BOSS "+str(i).zfill(2),
-                maxEpisode=self.maxEpisode,
-                debug=self.debug,
-                trajectoryLength=self.trajectoryLength,
-                stateSize=self.stateSize,
-                gamma=self.gamma,
-            )
-            self.__bossAgent.insert(i,boss)
-            if self.debug:
-                log.debug(f"Boss{str(i).zfill(2)} created")
-        return self.__bossAgent
-
-    def __trainBoss(self):
-        # To be defined Later :: the actual function to train multiple bosses.
-        #"""
-        bossThreads=[]
-        for i in range(self.__nAgent):
-            process = Process(
-                target=self.__bossAgent[i].train,
-                #args=(self._resetSemaphore,),  # Not using semaphores
-            )
-            bossThreads.append(process)
-
-        for i in range(len(bossThreads)):
-            bossThreads[i].start()
-            log.info(f"Boss{str(i).zfill(2)} training started via GOD")
-        for i in bossThreads:
-            i.join()
-
-        return
- 
-    def forwardP(self,actions):
-        """
-        To make forward pass in the policy network using the state trajectory
-        @input          = states (list of tuples of states acc to trajectory followed)
-        @output         = actionProb list showing probability distribution of possible actions 
-        #"""
-
-        #self._policySemaphore.acquire()
-        actionProb = self.__policyNet.forward(actions)
-        #self._policySemaphore.release()
-        return actionProb
+    # ONLINE TEST -----------------------------------------------------
 
     def __progressWatch(self):
         while True:
             yield
 
-    # TODO, Update this
-    def __online(self):
+    def __online(self,newMethod=True):
         """
         This function is an implementation of A3C in online mode.
         Here we gather states using a sliding window of size [trajectoryLength] initially which slides and
@@ -458,9 +391,13 @@ class GOD:
         present in the sliding window
 
         NOTE: This process will run indefintely since this is online and will stop after encountering an user
-        interrupt
+        interrupt.
+        NewMethod is a flag , which will enable the new method of updating networks in online mode which was 
+        invented by disscussion b/w BlackDChase,Europe-asia-america and MR-TLL, due to inherent problems present
+        in the sliding window method. Please refer issue #28 for more details.
         #"""
-
+        if self.debug:
+            log.debug(f"New Method is {newMethod}")
         episodes=0
         # These self variables necessary for doing gather and store.
         # The same way they are used in the BOSS agent.
@@ -469,11 +406,17 @@ class GOD:
         currentState=self.reset()
         # get start state from the env.
         try:
-            for _ in range(self.trajectoryLength-1):
-                currentState=self.onlineGatherAndStore(currentState)
-                episodes+=1
+            if newMethod==False:
+                for _ in range(self.trajectoryLength-1):
+                    currentState=self.onlineGatherAndStore(currentState)
+                    episodes+=1
             for _ in tqdm(self.__progressWatch()):
                 currentState=self.onlineGatherAndStore(currentState)
+
+                if newMethod==True and episodes<self.trajectoryLength:
+                    episodes+=1
+                    continue
+
                 self.calculateV_p()
                 self.calculateV_tar()
                 self.onlineNstepAdvantage()
@@ -484,6 +427,14 @@ class GOD:
 
                 self.calculateAndUpdateL_P()
                 self.calculateAndUpdateL_C()
+
+                # Logging rewards from the current trajectoryR buffer before flushing
+                log.info(f"rewards = {Tensor(self.trajectoryR)}")
+
+                if newMethod==True:
+                    episodes=0
+                    self.resetTrajectory()
+                    continue
 
                 ## remove the oldest entry
                 #print("Episodes: ",episodes)
@@ -507,7 +458,6 @@ class GOD:
         self.advantage   = torch.zeros(self.trajectoryLength)
         return
 
-    # TODO, Update this
     def onlineGatherAndStore(self,currentState):
         """
         Performs a single state transition using the current network configurations (for online)
@@ -532,6 +482,8 @@ class GOD:
         log.info(f"A3C Profit = {a3cProfit}")
 
         nextState,reward,_,info = self.step(action)
+        #log.info(f"rewards = {Tensor(reward)}")
+
         if self.debug:
             log.debug(f"Online: {self.name}, {info}")
             log.debug(f"Online: Reward and Shape = {reward}, {reward.shape}")
@@ -546,6 +498,98 @@ class GOD:
             log.debug(f"Online: Action for {self.name}, {action}, {type(action)}")
             log.debug(f"Online: Detached Next state {nextState}")
         return Tensor(nextState)
+
+
+    # Interact With Env -----------------------------------------------------
+    
+    def decideAction(self,state):
+        """
+        Gets actionProbability from the given state using the neural net. 
+        Then sampling an action.
+        ___________________________________________________________________________________________________
+        @input  :: current state
+        @output :: the index of action which must be taken from this states, and probability of that action
+        #"""
+        state = Tensor(state)
+        actionProb = self._getAction(state)
+        """
+        actionProb  ::  State-action probability vector from the policy net.
+        Categorical ::  Create a categorical distribution acording to the actionProb
+        #"""
+        probabDistribution = Categorical(probs=actionProb)
+
+        if self.debug:
+            log.debug(f"Deciding action for {state}")
+            log.debug(f"Probability Distribution {probabDistribution}, actionProbab = {actionProb}")
+       
+        # TODO
+        #"""
+        actionIndex = probabDistribution.sample()
+        """
+        try:
+            # Sampling from the probDistribution if no exceptions occur
+            actionIndex = probabDistribution.sample()
+        except RuntimeError:
+            # For invalid multinomial distribution (encountering probability entry < 0)
+            actionIndex = np.random.randint(0,len(self._actionSpace))
+        #"""
+        ## sample the action according to the probability distribution.
+        if self.debug:
+            log.debug(f"Action: {actionIndex}")
+        return actionIndex,probabDistribution
+    
+    # Returns an initial state from the env (Randomized)
+    def reset(self):
+        return Tensor(self._env.reset())
+
+    # Take the specific action on the env and returns nextState, reward and other relevant params
+    def step(self,action):
+        return self._env.step(action)
+
+
+    # Interact With Network -----------------------------------------------------
+
+    def _getAction(self,state):
+        #self._policySemaphore.acquire()
+        actionProbab = self.__policyNet.forward(state)
+        #self._policySemaphore.release()
+        return actionProbab
+
+    def _getCriticValue(self,state):
+        #self._criticSemaphore.acquire()
+        vVlaue = self.__criticNet.forward(state)
+        #self._criticSemaphore.release()
+        return vVlaue
+
+    def _updatePolicy(self,lossP):
+        self.__policyNet.optimizer.zero_grad()
+        lossP.backward(retain_graph=True)
+        #lossP.backward(retain_graph=False)
+        self.__policyNet.optimizer.step()
+        return
+
+    def _updateCritc(self,lossC):
+        self.__criticNet.optimizer.zero_grad()
+        lossC.backward(retain_graph=True)
+        #lossC.backward(retain_graph=False)
+        self.__criticNet.optimizer.step()
+        return
+ 
+    def forwardP(self,actions):
+        """
+        To make forward pass in the policy network using the state trajectory
+        ___________________________________________________________________________________________________
+        @input          = states (list of tuples of states acc to trajectory followed)
+        @output         = actionProb list showing probability distribution of possible actions 
+        #"""
+
+        #self._policySemaphore.acquire()
+        actionProb = self.__policyNet.forward(actions)
+        #self._policySemaphore.release()
+        return actionProb
+
+    # TODO
+    # A3C governing variable -----------------------------------------------------
 
     def calculateV_p(self):
         # calculate the predicted v value by using critic network
@@ -563,7 +607,7 @@ class GOD:
         1. v_target(s) = summation( reward + v_predicted(ss)) , where ss is some state after the trajectory.
         2. calculate v_target with the help of advantage function itself.
 
-        #####################################################################################################
+        ___________________________________________________________________________________________________
         Another Huge Doubt regarding v_target and GAE is::
 
         DO WE NEED TO CONSTRUCT NEW EXPERIENCE(ENVIORENMENT EXPLORATION) FOR CALCULATING V_tar OR WE CAN USE THE
@@ -605,7 +649,9 @@ class GOD:
         self.advantage[-1]=vPredLast
         for i in reversed(range(self.trajectoryLength-1)):
             self.advantage[i] = Tensor(self.trajectoryR[i]) + self.gamma*self.advantage[i+1] - self.vPredicted[i]
-        log.info(f"Online : Advantage {self.name} = {self.advantage}")
+        #log.info(f"Online : Advantage {self.name} = {self.advantage}")
+        # Advantage logged with correct format
+        log.info(f"Advantage {self.name} = {self.advantage}")
         return
 
     def calculateAndUpdateL_P(self):
@@ -665,6 +711,8 @@ class GOD:
         else:
             return self.god.forwardP(states)
 
+
+    # Model saving/loading  -----------------------------------------------------
     def saveModel(self,path):
         condition = path +"/"+str(self.__nAgent)+"_"+str(self.maxEpisode)+"_"+str(self.trajectoryLength)+"_"+str(len(self._actionSpace))+"_"+str(self.__actorLR)+"_"+str(self.__criticLR)+"_"
         self.__policyNet.saveM(condition+"PolicyModel.pt")
@@ -689,16 +737,15 @@ class GOD:
 
 class BOSS(GOD):
     """
-   The actual class which does the exploration of the state space.
-   Contains the code for the actor critic algorithm (Trajectory generation+ Policy gradient and value net updation )
-
-   @Input :: (From Enviorenment) The current state + next state according to the current price to create trajectory.
-
-   @Output:: (To Enviorenment)   The action taken for creating trajectory.
-
-   @Actual Job :: To update the policy network and critic net by creating the trajectory and calculating losses.
-
-
+    The actual class which does the exploration of the state space.
+    Contains the code for the actor critic algorithm
+    Trajectory generation+ Policy gradient and value net updation
+    ___________________________________________________________________________________________________
+    @Input      :: (From Enviorenment) The current state + next state according to the current price to 
+                   create trajectory.
+    @Output     :: (To Enviorenment)   The action taken for creating trajectory.
+    @Actual Job :: To update the policy network and critic net by creating the trajectory and calculating    
+                   losses.
     #"""
     def __init__(self,
                  maxEpisode,
@@ -805,10 +852,11 @@ class BOSS(GOD):
         )
 
         """
-        We are doing env.reset() after every env initialization 
-        to set an initial random starting state from a random timeStep for every individual worker (boss) agent
-        along with initialization of other relevant parameters
-        since every boss agent has their own seperate instance of the env, this needs to be done for every instance of env  
+        We are doing `env.reset()` after every env initialization to set an initial random starting state 
+        from a random timeStep for every individual worker (boss) agent along with initialization of other 
+        relevant parameters.
+        Since every boss agent has their own seperate instance of the env, this needs to be done for every
+        instance of env  
         """
         self.reset()
         return
@@ -853,7 +901,8 @@ class BOSS(GOD):
 
         actionIndex,probab = self.god.decideAction(state)
         return actionIndex, probab
-
+    
+    # TODO, Update on this
     # def calculateV_p(self):
     #     # calculate the predicted v value by using critic network
     #     # Predicted value is just the value returned by the critic network.
@@ -919,6 +968,7 @@ class BOSS(GOD):
         log.info(f"Advantage {self.name} = {self.advantage}")
         return
 
+    # TODO, Update on this
     # def calculateAndUpdateL_P(self):
     #     ### Semaphore stuff for safe update of network by multiple bosses.
     #     """

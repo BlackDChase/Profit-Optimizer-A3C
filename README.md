@@ -1,9 +1,42 @@
-# Adjusting Price to maximize profit using A3C
+# Adjusting Price to maximize profit using A3C 
+`Version : '1.3.5'`
 
 ## Ref
-- [Research Paper](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/Reinforcement%20Learning%20for%20Optimizing%20the%20Demand%20Response.pdf)
-- Incomplete
-    - Missing Train and test Results
+- [Research Paper](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/MARKDOWN/Reinforcement%20Learning%20for%20Optimizing%20the%20Demand%20Response.pdf)
+- Authors:
+    - [Harsh Kochar](https://github.com/BlackDChase/)
+    - [Aadarsh Abhijat](https://github.com/MR-TLL/)
+    - [Mrigyen Sawant](https://github.com/europe-asia-america/)
+    - [Rithik Seth](https://github.com/ronin117-prog)
+    - [Priyatam Somagattu](https://github.com/Pri1437)
+
+## Loss
+### Policy 
+
+[//]: # (Add Graph here)
+
+[![Policy Gradient](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/MARKDOWN/)](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/MARKDOWN/)
+
+### Critic
+
+[//]: # (Add Graph here)
+
+[![Critic Loss](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/MARKDOWN/)](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/MARKDOWN/)
+
+
+## Reward
+### Advantage
+
+[//]: # (Add Graph here)
+
+[![Average Advantage](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/MARKDOWN/)](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/MARKDOWN/)
+
+### ENV Reward
+
+[//]: # (Add Graph here)
+
+[![Average Reward](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/MARKDOWN/)](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/MARKDOWN/)
+
 
 ## Decisions
 - Model has to be scaled in way that it can adjust for the following scenario
@@ -14,15 +47,21 @@
     - If it has to optimise profit for a longer term than t should be predicting for a longer term.
 - __Environment is going to produce a reward__, The only thing matters for the agent is the reward , so it doesn't matters to agent how that reward is distributed, it will only chase the state which gives high reward. Now a preliminary reward can be (price * demand) , this needs to be refined later.
 
+
 ## PROFIT
-- Bare Profit Given by Enviorenment without any A3C --> 696756.5274361509 
-- Bare Profit Given by Enviorenment with A3C --> 1277335.7448592219
 - Bare profit of dataset 
     - Mean = 106272.98738089424
     - STD = 74348.89390813262
     - Min = 0.19366888086732809
     - Max = 5860463.267796092
     - Median = 104574.45803202249
+- Profit of A3C model:
+
+[//]: # (Add Graph here)
+
+[![A3C Profit](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/MARKDOWN/)](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/MARKDOWN/)
+
+
 ## Bird Eye View
 - God Agent:
     - Will take final action
@@ -66,13 +105,13 @@
             - Policy `l_p`
             - Critic `l_c`
 
+
 ## ONLINE-OFFLINE DILLEMA
-- There are two versions of actor critic:
-    1. Batch
-    2. Online
-        - It seems that Online one is more suited for our problems.
-        - In online we don't need to create trajectory.
-        - We just sample a action and update the network step-by-step.
+- There are three versions of actor critic: Refer [#28](https://github.com/BlackDChase/Profit-Optimizer-A3C/issues/28)
+    1. Online Sliding Window
+    2. Online Episodic
+    3. Offline
+
 
 ## Detailed View Of The Code
 - Dataset
@@ -106,6 +145,7 @@
 - Model is concerned with choosing the appropriate price increase/decrease for the current state(current demand)
   in hope that it will maximize the profit of the energy company and minimize the losses.
 
+
 ## Annexure
-@ Overriden method
-% Semaphore required
+`@` Overriden method
+`%` Semaphore required

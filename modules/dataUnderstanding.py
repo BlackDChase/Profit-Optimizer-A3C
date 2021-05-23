@@ -7,7 +7,7 @@ Parameteres made:
     - All data with necessory elements seprated [reducedDF]
 """
 __author__ = 'BlackDChase'
-__version__ = '1.1.0'
+__version__ = '1.3.5'
 
 
 import pandas as pd
@@ -129,12 +129,12 @@ for i in range(len(norm.columns)):
 denorm['Profit']=(denorm['Ontario Demand']-denorm['supply'])*denorm['Ontario Price']
 profit=denorm['Profit']
 profit.mean()
-#106272.98738089424
+#106272.987
 profit.std()
-#74348.89390813262
+#74348.8939
 profit.min()
-#0.19366888086732809
+#0.19366888
 profit.max()
-#5860463.267796092
+#5860463.26
 profit.median()
-#104574.45803202249
+#104574.458

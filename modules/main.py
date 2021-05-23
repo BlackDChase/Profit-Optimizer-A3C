@@ -14,11 +14,13 @@ Parameters:
     - s     Times steps to test for, if 0, will test in  online mode until KeyboardInterrupt.
             I is not initialised, will be parsed when called god.test().
     - f     Finetune trained Model
+    - g     gamma
+    - m     True: Episodic Method, False: Sliding Window Method
     - h     Help
 #"""
 
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '1.1.0'
+__version__ = '1.3.5'
 
 # Input from outside
 import log
@@ -34,6 +36,8 @@ keywords={
         "s":0,
         "p":None,
         "f":"",
+        "m":True,
+        "g":0.9,
     }
 
 stateSize = 13
@@ -45,7 +49,7 @@ try:
     for arg in sys.argv[1:]:
         key,value = arg.split("=")
         # For debug and fine tuning 
-        if key[1:]=="d" or key[1:]=="f":
+        if key[1:]=="d" or key[1:]=="f" or key[1:]=="m":
             keywords[key[1:]] = True if "t" in value.lower() else False
         # For assigning the path of the policy and critic models
         elif key[1:]=="p":
@@ -74,6 +78,8 @@ Parameters:
     - p     Path of folder which contains PolicModel.py, CriticModel.pt
     - s     Times steps to test for, if 0, will test in  online mode until KeyboardInterrupt
     - f     Finetune trained Model
+    - g     gamma
+    - m     True: Episodic Method, False: Sliding Window Method
     - h     Help
 """)
     sys.exit()
@@ -115,7 +121,6 @@ if __name__=="__main__":
     else:
         actionSpace = [i/10 for i in range(-n*55,n*55+1,55)]
     keywords['a']=actionSpace
-    print(keywords['t'])
     # If path for trained model is not given or fine-tuning is enabled then training process is initiated
     if keywords["p"] is None or keywords["f"]:
         print("Model Will be trained")
@@ -132,6 +137,7 @@ if __name__=="__main__":
             clr=keywords["clr"],
             debug=keywords["d"],
             path=keywords["p"],
+            gamma=keywords["g"],
         )
 
         # Logging all details about the God agent created during training phase
@@ -180,6 +186,7 @@ if __name__=="__main__":
             debug=keywords["d"],
             alr=keywords["alr"],
             clr=keywords["clr"],
+            gamma=keywords["g"],
         )
 
         # Logging all details about the God agent created during testing phase
@@ -220,6 +227,7 @@ if __name__=="__main__":
         # Testing phase
         # if testing timeSteps <=0 then proceed in online mode, else offline
         time=int(keywords['s'])
-        god.test(time=time)
+
+        god.test(time=time,newMethod=keywords["m"])
 
         print("Testing Complete")

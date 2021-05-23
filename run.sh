@@ -1,6 +1,7 @@
 #!/bin/bash
+
 # Author  : 'BlackDChase'
-# Version : '1.1.0'
+# Version : '1.3.5'
 
 source bin/activate
 
@@ -35,6 +36,7 @@ a=8
 s=0
 alr=0.01
 clr=0.07
+g=0.9
 f=True
 d=True
 # '
@@ -42,29 +44,30 @@ d=True
  : '
 # This is for Actuall training
 n=50
-e=500
-t=55
+e=400
+t=200
 a=8
 s=1000
 alr=0.002
 clr=0.009
+g=0.9
 f=True
-#d=True
+d=False
 # '
 
 
 # : ' Training
-echo "\"Model will start training with $n agents, training $e episodes of $t length, with $a actions, and Debugging set to $d, while actor learning rate and critic learining rate being at $alr and $clr respectivly, as Hyperparameters\""
+echo "Model will start training with $n agents, training $e episodes of $t length, with $a actions, and Debugging set to $d, while actor learning rate and critic learining rate being at $alr and $clr respectivly, as Hyperparameters"
 folder="../Saved_model/" 
 folder="$folder$(ls $folder -Art | grep "Olog" | tail -n 1)/"
-p=$(echo "$folder$(ls $folder | grep "CritcModel.pt")" | rev | cut -b 14- | rev)
+#p=$(echo "$folder$(ls $folder | grep "CritcModel.pt")" | rev | cut -b 14- | rev)
 echo "Path is : $p"
-python main.py -n=$n -e=$e -t=$t -a=$a -alr=$alr -clr=$clr -d=$d -p=$p -f=$f || echo "\"Stopped In Between\""
+python main.py -n=$n -e=$e -t=$t -a=$a -alr=$alr -clr=$clr -d=$d -p=$p -f=$f || echo "Stopped In Between"
 
 #For after training
-echo "\"Model Trained and saved, extracting usefull info\""
+echo "Model Trained and saved, extracting usefull info"
 ./extractTrainLog.sh
-echo "\"Extraction successfull, with $n agents training $e episodes of $t length with $a actions as Hyperparameter\""
+echo "Extraction successfull, with $n agents training $e episodes of $t length with $a actions as Hyperparameter"
 # '
 
 
@@ -74,16 +77,24 @@ echo "\"Extraction successfull, with $n agents training $e episodes of $t length
 #d=True
 folder="../Saved_model/" 
 folder="$folder$(ls $folder -Art | grep "Olog" | tail -n 1)/"
+
 p=$(echo "$folder$(ls $folder | grep "CritcModel.pt")" | rev | cut -b 14- | rev)
+s=0
+#s=1000
+m=True
+#m=False
+
 echo "Path is : $p"
 f=False
+#t=2000
 python main.py -n=$n -t=$t -a=$a -p=$p -s=$s -d=$d -f=$f -alr=$alr -clr=$clr  
-echo "\"Model Tested for $fileName for $s time steps\""
+echo "Model Tested for $fileName for $s time steps"
 
 # For After testing
 fileName=$(echo $folder | cut -b 16- | rev | cut -b 2- | rev)
 ./extractTestLog.sh "$s"
-echo "\"Extraction successfull, for $s timesteps\""
+echo "Extraction successfull, for $s timesteps"
+echo "Sliding window is $m"
 # '
 
 
@@ -91,3 +102,21 @@ echo "\"Extraction successfull, for $s timesteps\""
 if [[ "$shut" = 1 ]];then
     shutdown
 fi
+
+
+: ' 
+    - n     Number of agents
+    - e     Number of episodes
+    - t     Length of trajectory
+    - a     Number of deviations in action
+            This means if a=5, 5*2+1 number of action [-12.5,-10 ... 0 ... +10,+12.5] percent change in price
+    - d     If debug to be part of logs
+    - alr   Actor Learning rate
+    - clr   Critic Learning rate
+    - p     Path of folder which contains PolicModel.py, CriticModel.pt
+    - s     Times steps to test for, if 0, will test in  online mode until KeyboardInterrupt
+    - f     Finetune trained Model
+    - g     gamma
+    - m     True: Episodic Method, False: Sliding Window Method
+    - h     Help
+'

@@ -1,6 +1,6 @@
-.ipynb_checkpoints/*
+*.ipynb_checkpoints
 share/
-__pycache__/
+*__pycache__
 datasets/
 pyvenv.cfg
 lib/*
@@ -11,8 +11,7 @@ logs/*
 Saved_model/*
 Saved_test/*
 todo
-Final Performance/*
-.vscode/*
+*.vscode
 updateVersion.sh
 .fuse_h*
-OUTPUT.log
+OUT*.log
