@@ -1,5 +1,5 @@
 # Adjusting Price to maximize profit using A3C 
-`Version : '1.4.2'`
+`Version : '1.4.5'`
 
 ## How to Use
 ### Installing

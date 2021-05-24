@@ -1,8 +1,9 @@
 #!/bin/bash
 
 # Author  : 'BlackDChase'
-# Version : '1.4.2'
+# Version : '1.4.5'
 
+# ./test.sh "e" "False" "False"
 # Default Hyperparameters
 testVarient=$1
 f=$2

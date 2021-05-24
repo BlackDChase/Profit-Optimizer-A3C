@@ -1,67 +1,35 @@
 """
 Post processing to produce graphs from logs
-- [X] A3C Profit
-- [X] Normal Profit
-- [X] A3C State
-- [X] Normal State
-- [X] Diff
+Combinations:
+    - [X] Reward
+    - [X] Policy Loss
+    - [X] Critic Loss
+    - [X] Advantage
+    - [X] Demand
+    - [X] Supply
+    - [X] Price
+    - [X] Profit
 #"""
+
 __author__ = 'BlackDChase'
-__version__ = '1.4.2'
+__version__ = '1.4.5'
 
 # Imports
-
 import os
 import matplotlib.pyplot as plt
 import sys
 import numpy as np
-
-def modelLoss(fileN):
-    arr = []
-    with open(fileN) as loss:
-        for line in loss:
-            l = line.strip()
-            arr.append(float(l))
-    return arr
-
-def uniqueColor():
-    """There're better ways to generate unique colors, but this isn't awful."""
-    return plt.cm.gist_ncar(np.random.random())
-
-
-def getMostRecent(folder):
-    path=os.path.dirname(os.path.realpath(""))
-    pwd = path.split("/")[0]
-    if pwd=='Saved_model':
-        all_subdirs = [d for d in os.listdir('.') if os.path.isdir(d)]
-        latest_subdir = max(all_subdirs, key=os.path.getmtime)
-    raise NotImplemented
-
-
-def readState(fileN):
-    states = []
-    with open(fileN) as state:
-        for i in state:
-            x = i.strip().split(",")
-            while "" in x:
-                x.remove('')
-            states.append(list(map(float,x)))
-    states = np.array(states,dtype=np.float32).transpose()
-    return states
-
-def readProfit(fileN):
-    profit = []
-    with open(fileN) as state:
-        for i in state:
-            profit.append(float(i.strip()))
-    return np.array(profit)
-
 
 def getAvg(array):
     arr = []
     for i in array:
         arr.append(float(i))
     return (sum(arr)/len(arr),len(arr))
+
+
+def uniqueColor():
+    """There're better ways to generate unique colors, but this isn't awful."""
+    return plt.cm.gist_ncar(np.random.random())
 
 def rewardAvg(fileN):
     arr = []
@@ -74,6 +42,14 @@ def rewardAvg(fileN):
                 arr.append(getAvg(avgReward))
     return arr
 
+def modelLoss(fileN):
+    arr = []
+    with open(fileN) as loss:
+        for line in loss:
+            l = line.strip()
+            arr.append(float(l))
+    return arr
+
 def rewardAvgLen(data):
     avgReward = []
     rewardLen = []
@@ -81,6 +57,15 @@ def rewardAvgLen(data):
         avgReward.append(avg)
         rewardLen.append(length)
     return avgReward,rewardLen
+
+
+def getMostRecent(folder):
+    path=os.path.dirname(os.path.realpath(""))
+    pwd = path.split("/")[0]
+    if pwd=='Saved_model':
+        all_subdirs = [d for d in os.listdir('.') if os.path.isdir(d)]
+        latest_subdir = max(all_subdirs, key=os.path.getmtime)
+    raise NotImplemented
 
 def stateExtract(fileN,order=None):
     with open(fileN) as state:
@@ -117,98 +102,98 @@ def stateExtract(fileN,order=None):
                 temp-=1
     return np.array(price),np.array(corre),np.array(demand),np.array(supply),np.array(profit)
 
-def computeAvg(data):
-    avg = 0
-    for element in data:
-        avg += element
-    return avg/len(data)
-
-def computeAvgChunks(data,chunkSize):
-    avgChunks = [computeAvg(data[i * chunkSize:(i + 1) * chunkSize]) for i in range((len(data) + chunkSize - 1) // chunkSize )] 
-    return avgChunks
-
 if __name__ == '__main__':
     #print(sys.argv)
     #print(os.path.dirname(os.path.realpath("")))
     #folderName = getMostRecent(sys.argv[1])
     folderName = ""
-
-    # TODO, Update this
-    
-    price,corre,demand,supply,profit = stateExtract(folderName+"stateLog.tsv")
-    a3cProfit = profit
-    #a3cProfit = readProfit(folderName+"A3CProfit.tsv")
+    avgAdvantage,episodeLength = rewardAvgLen(rewardAvg(folderName+"advantageLog.tsv"))
+    reward = modelLoss(folderName+"rewardLog.tsv")
     policyLoss = modelLoss(folderName+"policyLossLog.tsv")
     criticLoss = modelLoss(folderName+"criticLossLog.tsv")
-
-    # Advantage logged in both online/offline inside their respective nStepAdvantage()
-    avgAdvantage,episodeLength = rewardAvgLen(rewardAvg(folderName+"advantageLog.tsv"))
-    # Reward logged in online in size(trajectoryR)/ offline one at a time
-    avgReward, episodeLength = rewardAvgLen(rewardAvg(folderName+"rewardLog.tsv"))
-    # Extracting state attributes from state set logged in both online and offline internally within env after env.step() is called 
-    priceAvg,correAvg,demandAvg,supplyAvg,profitAvg = stateExtract(folderName+"stateLog.tsv",len(episodeLength)//4)
-    demSupAvg = [-supplyAvg[i]+demandAvg[i] for i in range(len(demandAvg))]
+    price,corre,demand,supply,profit = stateExtract(folderName+"stateLog.tsv")
     demSup = [-supply[i]+demand[i] for i in range(len(demand))]
 
-    offline=True
-    try:
-        #normalState = readState(folderName+"NormalState.tsv")
-        normalProfit = readProfit(folderName+"NormalProfit.tsv")
-        meanNormalProfit = normalProfit.mean()
-        mean = np.ones(shape=a3cProfit.shape)*meanNormalProfit
-        diff = readProfit(folderName+"ProfitDiff.tsv")
-    except:
-        offline=False
-        pass
-
-
-
-    # Model Profit and Data Profits (STD not included)
-    fig,ax = plt.subplots(dpi=400)
-    fig.suptitle('Profits', fontsize=14)
-    ax.set_xlabel(f"Time steps")
-    ax.set_ylabel('Profit')
-    color='b'
-    ax.plot(profitAvg,color=color,label='Model Profit')
-    ax2 = ax.twinx()
-    # Based on data profit (original)
-    color='g'
-    bareProfitMean=np.ones(len(profitAvg)//4)*106272
-    ax2.plot(bareProfitMean,color=color,label='Mean Profit (Dataset)')
-    color='g'
-    #"""
-    bareProfitMax=np.ones(len(profitAvg))*5860463
-    ax2.plot(bareProfitMax,color=color,label='Max Profit (Dataset)')
-    color='g'
-    bareProfitMin=np.ones(len(profitAvg))*0.1
-    ax2.plot(bareProfitMin,color=color,label='Min Profit (Dataset)')
-    # Based on model profit
-    color='c'
-    modelProfitMean=np.ones(len(profitAvg))*a3cProfit.mean()
-    ax2.plot(modelProfitMean,color=color,label='Mean Profit (Model)')
-    color='c'
-    modelProfitMax=np.ones(len(profitAvg))*a3cProfit.max()
-    ax2.plot(modelProfitMax,color=color,label='Max Profit (Model)')
-    color='c'
-    modelProfitMin=np.ones(len(profitAvg))*a3cProfit.min()
-    ax2.plot(modelProfitMin,color=color,label='Min Profit (Model)')
-    #"""
     
-    ax2.tick_params(axis='y',labelcolor='r')
+    # Ploting Demand, Supply 
+    fig,ax1 = plt.subplots(dpi=400)
+    color='r'
+    ax1.plot(demand,color=color)
+    ax1.tick_params(axis='y',labelcolor=color)
+    ax1.set_ylabel('Demand',color=color)
+    ax1.set_xlabel(f"Per Episode")
+    ax2 = ax1.twinx()
+    color='b'
+    ax2.plot(demSup,color=color)
+    ax2.tick_params(axis='y',labelcolor=color)
+    ax2.set_ylabel('Demand-Supply',color=color)
+    ax3 = ax1.twinx()
+    color='c'
+    ax3.plot(supply,color=color)
+    ax3.tick_params(axis='y',labelcolor=color)
+    ax3.set_ylabel('Supply',color=color)
     fig.tight_layout()
-    plt.legend()
-    plt.savefig(folderName+"Model Profit vs Data Profit.svg")
+    plt.savefig(folderName+"Supply vs Demand.svg")
     plt.close()
 
-    if offline:
-        # Plotting Difference in Profit
-        fig,ax = plt.subplots(dpi=100)
-        ax.set_xlabel(f"Time step")
-        ax.plot(diff)
-        ax.set_ylabel(f"A3C Profit - Normal Profit")
-        fig.tight_layout()
-        plt.savefig(folderName+"Differnce in profit.svg")
-        plt.close()
+    # Ploting  A3C Price vs Exchange (both have different y-axis scaling and plotted on different axes)
+    fig,ax1 = plt.subplots(dpi=400)
+    color='r'
+    ax1.plot(price,color=color)
+    ax1.tick_params(axis='y',labelcolor=color)
+    ax1.set_ylabel('Model Price',color=color)
+    ax1.set_xlabel(f"Per Episode")
+    ax2 = ax1.twinx()
+    color='b'
+    ax2.plot(demSup,color=color)
+    ax2.tick_params(axis='y',labelcolor=color)
+    ax2.set_ylabel('Demand-Supply',color=color)
+    fig.tight_layout()
+    plt.savefig(folderName+"Model Price vs Exchange.svg")
+    plt.close()
+
+    # Profits 
+    fig,ax = plt.subplots(dpi=400)
+    fig.suptitle('Profits Accumulated', fontsize=14)
+    ax.set_xlabel(f"Per Episode")
+    ax.set_ylabel('Profit')
+    color='r'
+    ax.plot(profit,color=color,label='Model Profit')
+    ax2 = ax.twinx()
+    color='b'
+    bareProfitMean=np.ones(len(profit))*106272
+    ax2.plot(bareProfitMean,color=color,label='Mean Profit (Dataset)')
+    color='b'
+    bareProfitMax=np.ones(len(profit))*5860463
+    ax2.plot(bareProfitMax,color=color,label='Max Profit (Dataset)')
+    color='b'
+    bareProfitMin=np.ones(len(profit))*0.19
+    ax2.plot(bareProfitMin,color=color,label='Min Profit (Dataset)')
+    # bareProfitStd=np.ones(len(profitAvg))*74348
+    # ax2.plot(bareProfitStd,color=color,label='STD Profit (Dataset)')
+    color='c'
+    modelProfitMean=np.ones(len(profit))*profit.mean()
+    ax2.plot(modelProfitMean,color=color,label='Mean Profit (Model)')
+    color='c'
+    modelProfitMax=np.ones(len(profit))*profit.max()
+    ax2.plot(modelProfitMax,color=color,label='Max Profit (Model)')
+    color='c'
+    modelProfitMin=np.ones(len(profit))*profit.min()
+    ax2.plot(modelProfitMin,color=color,label='Min Profit (Model)')
+    
+    ax2.tick_params(axis='y',labelcolor=color)
+    fig.tight_layout()
+    plt.legend()
+    plt.savefig(folderName+"Profit Compariosn.svg")
+    plt.close()
+
+    # Ploting average advantage
+    plt.figure(dpi=400)
+    plt.xlabel("Episode")
+    plt.ylabel("Average advantage")
+    plt.plot(avgAdvantage)
+    plt.savefig(folderName+"avgAdvantage.svg")
+    plt.close()
 
     # Ploting episodic Policy Loss
     plt.figure(dpi=400)
@@ -226,103 +211,35 @@ if __name__ == '__main__':
     plt.savefig(folderName+"criticLoss.svg")
     plt.close()
 
-    # Rewards Accumulated (TESTING)
-    plt.figure(dpi=400)
-    plt.xlabel("Episode")
-    plt.ylabel("Avg Reward")
-    plt.plot(avgReward)
-    plt.savefig(folderName+"Avg_rewards.svg")
-    plt.close()
-
-    # Avg advantage
-    #episodeLength = 2000
-    #avgAdvantage = computeAvgChunks(advantage,episodeLength)
-    plt.figure(dpi=400)
-    plt.xlabel(f"Episode")
-    plt.ylabel("Advantage")
-    plt.plot(avgAdvantage)
-    plt.savefig(folderName+"Avg_Advantage.svg")
-    plt.close()
-
-    # Avg rewards vs correction (on seperate y axis scaling)
-    #episodeLength = 2000
-    #avgRewards = computeAvgChunks(rewards,episodeLength)
-    #avgCorrection = computeAvgChunks(correction,episodeLength)
-    fig,ax = plt.subplots(dpi=400)
-    fig.suptitle('Avg rewards vs correction', fontsize=14)
-    la=len(episodeLength)//4
-    ax.set_xlabel(f"Average per {la} episodes")
-    ax.set_ylabel('Rewards')
-    color='b'
-    ax.plot(avgReward,color=color,label='Avg rewards')
-    ax2 = ax.twinx()
-    ax2.set_ylabel('Correction')
+    # Ploting average reward vs correction
+    fig,ax1 = plt.subplots(dpi=400)
     color='r'
-    ax2.plot(correAvg,color=color,label='Avg Correction')
-    ax2.tick_params(axis='y',labelcolor=color)
-    fig.tight_layout()
-    plt.legend()
-    plt.savefig(folderName+"Avg rewards vs correction.svg")
-    plt.close()
-
-    # Avg model price vs exchange vs profit (on seperate y axis scaling)
-    #episodeLength = 2000
-    #avgPrice = computeAvgChunks(price,episodeLength)
-    #avgExchange = computeAvgChunks(dem_Sup,episodeLength)
-    #avgProfit = computeAvgChunks(profit,episodeLength)
-    fig,ax = plt.subplots(dpi=400)
-    fig.suptitle('Avg model price vs exchange vs profit', fontsize=14)
-    ax.set_xlabel(f"Average per  {la} episodes")
-    ax.set_ylabel('Demand-Supply')
+    ax1.plot(reward,color=color)
+    ax1.tick_params(axis='y',labelcolor=color)
+    ax1.set_ylabel('Average Reward',color=color)
+    ax1.set_xlabel(f"Average of Per {len(episodeLength)/4} Episode")
+    ax2 = ax1.twinx()
     color='b'
-    ax.plot(demSupAvg,color=color,label='Avg Exchange(demand-supply)')
-    ax2 = ax.twinx()
-    ax2.set_ylabel('Price')
-    color='r'
-    ax2.plot(priceAvg,color=color,label='Avg model price')
+    ax2.plot(corre,color=color)
     ax2.tick_params(axis='y',labelcolor=color)
-    color='g'
-    ax3 = ax.twinx()
-    ax3.set_ylabel('Profit')
-    ax3.plot(profitAvg,color=color,label='Avg profit')
-    ax3.tick_params(axis='y',labelcolor=color)
+    ax2.set_ylabel('Average Correction',color=color)
     fig.tight_layout()
-    plt.legend()
-    plt.savefig(folderName+"Avg model price vs exchange vs profit.svg")
+    plt.savefig(folderName+"avgRewardnCorrection.svg")
     plt.close()
 
-    print(f"Min of Profit Acquired: {a3cProfit.min()}")
-    print(f"Max of Profit Acquired: {a3cProfit.max()}")
-    print(f"Avg of Profit Acquired: {a3cProfit.mean()}")
-    print(f"STD of Profit Acquired: {a3cProfit.std()}")
+    print(f"Min of Profit Acquired: {profit.min()}")
+    print(f"Max of Profit Acquired: {profit.max()}")
+    print(f"Avg of Profit Acquired: {profit.mean()}")
+    print(f"STD of Profit Acquired: {profit.std()}")
 
-    """
-    # Ploting States
-    # Plotting A3C State
-    states=len(normalState)
-    square=int(np.ceil(states**(1/2)))
-    fig,ax = plt.subplot(square,square,dpi=800)
-    for i in range(states):
-        lstm=2*i
-        a3c=lstm+1
-
-        x,y=lstm//square,lstm%square
-        ax1=ax[x,y]
-        ax1.set_title(f"State {i}")
-        ax1.set_xlabel(f"Time step")
-
-        color='r'
-        ax1.plot(normalState[i],color=color)
-        ax1.tick_params(axis='y',labelcolor=color)
-        ax1.set_ylabel('Normal',color=color)
-
-        ax2 = ax1.twinx()
-        color='b'
-        ax2.plot(normalProfit,color=color)
-        ax2.tick_params(axis='y',labelcolor=color)
-        ax2.set_ylabel('A3C',color=color)
-
-    fig.tight_layout()
-    plt.savefig(folderName+"States.svg")
-    plt.close()
-    """
+    #"""
+    # REMOVE ---------------------------------------------------------------------------
+    # Ploting A3C Price vs Exchange
+    # plt.figure(dpi=400)
+    # plt.xlabel(f"Episode")
+    # plt.plot(demSup,label="Demand-Supply")
+    # plt.plot(price,label="Model Price")
+    # plt.legend()
+    # plt.savefig(folderName+"Price VS Exchange.svg")
+    # plt.close()
+    #"""

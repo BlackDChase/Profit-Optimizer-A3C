@@ -12,7 +12,7 @@ BOSS AGENT
 State = Ontario Price, Ontario Demand, Ontario Supply,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, Northwest Nigiria, West
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '1.4.2'
+__version__ = '1.4.5'
 
 # Imports
 from torch import nn, Tensor
@@ -432,7 +432,7 @@ class GOD:
                 self.calculateAndUpdateL_C()
 
                 # Logging rewards from the current trajectoryR buffer before flushing
-                log.info(f"rewards = \t {Tensor(self.trajectoryR).squeeze()}")
+                #log.info(f"rewards = \t {Tensor(self.trajectoryR).squeeze()}")
 
                 if newMethod==True:
                     episodes=0
@@ -485,7 +485,7 @@ class GOD:
         log.info(f"A3C Profit = {a3cProfit}")
 
         nextState,reward,_,info = self.step(action)
-
+        log.info(f"rewards = {reward}")
         if self.debug:
             log.debug(f"Online: {self.name}, {info}")
             log.debug(f"Online: Reward and Shape = {reward}, {reward.shape}")
