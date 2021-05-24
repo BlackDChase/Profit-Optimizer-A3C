@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Author  : 'BlackDChase'
-# Version : '1.4.0'
+# Version : '1.4.2'
 
 # ./train.sh "True" "False"
 
@@ -12,9 +12,9 @@ d=$2
 cd modules
 
 # : ' This is default
-n=10
+n=30
 e=200
-t=30
+t=75
 a=9
 alr=0.01
 clr=0.07
@@ -23,8 +23,8 @@ g=0.6
 
 # : '
 # This is for Actuall training
-n=50
-e=40
+#n=50
+e=1000
 #t=200
 a=8
 #alr=0.002

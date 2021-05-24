@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Author  : 'BlackDChase'
-# Version : '1.4.0'
+# Version : '1.4.2'
 
 # Default Hyperparameters
 testVarient=$1
@@ -9,7 +9,7 @@ f=$2
 d=$3
 a=8
 s=0
-t=50
+t=75
 alr=0.002
 clr=0.009
 g=0.6
@@ -65,7 +65,7 @@ case $testVarient in
         s=1000
         offlineTest $s;;
     [sS1]* ) # Hyperparameters for Sliding Window Online
-        t=65
+        t=75
         alr=0.002
         clr=0.009
         g=0.8
@@ -77,12 +77,12 @@ case $testVarient in
         alr=0.05
         clr=0.1
          : '
-        t=60
-        g=0.6
+        t=75
+        g=0.8
         alr=0.01
         clr=0.05
         # '
-        episodicOnlineTest "$t" "$g" "$alr" "$clr";;
+        episodicOnlineTest $t $g $alr $clr;;
     * ) echo "Invalid varient";;
 esac
 

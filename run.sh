@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Author  : 'BlackDChase'
-# Version : '1.4.0'
+# Version : '1.4.2'
 
 source bin/activate
 
@@ -168,41 +168,83 @@ case $m in
         validity=$?
         if [[ "$validity" = "1" ]]; then
             ./test.sh "s" "$d" &
-            childPid=($!)
+            childPid=$!
+            echo "Waiting for $childPid for $intrupt"
             sleep $intrupt
             kill -SIGINT $childPid
+            echo "Waiting conclusion"
+            wait $childPid
+            echo "$childPid Concluded"
         else
-            ./test.sh "s" "$d"
-             echo "Will not Intrupt, have to do it manually"
+            ./test.sh "s" "$d" &
+            childPid=$!
+            echo "Waiting for $childPid"
+            echo "Will not Intrupt, have to do it manually"
+            wait $childPid
+            echo "Waiting conclusion"
+            sleep 10
         fi
         echo "Intrupt success";;
     [2]*) intruptValid $intrupt
         validity=$?
         if [[ "$validity" = "1" ]]; then
-            ./test.sh "o" "$d" &
-            childPid=($!)
+            ./test.sh "e" "$d" &
+            childPid=$!
+            echo "Waiting for $childPid"
             sleep $intrupt
             kill -SIGINT $childPid
+            echo "Waiting conclusion"
+            wait $childPid
+            echo "$childPid Concluded"
         else
-            ./test.sh "s" "$d"
-             echo "Will not Intrupt, have to do it manually"
+            ./test.sh "e" "$d" &
+            childPid=$!
+            echo "Waiting for $childPid"
+            echo "Will not Intrupt, have to do it manually"
+            wait $childPid
+            echo "Waiting conclusion"
+            sleep 10
         fi
         echo "Intrupt success";;
     [3]*) ./test.sh "o" ;
         intruptValid $intrupt
         validity=$?
         if [[ "$validity" = "1" ]]; then
+
             ./test.sh "s" "$d" &
-            childPid=($!)
+            childPid=$!
+            echo "Waiting for $childPid for $intrupt"
             sleep $intrupt
             kill -SIGINT $childPid
-            ./test.sh "o" "$d" &
-            childPid=($!)
+            echo "Waiting conclusion"
+            wait $childPid
+            echo "$childPid Concluded"
+            
+            ./test.sh "e" "$d" &
+            childPid=$!
+            echo "Waiting for $childPid for $intrupt"
             sleep $intrupt
             kill -SIGINT $childPid
+            echo "Waiting conclusion" 
+            wait $childPid
+            echo "$childPid Concluded"
         else
-            ./test.sh "s" "$d"
-             echo "Will not Intrupt, have to do it manually"
+            ./test.sh "o" "$d"
+            ./test.sh "s" "$d" &
+            childPid=$!
+            echo "Waiting for $childPid"
+            echo "Will not Intrupt, have to do it manually"
+            wait $childPid
+            echo "Waiting conclusion"
+            sleep 10
+            
+            ./test.sh "e" "$d" &
+            childPid=$!
+            echo "Waiting for $childPid"
+            echo "Will not Intrupt, have to do it manually"
+            wait $childPid
+            echo "Waiting conclusion"
+            sleep 10
         fi
         echo "Intrupt success";;
     [4]*) echo "Training concludes"
