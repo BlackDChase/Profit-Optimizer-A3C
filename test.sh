@@ -1,13 +1,18 @@
 #!/bin/bash
 
 # Author  : 'BlackDChase'
-# Version : '1.4.5'
+# Version : '1.4.6'
 
 # ./test.sh "e" "False" "False"
 # Default Hyperparameters
+if [[ "$PWD" != $VIRTUAL_ENV ]];then
+    source bin/activate
+fi
+
 testVarient=$1
 f=$2
 d=$3
+intrupt=$4
 a=8
 s=0
 t=75
@@ -23,8 +28,9 @@ offlineTest(){
     s=$1
     echo "Offline testing"
     echo "$s"
-    python main.py -t=$t -a=$a -p=$p -s=$s -d=$d -f=$f -alr=$alr -clr=$clr -g=$g ;
-    return 1
+    python main.py -t=$t -a=$a -p=$p -s=$s -d=$d -f=$f -alr=$alr -clr=$clr -g=$g & 
+    childPid=$!
+    return $childPid
 }
 
 slidingOnlineTest(){
@@ -34,8 +40,9 @@ slidingOnlineTest(){
     g=$2
     alr=$3
     clr=$4
-    python main.py -t=$t -a=$a -p=$p -s=$s -d=$d -f=$f -alr=$alr -clr=$clr -g=$g -m=$m ;
-    return 1
+    python main.py -t=$t -a=$a -p=$p -s=$s -d=$d -f=$f -alr=$alr -clr=$clr -g=$g -m=$m &
+    childPid=$!
+    return $childPid
 }
 
 episodicOnlineTest(){
@@ -45,8 +52,9 @@ episodicOnlineTest(){
     g=$2
     alr=$3
     clr=$4
-    python main.py -t=$t -a=$a -p=$p -s=$s -d=$d -f=$f -alr=$alr -clr=$clr -g=$g -m=$m ;
-    return 1
+    python main.py -t=$t -a=$a -p=$p -s=$s -d=$d -f=$f -alr=$alr -clr=$clr -g=$g -m=$m&
+    childPid=$!
+    return $childPid
 }
 
 
@@ -64,13 +72,13 @@ fi
 case $testVarient in
     [oO0]* ) # Hyperparameters for Offline
         s=1000
-        offlineTest $s;;
+        offlineTest "$s";;
     [sS1]* ) # Hyperparameters for Sliding Window Online
         t=75
         alr=0.002
         clr=0.009
         g=0.8
-        slidingOnlineTest $t $g $alr $clr;;
+        slidingOnlineTest "$t" "$g" "$alr" "$clr";;
     [eE2]* ) # Hyperparameters for Episodic Online
          : ' 
         t=2000
@@ -83,13 +91,24 @@ case $testVarient in
         alr=0.01
         clr=0.05
         # '
-        episodicOnlineTest $t $g $alr $clr;;
+        episodicOnlineTest "$t" "$g" "$alr" "$clr";;
     * ) echo "Invalid varient";;
 esac
 
 
-testSuccess=$?
-if [[ "$testSuccess" = 1 ]]; then
+childPid=$?
+
+if [[ "$childPid" != 1 ]]; then
+    case $intrupt in
+        [0-9]*) echo "Waiting for $childPid for $intrupt"
+                sleep $intrupt
+                kill -SIGINT $childPid
+                echo "$childPid Concluded";;
+        [nN]*)  echo "Waiting for $childPid"
+                echo "Will not Intrupt, have to do it manually"
+                sleep 10
+                wait $childPid;; 
+    esac
     fileName=$(echo $folder | cut -b 16- | rev | cut -b 2- | rev)
     echo "Model Tested for $fileName for $s time steps"
 fi
@@ -97,5 +116,5 @@ fi
 
 # For After testing
 echo "Sliding window is $m"
-./extractTestLog.sh "$s"
+./extractTestLog.sh 
 echo "Extraction successfull, for $s timesteps"

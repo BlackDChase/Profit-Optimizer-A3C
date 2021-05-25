@@ -1,5 +1,5 @@
 # Adjusting Price to maximize profit using A3C 
-`Version : '1.4.5'`
+`Version : '1.4.6'`
 
 ## How to Use
 ### Installing
@@ -35,7 +35,7 @@ source bin/activate
     - `8`. Seconds after which it will Intrupt on its own.
 ```sh
 #Points (1) (2) (3) (4) (5) (6)
-./run   "y" "F" "F" "3" "2" "200"
+./run   "y" "F" "T" "3" "2" "200"
 ```
 
 ## Ref

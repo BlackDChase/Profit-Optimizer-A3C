@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Author  : 'BlackDChase'
-# Version : '1.4.5'
+# Version : '1.4.6'
 
 source bin/activate
 
@@ -34,6 +34,7 @@ getFine(){
         * ) shut=0;
             echo "Please answer True or false";;
     esac
+    echo $shut
     return $shut
 }
 
@@ -92,7 +93,7 @@ getShut $shutCon
 shut=$?
 while [[ "$shut" = 0 ]]; do
     read -p "Shutdown when done (Y/n): " shutCon
-    getShut $shutCon
+    getShut "$shutCon"
     shut=$?
 done
 
@@ -101,7 +102,7 @@ getFine $f
 fineCond=$?
 while [[ "$fineCond" = 0 ]]; do
     read -p "Finetuning (T/f): " f
-    getFine $f
+    getFine "$f"
     fineCond=$?
 done
 
@@ -110,7 +111,7 @@ getDebug $d
 debugCond=$?
 while [[ "$debugCond" = 0 ]]; do
     read -p "Debugging (T/f): " d
-    getDebug $d
+    getDebug "$d"
     debugCond=$?
 done
 
@@ -126,7 +127,7 @@ while [[ "$testCond" = 0 ]]; do
     echo "2. Episodic" # e/E
     echo "3. All" # a/A
     read -p "Testing methodology [0,1,2,3]: " m
-    getTestingMethodolgy $m
+    getTestingMethodolgy "$m"
     testCond=$?
 done
 
@@ -135,7 +136,7 @@ getItter $i
 validity=$?
 while [[ "$validity" = 0 ]];do
     read -p "Number of training Itterations : " i;
-    getItter $i
+    getItter "$i"
     validity=$?
 done
 
@@ -147,7 +148,7 @@ validity=$?
 while [[ "$validity" = 0 ]];do
     echo "Do you want to intrupt:"
     read -p "Should Intrupt time(s) /No  : " intrupt
-    intruptValid $intrupt
+    intruptValid "$intrupt"
     validity=$?
 done
 
@@ -162,92 +163,14 @@ while [[ $i != 0 ]];do
 done
 
 case $m in
-    [0]*) ./test.sh "o" "$d";;
+    [0]*) ./test.sh "o" "$d" "n";;
     
-    [1]*) intruptValid $intrupt
-        validity=$?
-        if [[ "$validity" = "1" ]]; then
-            ./test.sh "s" "$d" &
-            childPid=$!
-            echo "Waiting for $childPid for $intrupt"
-            sleep $intrupt
-            kill -SIGINT $childPid
-            echo "Waiting conclusion"
-            wait $childPid
-            echo "$childPid Concluded"
-        else
-            ./test.sh "s" "$d" &
-            childPid=$!
-            echo "Waiting for $childPid"
-            echo "Will not Intrupt, have to do it manually"
-            wait $childPid
-            echo "Waiting conclusion"
-            sleep 10
-        fi
-        echo "Intrupt success";;
-    [2]*) intruptValid $intrupt
-        validity=$?
-        if [[ "$validity" = "1" ]]; then
-            ./test.sh "e" "$d" &
-            childPid=$!
-            echo "Waiting for $childPid"
-            sleep $intrupt
-            kill -SIGINT $childPid
-            echo "Waiting conclusion"
-            wait $childPid
-            echo "$childPid Concluded"
-        else
-            ./test.sh "e" "$d" &
-            childPid=$!
-            echo "Waiting for $childPid"
-            echo "Will not Intrupt, have to do it manually"
-            wait $childPid
-            echo "Waiting conclusion"
-            sleep 10
-        fi
-        echo "Intrupt success";;
-    [3]*) ./test.sh "o" ;
-        intruptValid $intrupt
-        validity=$?
-        if [[ "$validity" = "1" ]]; then
-
-            ./test.sh "s" "$d" &
-            childPid=$!
-            echo "Waiting for $childPid for $intrupt"
-            sleep $intrupt
-            kill -SIGINT $childPid
-            echo "Waiting conclusion"
-            wait $childPid
-            echo "$childPid Concluded"
-            
-            ./test.sh "e" "$d" &
-            childPid=$!
-            echo "Waiting for $childPid for $intrupt"
-            sleep $intrupt
-            kill -SIGINT $childPid
-            echo "Waiting conclusion" 
-            wait $childPid
-            echo "$childPid Concluded"
-        else
-            ./test.sh "o" "$d"
-            ./test.sh "s" "$d" &
-            childPid=$!
-            echo "Waiting for $childPid"
-            echo "Will not Intrupt, have to do it manually"
-            wait $childPid
-            echo "Waiting conclusion"
-            sleep 10
-            
-            ./test.sh "e" "$d" &
-            childPid=$!
-            echo "Waiting for $childPid"
-            echo "Will not Intrupt, have to do it manually"
-            wait $childPid
-            echo "Waiting conclusion"
-            sleep 10
-        fi
-        echo "Intrupt success";;
-    [4]*) echo "Training concludes"
+    [1]*) ./test.sh "s" "$d"  "$intrupt";;
+    [2]*) ./test.sh "e" "$d"  "$intrupt";;
+    [3]*) ./test.sh "o" "$n"  "n";
+          ./test.sh "s" "$d"  "$intrupt"
+          ./test.sh "e" "$d"  "$intrupt";;
+    [4]*) echo "Training concludes";;
 esac
 
 # For shutting down system

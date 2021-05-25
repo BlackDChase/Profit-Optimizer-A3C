@@ -1,6 +1,6 @@
 #!/bin/bash
 # Author  : 'BlackDChase'
-# Version : '1.4.5'
+# Version : '1.4.6'
 s=$?
 name=$(ls ../logs -Art | grep "Olog.tsv" | tail -n 1)
 IFS='.'
@@ -16,7 +16,6 @@ awk "/\tPara/ {print}" $name.tsv >> "README.md"
 vim README.md -c ':%s/.*\tTesting Mode/# Testing Mode/g' -c ':wq'
 vim README.md -c ':%s/.*Para/- Para/g' -c ':wq'
 
-if (( $s > 0 ));then
     awk "/\tA3C State/ {print}" $name.tsv > "A3CState.tsv"
     awk "/\tA3C Profit/ {print}" $name.tsv > "A3CProfit.tsv"
     awk "/\tNormal State/ {print}" $name.tsv > "NormalState.tsv"
@@ -29,7 +28,7 @@ if (( $s > 0 ));then
 
     vim A3CProfit.tsv  -c ':%s/.*Profit = //g' -c ':wq'
     vim A3CState.tsv  -c ':%s/.*\[//g'  -c ':%s/\].*//g' -c ':wq'
-else
+
     awk "/\trewards/ {print}" $name.tsv > "rewardLog.tsv"
     awk "/Policy loss/ {print}" $name.tsv > "policyLossLog.tsv"
     awk "/Critic loss/ {print}" $name.tsv > "criticLossLog.tsv"
@@ -42,7 +41,7 @@ else
     vim criticLossLog.tsv  -c ':%s/.*=//g' -c ':%s/.*\[//g'  -c ':%s/\].*//g' -c ':wq'
     vim advantageLog.tsv  -c ':%s/.*=//g' -c ':%s/.*\[//g'  -c ':%s/\].*//g' -c ':wq'
     vim stateLog.tsv  -c ':%s/.*=//g' -c ':%s/.*\[//g'  -c ':%s/\].*//g' -c ':wq'
-fi
+
 
 echo "Post Processing Logs was a success"
 
