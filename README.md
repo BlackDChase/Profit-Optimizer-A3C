@@ -1,5 +1,5 @@
 # Adjusting Price to maximize profit using A3C 
-`Version : '1.4.6'`
+`Version : '1.4.7'`
 
 ## How to Use
 ### Installing
@@ -34,8 +34,8 @@ source bin/activate
     - `n`. manually stopping by `KeyboardIntrupt`
     - `8`. Seconds after which it will Intrupt on its own.
 ```sh
-#Points (1) (2) (3) (4) (5) (6)
-./run   "y" "F" "T" "3" "2" "200"
+#Points    (1) (2) (3) (4) (5) (6)
+./run.sh   "y" "F" "T" "3" "2" "200"
 ```
 
 ## Ref
