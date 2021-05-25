@@ -6,7 +6,12 @@ import logging
 import datetime
 
 __author__ = 'Biribiri,BlackDChase'
-__version__ = '1.4.7'
+__version__ = '1.4.8'
+""" 
+One log can maximum have 1000 elements of a tensor
+"""
+
+
 
 """
 weeks = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]
@@ -16,14 +21,19 @@ logging.basicConfig(level=logging.DEBUG, filename="../logs/"+name+".tsv", format
 #"""
 directory = "../logs/"
 filename = str(datetime.datetime.now()).replace(":","-").replace(" ","-").split(".")[0][:-3]+"-Olog.tsv"
-logging.basicConfig(level=logging.DEBUG, filename=directory+filename, format='%(asctime)s\t%(levelname)s\t%(message)s', datefmt='%Y-%m-%d\t%H:%M:%S')
+logging.basicConfig(
+        level=logging.DEBUG, 
+        filename=directory+filename, 
+        format='%(asctime)s\t%(levelname)s\t%(message)s', 
+        datefmt='%Y-%m-%d\t%H:%M:%S',
+        )
 #"""
 #logging.addLevelName(level=logging.info,levelName="GPUusage")
 
 def info(information,debug=False):
     if debug:
         print(information)
-    logging.info(information)
+    logging.info(information.replace('\n',''))
 
 debug = logging.debug
 
