@@ -20,7 +20,7 @@ Parameters:
 #"""
 
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '1.4.7'
+__version__ = '1.4.8'
 
 # Input from outside
 import log
@@ -222,6 +222,7 @@ if __name__=="__main__":
             actionSpace=actionSpace,
             debug=keywords["d"],
         )
+        env.reset()
         print("Environment inititated")
         #env = ENV(stateSize,actionSpace)
         

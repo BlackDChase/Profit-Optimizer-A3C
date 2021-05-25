@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Author  : 'BlackDChase'
-# Version : '1.4.7'
+# Version : '1.4.8'
 
-# ./test.sh "e" "False" "False"
+# ./test.sh "e" "False" "False" "10"
 # Default Hyperparameters
 if [[ "$PWD" != $VIRTUAL_ENV ]];then
     source bin/activate
@@ -28,9 +28,7 @@ offlineTest(){
     s=$1
     echo "Offline testing"
     echo "$s"
-    python main.py -t=$t -a=$a -p=$p -s=$s -d=$d -f=$f -alr=$alr -clr=$clr -g=$g & 
-    childPid=$!
-    return $childPid
+    python main.py -t=$t -a=$a -p=$p -s=$s -d=$d -f=$f -alr=$alr -clr=$clr -g=$g 
 }
 
 slidingOnlineTest(){
@@ -40,9 +38,7 @@ slidingOnlineTest(){
     g=$2
     alr=$3
     clr=$4
-    python main.py -t=$t -a=$a -p=$p -s=$s -d=$d -f=$f -alr=$alr -clr=$clr -g=$g -m=$m &
-    childPid=$!
-    return $childPid
+    python main.py -t=$t -a=$a -p=$p -s=$s -d=$d -f=$f -alr=$alr -clr=$clr -g=$g -m=$m 
 }
 
 episodicOnlineTest(){
@@ -52,9 +48,7 @@ episodicOnlineTest(){
     g=$2
     alr=$3
     clr=$4
-    python main.py -t=$t -a=$a -p=$p -s=$s -d=$d -f=$f -alr=$alr -clr=$clr -g=$g -m=$m&
-    childPid=$!
-    return $childPid
+    python main.py -t=$t -a=$a -p=$p -s=$s -d=$d -f=$f -alr=$alr -clr=$clr -g=$g -m=$m
 }
 
 
@@ -68,18 +62,26 @@ else
     echo "Training/Testing from Scratch"
 fi
 
+childPid=1
 
 case $testVarient in
     [oO0]* ) # Hyperparameters for Offline
         s=1000
-        offlineTest "$s";;
+        offlineTest "$s" &
+        methodPid=$!
+        childPid=$(pgrep -P $methodPid)
+        intrupt="n"
+        ;;
     [sS1]* ) # Hyperparameters for Sliding Window Online
         t=75
         alr=0.002
         clr=0.009
         g=0.8
-        slidingOnlineTest "$t" "$g" "$alr" "$clr";;
+        slidingOnlineTest "${t}" "${g}" "${alr}" "${clr}" & 
+        methodPid=$!
+        childPid=$(pgrep -P $methodPid);;
     [eE2]* ) # Hyperparameters for Episodic Online
+        echo "Episodic Case"
          : ' 
         t=2000
         g=0.99
@@ -91,12 +93,12 @@ case $testVarient in
         alr=0.01
         clr=0.05
         # '
-        episodicOnlineTest "$t" "$g" "$alr" "$clr";;
+        episodicOnlineTest "${t}" "${g}" "${alr}" "${clr}" &
+        methodPid=$!
+        childPid=$(pgrep -P $methodPid)
+        ;;
     * ) echo "Invalid varient";;
 esac
-
-
-childPid=$?
 
 if [[ "$childPid" != 1 ]]; then
     case $intrupt in
