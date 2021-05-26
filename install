@@ -9,6 +9,9 @@ if [ ! -f bin/activate ];then
 fi
 
 source bin/activate
+
+mkdir logs Saved_test Saved_model
+
 cd ./modules
 
 if [ ! -f requirements.txt ]; then
