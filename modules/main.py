@@ -28,6 +28,7 @@ import sys
 keywords={
         "n":1,
         "e":10,
+        "E":-1,
         "t":5,
         "a":5,
         "d":"",
@@ -72,6 +73,7 @@ python main.py -n=3 -e=100 -t=50 -a=7 -d=t -alr=0.001 -clr=0.001 -f=True -p='../
 Parameters:
     - n     Number of agents
     - e     Number of episodes
+    - E     Max online episodes (in case of no manual user interrupt)
     - t     Length of trajectory
     - a     Number of deviations in action
             This means if a=5, 5*2+1 number of action [-12.5,-10 ... 0 ... +10,+12.5] percent change in price
@@ -193,6 +195,7 @@ if __name__=="__main__":
             alr=keywords["alr"],
             clr=keywords["clr"],
             gamma=keywords["g"],
+            maxOnlineEpisodes=keywords["E"]
         )
 
         # Logging all details about the God agent created during testing phase
@@ -234,7 +237,6 @@ if __name__=="__main__":
         # Testing phase
         # if testing timeSteps <=0 then proceed in online mode, else offline
         time=int(keywords['s'])
-
         god.test(time=time,newMethod=keywords["m"])
 
         print("Testing Complete")

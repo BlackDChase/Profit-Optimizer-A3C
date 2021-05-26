@@ -31,7 +31,7 @@ offlineTest(){
     s=$1
     echo "Offline testing"
     echo "$s"
-    python main.py -t=$t -a=$a -p=$p -s=$s -d=$d -f=$f -alr=$alr -clr=$clr -g=$g 
+    python main.py -t=$t -a=$a -p=$p -s=$s -d=$d -f=$f -alr=$alr -clr=$clr -g=$g
 }
 
 slidingOnlineTest(){
@@ -41,7 +41,7 @@ slidingOnlineTest(){
     g=$2
     alr=$3
     clr=$4
-    python main.py -t=$t -a=$a -p=$p -s=$s -d=$d -f=$f -alr=$alr -clr=$clr -g=$g -m=$m 
+    python main.py -t=$t -a=$a -p=$p -s=$s -d=$d -f=$f -alr=$alr -clr=$clr -g=$g -m=$m -E=intrupt
 }
 
 episodicOnlineTest(){
@@ -51,14 +51,14 @@ episodicOnlineTest(){
     g=$2
     alr=$3
     clr=$4
-    python main.py -t=$t -a=$a -p=$p -s=$s -d=$d -f=$f -alr=$alr -clr=$clr -g=$g -m=$m
+    python main.py -t=$t -a=$a -p=$p -s=$s -d=$d -f=$f -alr=$alr -clr=$clr -g=$g -m=$m -E=intrupt
 }
 
 
 # Path, if using previously trained model
 folder="../Saved_model/" 
 folder="$folder$(ls "$folder" -Art | grep "Olog" | tail -n 1)/"
-if [[ false =~ "$f" ]] || [[ False =~ "$f"  ]];
+if [[ false =~ "$f" ]] || [[ False =~ "$f"  ]]; then
     p=$(echo "$folder$(ls "$folder" | grep "CritcModel.pt")" | rev | cut -b 14- | rev)
     echo "Loading Model from : $p"
 else 
@@ -121,5 +121,5 @@ fi
 
 # For After testing
 echo "Sliding window is $m"
-./extractTestLog.sh 
+./extractTestLog.sh "$testVarient"
 echo "Extraction successfull, for $s timesteps"
