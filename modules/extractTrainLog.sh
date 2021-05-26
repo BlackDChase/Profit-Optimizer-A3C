@@ -31,5 +31,5 @@ mv "../$critic" "./"
 mv "../$actor" "./"
 echo "New models moved to $name"
 
-python ../../modules/postTraining.py
+python3 ../../modules/postTraining.py
 echo "Ploting was success"
