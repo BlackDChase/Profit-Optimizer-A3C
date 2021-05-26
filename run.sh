@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Author  : 'BlackDChase'
-# Version : '1.4.8'
+# Version : '1.4.9'
 
 source bin/activate
 
@@ -157,12 +157,15 @@ done
 
 # Finetuning, Debugging
 echo "Will train for $i times while Finetuning is $f"
+# Startin Test
 while [[ $i != 0 ]];do
     ./train.sh "$f" "$d"
     i=$((i-1))
 done
 
-echo "Testing area"
+# Startin Test
+# Fine tuning has to be disabled for testing.
+# Else It will not load a previosuly saved model from $p and Start from Scratch
 case $testCond in
     [0]*) echo "Training concludes";;
     [1]*) ./test.sh "o" "$d" "n";;

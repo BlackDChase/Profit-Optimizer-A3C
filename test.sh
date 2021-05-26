@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Author  : 'BlackDChase'
-# Version : '1.4.8'
+# Version : '1.4.9'
 
 # ./test.sh "e" "False" "False" "10"
 # Default Hyperparameters
@@ -11,6 +11,9 @@ fi
 
 testVarient=$1
 f=$2
+# Fine tuning has to be disabled for testing.
+# Else It will not load a previosuly saved model from $p and Start from Scratch
+
 d=$3
 intrupt=$4
 a=8
@@ -55,7 +58,7 @@ episodicOnlineTest(){
 # Path, if using previously trained model
 folder="../Saved_model/" 
 folder="$folder$(ls "$folder" -Art | grep "Olog" | tail -n 1)/"
-if [[ "$f" = False ]]; then
+if [[ false =~ "$f" ]] || [[ False =~ "$f"  ]];
     p=$(echo "$folder$(ls "$folder" | grep "CritcModel.pt")" | rev | cut -b 14- | rev)
     echo "Loading Model from : $p"
 else 

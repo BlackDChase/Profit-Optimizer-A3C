@@ -1,5 +1,5 @@
 # Adjusting Price to maximize profit using A3C 
-`Version : '1.4.8'`
+`Version : '1.4.9'`
 
 ## How to Use
 ### Installing
@@ -24,18 +24,18 @@ source bin/activate
 2. If we should do a headstart by using a previusly trained model and fine tune it `True/false`.
 3. Debugging, if logs shoul contain debugging or not `True/false`.
 4. Testing methodology (all using a headstart and fine tuning over it).
-    - `n`. No testing what so ever
-    - `0`. Offline mode
-    - `1`. Sliding Window Protocol
-    - `2`. Episodic Protocol
-    - `3`. All the protocols
+    - `0`. No testing what so ever
+    - `1`. Offline mode
+    - `2`. Sliding Window Protocol
+    - `3`. Episodic Protocol
+    - `4`. All the protocols
 5. Number of Indifferent Trains to perform. (1 is ideal, can opt 1-3 is recommended, keep the better perfomning one , delte the other)
 6. Intrupting Test, as the model is for a live Electric Grid hence will not stop.
     - `n`. manually stopping by `KeyboardIntrupt`
     - `8`. Seconds after which it will Intrupt on its own.
 ```sh
 #Points    (1) (2) (3) (4) (5) (6)
-./run.sh   "y" "F" "T" "3" "2" "200"
+./run.sh   "y" "F" "T" "3" "2" "8"
 ```
 
 ## Ref
