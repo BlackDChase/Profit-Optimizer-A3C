@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Author  : 'BlackDChase'
-# Version : '1.4.9'
+# Version : '1.5.0'
 
 source bin/activate
 
@@ -159,6 +159,7 @@ done
 echo "Will train for $i times while Finetuning is $f"
 # Startin Test
 while [[ $i != 0 ]];do
+    echo "On run $i"
     ./train.sh "$f" "$d"
     i=$((i-1))
 done

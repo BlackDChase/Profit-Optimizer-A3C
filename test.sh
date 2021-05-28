@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Author  : 'BlackDChase'
-# Version : '1.4.9'
+# Version : '1.5.0'
 
 # ./test.sh "e" "False" "False" "10"
 # Default Hyperparameters
@@ -58,7 +58,7 @@ episodicOnlineTest(){
 # Path, if using previously trained model
 folder="../Saved_model/" 
 folder="$folder$(ls "$folder" -Art | grep "Olog" | tail -n 1)/"
-if [[ false =~ "$f" ]] || [[ False =~ "$f"  ]];
+if [[ false =~ "$f" ]] || [[ False =~ "$f"  ]];then
     p=$(echo "$folder$(ls "$folder" | grep "CritcModel.pt")" | rev | cut -b 14- | rev)
     echo "Loading Model from : $p"
 else 

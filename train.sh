@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Author  : 'BlackDChase'
-# Version : '1.4.9'
+# Version : '1.5.0'
 
 # ./train.sh "True" "False"
 
@@ -36,7 +36,7 @@ a=8
 # Path, if using previously trained model
 folder="../Saved_model/" 
 folder="$folder$(ls $folder -Art | grep "Olog" | tail -n 1)/"    
-if [[ "$f" = True ]]; then
+if [[ true =~ "$f" ]] || [[ True =~ "$f"  ]];then
     if [[ -f "$folder$(ls $folder | grep "CritcModel.pt")" ]]; then
         p=$(echo "$folder$(ls $folder | grep "CritcModel.pt")" | rev | cut -b 14- | rev)
         echo "Loading Model from : $p"
