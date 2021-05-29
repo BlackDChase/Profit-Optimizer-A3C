@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Author  : 'BlackDChase'
-# Version : '1.5.1'
+# Version : '1.5.2'
 
 # ./train.sh "True" "False"
 

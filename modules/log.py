@@ -6,7 +6,7 @@ import logging
 import datetime
 
 __author__ = 'Biribiri,BlackDChase'
-__version__ = '1.5.1'
+__version__ = '1.5.2'
 """ 
 One log can maximum have 1000 elements of a tensor
 """

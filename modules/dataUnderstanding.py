@@ -7,7 +7,7 @@ Parameteres made:
     - All data with necessory elements seprated [reducedDF]
 """
 __author__ = 'BlackDChase'
-__version__ = '1.5.1'
+__version__ = '1.5.2'
 
 
 import pandas as pd
@@ -118,10 +118,58 @@ reCorr1.to_csv('../Dataset/reCorr.csv')
 adCorr1.to_csv('../Dataset/adCorr.csv')
 
 
+# Making Dataset
+full = pd.read_csv('finalwork.csv')
+full = full.drop(axis=0,columns=['Count','Date','Hour','Minute'])
+new=full.ffill().bfill()
+new['Ontario Price']=abs(new['Ontario Price'])
+deduct=np.random.rand(len(full))                                           
+new['Market Demand'] = new['Ontario Demand'] - deduct*new['Ontario Price']
+new=new.rename(columns={'Market Demand':'supply'})
+new=new[['Ontario Price', 'Ontario Demand','supply' , 'Northwest', 
+       'Northwest Temp', 'Northwest Dew Point Temp', 'Northwest Rel Hum', 
+       'Northeast', 'Northeast Temp', 'Northeast Dew Point Temp', 
+       'Northeast Rel Hum', 'Ottawa', 'Ottawa Temp', 'Ottawa Dew Point Temp', 
+       'OttawaRel Hum', 'East', 'East Temp', 'East Dew Point Temp', 
+       'East Rel Hum', 'Toronto', 'Toronto Temp', 'Toronto Dew Point Temp', 
+       'Toronto Rel Hum', 'Essa', 'Essa Temp', 'Essa Dew Point Temp', 
+       'Essa Rel Hum', 'Bruce', 'Bruce Temp', 'Bruce Dew Point Temp', 
+       'Bruce Rel Hum', 'Southwest', 'Southwest Temp', 
+       'Southwest Dew Point Temp', 'Southwest Rel Hum', 'Niagara', 
+       'Niagara Temp', 'Niagara Dew Point Temp', 'Niagara Rel Hum', 'West', 
+       'West Temp', 'West Dew Point Temp', 'West Rel Hum']]
+profit=(new['Ontario Demand']-new['supply'])*new['Ontario Price']
+profit.mean()     
+#908.532587007038
+profit.std()      
+#26168.12415430964
+profit.min()      
+#0.0
+profit.max()      
+#3946874.814376206
+profit.median()   
+#153.44608280964934
+
+maxi=[]
+mini=[]
+for i in new.columns: 
+    m1=max(new[i]) 
+    m2=min(new[i]) 
+    new[i]=(new[i]-m2)/(m1-m2) 
+    maxi.append(m1) 
+    mini.append(m2)  
+new.to_csv('normalized_weird_43_columns_with_supply.csv',index=False)  
+x=pd.DataFrame(columns=['max','min'])                                                                      
+x['max'],x['min']=maxi,mini
+x.to_csv('min_max_values_43_columns_with_supply.csv',index=False)
+
+
+
 # Supply demand data Normalized
 norm = pd.read_csv('normalized_weird_13_columns_with_supply.csv')
 maxmin = pd.read_csv('min_max_values_13_columns_with_supply.csv')
 denorm = pd.DataFrame(columns=norm.columns)
+
 
 for i in range(len(norm.columns)):
     col=norm.columns[i]
