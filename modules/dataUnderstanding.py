@@ -7,7 +7,7 @@ Parameteres made:
     - All data with necessory elements seprated [reducedDF]
 """
 __author__ = 'BlackDChase'
-__version__ = '1.5.0'
+__version__ = '1.5.1'
 
 
 import pandas as pd
