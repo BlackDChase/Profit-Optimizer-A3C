@@ -12,7 +12,7 @@ Combinations:
 #"""
 
 __author__ = 'BlackDChase'
-__version__ = '1.5.2'
+__version__ = '1.5.3'
 
 # Imports
 import os

@@ -4,7 +4,7 @@ Primarily We would be using Network Class as it is more robust to change
 Aktor, Kritc are standins for testing
 #"""
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '1.5.2'
+__version__ = '1.5.3'
 
 # Imports
 import torch

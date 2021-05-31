@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Author  : 'BlackDChase'
-# Version : '1.5.2'
+# Version : '1.5.3'
 
 # ./test.sh "e" "False" "False" "10"
 # Default Hyperparameters

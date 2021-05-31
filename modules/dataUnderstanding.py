@@ -7,7 +7,7 @@ Parameteres made:
     - All data with necessory elements seprated [reducedDF]
 """
 __author__ = 'BlackDChase'
-__version__ = '1.5.2'
+__version__ = '1.5.3'
 
 
 import pandas as pd
@@ -120,12 +120,10 @@ adCorr1.to_csv('../Dataset/adCorr.csv')
 
 # Making Dataset
 full = pd.read_csv('finalwork.csv')
-full = full.drop(axis=0,columns=['Count','Date','Hour','Minute'])
+full = full.drop(axis=0,columns=['Count','Date','Hour','Minute','Market Demand'])
 new=full.ffill().bfill()
-new['Ontario Price']=abs(new['Ontario Price'])
 deduct=np.random.rand(len(full))                                           
-new['Market Demand'] = new['Ontario Demand'] - deduct*new['Ontario Price']
-new=new.rename(columns={'Market Demand':'supply'})
+new['supply'] = new['Ontario Demand'] - deduct*new['Ontario Price']
 new=new[['Ontario Price', 'Ontario Demand','supply' , 'Northwest', 
        'Northwest Temp', 'Northwest Dew Point Temp', 'Northwest Rel Hum', 
        'Northeast', 'Northeast Temp', 'Northeast Dew Point Temp', 
