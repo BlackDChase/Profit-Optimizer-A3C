@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Author  : 'BlackDChase'
-# Version : '1.5.3'
+# Version : '1.4.9'
 
 source bin/activate
 
@@ -159,7 +159,6 @@ done
 echo "Will train for $i times while Finetuning is $f"
 # Startin Test
 while [[ $i != 0 ]];do
-    echo "On run $i"
     ./train.sh "$f" "$d"
     i=$((i-1))
 done
@@ -169,7 +168,7 @@ done
 # Else It will not load a previosuly saved model from $p and Start from Scratch
 case $testCond in
     [0]*) echo "Training concludes";;
-    [1]*) ./test.sh "o" "$d" "n";;
+    [1]*) ./test.sh "o" "False" "$d" "n";;
     
     [2]*) ./test.sh "s" "False" "$d"  "$intrupt";;
     [3]*) ./test.sh "e" "False" "$d"  "$intrupt";;

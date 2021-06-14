@@ -1,5 +1,5 @@
 # Adjusting Price to maximize profit using A3C 
-`Version : '1.5.3'`
+`Version : '1.4.9'`
 
 ## How to Use
 ### Installing
@@ -40,9 +40,6 @@ source bin/activate
 
 ## Ref
 - [Research Paper](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/MARKDOWN/Reinforcement%20Learning%20for%20Optimizing%20the%20Demand%20Response.pdf)
-
-[//]: # - [ICCCNT 2021](https://github.com/BlackDChase/Profit-Optimizer-A3C/blob/main/MARKDOWN/DEMAND%20RESPONSE%20OPTIMIZATION%20FOR%20MIRCOGRID%20CLUSTERS%20WITH%20DEEP%20REINFORCEMENT%20LEARNING_12th_ICCCNT_2021_paper_594.pdf)
-
 - Authors:
     - [Harsh Kochar](https://github.com/BlackDChase/)
     - [Aadarsh Abhijat](https://github.com/MR-TLL/)

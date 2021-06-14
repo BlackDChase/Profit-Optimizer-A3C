@@ -12,7 +12,7 @@ BOSS AGENT
 State = Ontario Price, Ontario Demand, Ontario Supply,Northwest,Northeast,Ottawa,East,Toronto,Essa,Bruce, Northwest Nigiria, West
 """
 __author__ = 'BlackDChase,MR-TLL'
-__version__ = '1.5.3'
+__version__ = '1.4.9'
 
 # Imports
 from torch import nn, Tensor
@@ -72,6 +72,7 @@ class GOD:
         Initialization of various GOD parameters, self evident from the code.
         #"""
         self.name=name
+        
 
         # We will be interacting with the env whose state will have 13 dimensions
         # i.e for every timeStep the env will represent its current state as a tuple of 13 values 
@@ -318,7 +319,7 @@ class GOD:
             action,_ = self.decideAction(Tensor(currentState))
             # Observe nextState, reward, info from the environment after taking the action 
             nextState,reward,_,info = self.step(action)
-            log.info(f"rewards = {[reward]}")
+            log.info(f"rewards = {reward}")
             ## Oi generous env , please tell me the next state and reward for the action i have taken
             log.info(f"{self.name}, {i},  {info}")
             if self.debug:
@@ -402,6 +403,7 @@ class GOD:
         if self.debug:
             log.debug(f"New Method is {newMethod}")
         episodes=0
+        currentOnlineIterations=0
         # These self variables necessary for doing gather and store.
         # The same way they are used in the BOSS agent.
         # initialized in resetTrajectory method.
@@ -415,6 +417,10 @@ class GOD:
                     episodes+=1
             for _ in tqdm(self.__progressWatch()):
                 currentState=self.onlineGatherAndStore(currentState)
+                currentOnlineIterations+=1
+                
+                if currentOnlineIterations==self.maxEpisode*self.trajectoryLength:
+                    break
 
                 if newMethod==True and episodes<self.trajectoryLength:
                     episodes+=1
@@ -432,7 +438,7 @@ class GOD:
                 self.calculateAndUpdateL_C()
 
                 # Logging rewards from the current trajectoryR buffer before flushing
-                #log.info(f"rewards = \t {Tensor(self.trajectoryR).squeeze()}")
+                log.info(f"rewards = \t {Tensor(self.trajectoryR).squeeze()}")
 
                 if newMethod==True:
                     episodes=0
@@ -445,6 +451,7 @@ class GOD:
                 self.trajectoryR.popleft()
                 self.trajectoryA.popleft()
                 episodes+=1
+
         except KeyboardInterrupt:
             print("\nOnline training terminated >_<")
             print("Episodes: ",episodes)
@@ -485,7 +492,7 @@ class GOD:
         log.info(f"A3C Profit = {a3cProfit}")
 
         nextState,reward,_,info = self.step(action)
-        log.info(f"rewards = {reward}")
+        #log.info(f"rewards = {reward}")
         if self.debug:
             log.debug(f"Online: {self.name}, {info}")
             log.debug(f"Online: Reward and Shape = {reward}, {reward.shape}")
