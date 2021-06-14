@@ -318,7 +318,7 @@ class GOD:
             action,_ = self.decideAction(Tensor(currentState))
             # Observe nextState, reward, info from the environment after taking the action 
             nextState,reward,_,info = self.step(action)
-            log.info(f"rewards = {[reward]}")
+            log.info(f"rewards = {reward}")
             ## Oi generous env , please tell me the next state and reward for the action i have taken
             log.info(f"{self.name}, {i},  {info}")
             if self.debug:
@@ -432,7 +432,7 @@ class GOD:
                 self.calculateAndUpdateL_C()
 
                 # Logging rewards from the current trajectoryR buffer before flushing
-                #log.info(f"rewards = \t {Tensor(self.trajectoryR).squeeze()}")
+                log.info(f"rewards = \t {Tensor(self.trajectoryR).squeeze()}")
 
                 if newMethod==True:
                     episodes=0
@@ -485,7 +485,7 @@ class GOD:
         log.info(f"A3C Profit = {a3cProfit}")
 
         nextState,reward,_,info = self.step(action)
-        log.info(f"rewards = {reward}")
+        # log.info(f"rewards = {reward}")
         if self.debug:
             log.debug(f"Online: {self.name}, {info}")
             log.debug(f"Online: Reward and Shape = {reward}, {reward.shape}")
