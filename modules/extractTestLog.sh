@@ -40,12 +40,16 @@ vim criticLossLog.tsv  -c ':%s/.*=//g' -c ':%s/.*\[//g'  -c ':%s/\].*//g' -c ':w
 vim advantageLog.tsv  -c ':%s/.*tensor//g' -c ':%s/(\[//g'  -c ':%s/\].*//g' -c ':wq'
 #vim advantageLog.tsv  -c ':%s/.*=//g' -c ':%s/.*\[//g'  -c ':%s/\].*//g' -c ':wq'
 vim stateLog.tsv  -c ':%s/.*=//g' -c ':%s/.*\[//g'  -c ':%s/\].*//g' -c ':wq'
+
 echo "Post Processing Logs was a success"
 # New models moved to $name
 critic=$(ls ../ -Art | grep "CritcModel." | tail -n 1)
 actor=$(ls ../ -Art | grep "PolicyModel." | tail -n 1)
 mv "../$critic" "./"
 mv "../$actor" "./"
+
+# offline = 0, sliding online = 1, episodic online = 2
+testvarient=2
 echo "New models moved to $name"
-python ../../modules/postTesting.py
+python ../../modules/postTesting.py -t=$testvarient
 echo "Ploting was success"

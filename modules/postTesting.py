@@ -20,6 +20,33 @@ import matplotlib.pyplot as plt
 import sys
 import numpy as np
 
+arguments ={
+            "t":-1,
+        }
+
+# Parsing arguments
+key,arg,value='','',''
+try:
+    for arg in sys.argv[1:]:
+        #print(f"arg = {arg}")
+        key,value = arg.split("=")
+        if key[1:]=="t":
+            if value in ['o','O','0']:
+                arguments[key[1:]] = 'offline'
+            elif value in ['s','S','1']:
+                arguments[key[1:]] = 'online sliding window'
+            elif value in ['e','E','2']:
+                arguments[key[1:]] = 'online episodic'
+            else:
+                arguments[key[1:]] = 'invalid varient'
+        else:
+            print("Invalid argument tag")
+            arguments[key[1:]] = int(value)
+        print(f"Parameter {key[1:]} is {value}")
+except:
+    print("Error in input in postTesting")
+    print(key,arg,value)
+
 def getAvg(array):
     arr = []
     for i in array:
@@ -161,14 +188,16 @@ def getOfflineReward(filename):
     return rewards
 
 if __name__ == '__main__':
+
+    print(f"TESTVARIENT = {arguments['t']}")
     
     folderName = ""
     price,corre,demand,supply,profit = newStateExtract(folderName+"stateLog.tsv")
     demSup = [demand[i]-supply[i] for i in range(len(demand))]
     
     # Ploting Demand, Supply 
-    print(f"demand = {demand}")
-    print(f"supply = {supply}")
+    #print(f"demand = {demand}")
+    #print(f"supply = {supply}")
     fig,ax1 = plt.subplots(dpi=400)
     color='r'
     ax1.plot(demand,color=color,label='Demand')
@@ -234,6 +263,7 @@ if __name__ == '__main__':
     plt.legend()
     plt.savefig(folderName+"Profit Compariosn.svg")
     plt.close()
+
     if 'online' in arguments['t'].split(' '):
         avgAdvantage,episodeLength = rewardAvgLen(rewardAvg(folderName+"advantageLog.tsv"))
         policyLoss = modelLoss(folderName+"policyLossLog.tsv")
@@ -259,6 +289,7 @@ if __name__ == '__main__':
         plt.plot(criticLoss)
         plt.savefig(folderName+"criticLoss.svg")
         plt.close()
+
     if 'online' in arguments['t'].split(' '):
         reward,episodeLength = getOnlineReward(folderName+"rewardLog.tsv")
         correction = getOnlineCorrection(corre, episodeLength)
